@@ -235,10 +235,17 @@ function ExamSessionRoute() {
     );
   }
 
-  if (error || !responseData) {
+  if (error || !responseData?.session) {
+    const errorMsg = (error as any)?.response?.data?.message || "We couldn't load your mock exam. Please check your connection.";
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-background)' }}>
-        <ErrorState message="We couldn't load your mock exam. Please check your connection." />
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--color-background)', gap: 16, padding: '0 20px' }}>
+        <ErrorState
+          message={errorMsg}
+          onRetry={() => window.location.reload()}
+        />
+        <Button variant="outline" onClick={() => navigate({ to: '/exam-prep' })}>
+          Return to Exam Prep
+        </Button>
       </div>
     );
   }
