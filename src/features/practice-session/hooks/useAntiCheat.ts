@@ -27,7 +27,7 @@ export const useAntiCheat = (
     const payload = { events: [...eventBufferRef.current] };
     eventBufferRef.current = []; // Clear buffer
 
-    practiceApi.logAntiCheatEvents(sessionIdRef.current, payload).catch(console.error);
+    practiceApi.logAntiCheatEvents(sessionIdRef.current, payload).catch(() => {});
   }, []);
 
   useEffect(() => {

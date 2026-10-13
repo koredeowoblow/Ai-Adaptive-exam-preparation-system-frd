@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useStudentDetailedAnalytics } from '../../features/admin/hooks/useAdmin';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { Skeleton } from '../../shared/components/Skeleton';
@@ -155,12 +155,12 @@ export function AdminStudentAnalyticsPage() {
   } = analytics;
 
   // Formatting calculations
-  const elo = summary?.currentElo ?? 1200;
+  const elo = (summary as any)?.currentElo ?? 1200;
   const eloLevel = summary?.averageEloLevel || 'Novice';
   const readiness = Math.round(summary?.examReadinessScore ?? 0);
   const readinessLevel = summary?.examReadinessLevel || (readiness >= 75 ? 'Ready' : readiness >= 50 ? 'Marginal' : 'Needs Preparation');
   const avgScore = summary?.averageScore ? Math.round(summary.averageScore) : 0;
-  const velocity = summary?.scoreVelocity ?? 0;
+  const velocity = (summary as any)?.scoreVelocity ?? 0;
   const totalSessions = summary?.totalSessions ?? performanceTrend.length;
   const totalQuestions = summary?.totalQuestionsAnswered ?? 0;
   const accuracy = Math.round(summary?.overallAccuracy ?? (totalQuestions > 0 ? ((summary?.totalCorrectAnswers ?? 0) / totalQuestions) * 100 : 0));
@@ -861,7 +861,7 @@ export function AdminStudentAnalyticsPage() {
               <div style={{ width: '100%', height: 240 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={subjectPerformance.map((sp) => ({
+                    data={subjectPerformance.map((sp: any) => ({
                       course: sp.code || sp.courseTitle,
                       Score: Math.round(sp.avg ?? sp.averageScore ?? 0),
                       Questions: sp.questionsAttempted ?? 0,
@@ -989,7 +989,7 @@ export function AdminStudentAnalyticsPage() {
                           {w.topicName}
                         </span>
                         <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>
-                          Score: {Math.round(w.score ?? w.accuracy ?? 0)}%
+                          Score: {Math.round((w as any).score ?? (w as any).accuracy ?? 0)}%
                         </span>
                       </div>
                       <span

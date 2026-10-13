@@ -7,7 +7,6 @@ import { useLogin } from '../hooks/useLogin';
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
-import { toast } from 'sonner';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),

@@ -16,12 +16,10 @@ import {
 } from 'recharts';
 import {
   ArrowLeft,
-  BookOpen,
   TrendingUp,
   Target,
   ShieldAlert,
   ShieldCheck,
-  CheckCircle2,
   Clock,
   RotateCcw,
   BarChart2,
@@ -30,11 +28,9 @@ import {
   GraduationCap,
   Layers,
   Award,
-  Zap,
   Check,
   Copy,
   Users,
-  AlertTriangle,
   ChevronRight,
 } from 'lucide-react';
 
@@ -797,7 +793,7 @@ export function AdminCourseAnalyticsPage() {
                     >
                       <td style={{ padding: '0.75rem 0.5rem' }}>
                         <Link
-                          to="/admin/topics_/$topicId"
+                          to="/admin/topics/$topicId"
                           params={{ topicId: topic.topicId }}
                           style={{
                             fontWeight: 600,
@@ -863,7 +859,7 @@ export function AdminCourseAnalyticsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate({ to: '/admin/topics_/$topicId', params: { topicId: topic.topicId } })}
+                          onClick={() => navigate({ to: '/admin/topics/$topicId', params: { topicId: topic.topicId } })}
                           style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
                         >
                           Deep View <ChevronRight size={12} style={{ marginLeft: 2 }} />
@@ -927,7 +923,7 @@ export function AdminCourseAnalyticsPage() {
                     >
                       <td style={{ padding: '0.75rem 0.5rem' }}>
                         <Link
-                          to="/admin/users_/$userId"
+                          to="/admin/users/$userId"
                           params={{ userId: s.studentId }}
                           style={{
                             fontWeight: 600,
@@ -976,7 +972,7 @@ export function AdminCourseAnalyticsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate({ to: '/admin/users_/$userId', params: { userId: s.studentId } })}
+                          onClick={() => navigate({ to: '/admin/users/$userId', params: { userId: s.studentId } })}
                           style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
                         >
                           View Student <ChevronRight size={12} style={{ marginLeft: 2 }} />

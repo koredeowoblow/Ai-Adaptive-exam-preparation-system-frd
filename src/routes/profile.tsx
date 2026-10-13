@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { AppLayout } from '../shared/components/layout/AppLayout';
 import { useDocumentTitle } from '../shared/hooks/useDocumentTitle';
 import { useStudentProfile, useUpdateProfile, useEnrolledCourses } from '../features/profile/hooks/useProfile';
@@ -16,8 +16,6 @@ import { Modal } from '../shared/components/Modal';
 import { Button } from '../shared/components/Button';
 import { Input } from '../shared/components/Input';
 import { Select } from '../shared/components/Select';
-import { authApi } from '../features/auth/api/auth.api';
-import { useQueryClient } from '@tanstack/react-query';
 import type { Department } from '../types/department.types';
 import { requireAuth } from '../features/auth/utils/authGuard';
 
@@ -61,7 +59,6 @@ function ProfileRecordRow({
 
 function ProfileRoute() {
   useDocumentTitle('Academic Record — EduAdapt');
-  const navigate = useNavigate();
   const { data: profile, isLoading: profileLoading } = useStudentProfile();
   const { data: dashData, isLoading: dashLoading } = useStudentDashboard('me');
   const { data: enrolledCourses, isLoading: enrolledLoading } = useEnrolledCourses();

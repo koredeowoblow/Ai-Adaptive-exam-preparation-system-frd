@@ -16,6 +16,7 @@ import { FormDrawer } from '../../shared/components/FormDrawer';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { Button } from '../../shared/components/Button';
+import { TableFilterBar } from '../../shared/components/TableFilterBar';
 import {
   Plus,
   Search,
@@ -29,7 +30,6 @@ import {
   Eye,
   Edit2,
   Trash2,
-  X,
   TrendingUp,
 } from 'lucide-react';
 import type { Department } from '../../types/department.types';
@@ -326,7 +326,7 @@ function DepartmentsAdminRoute() {
       cell: (dept) => (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <Link
-            to="/admin/departments_/$deptId"
+            to="/admin/departments/$deptId"
             params={{ deptId: dept._id }}
             style={{
               fontSize: '0.8125rem',
@@ -422,7 +422,7 @@ function DepartmentsAdminRoute() {
           {
             label: 'In-Depth Analytics',
             icon: <TrendingUp size={14} color="var(--color-primary)" />,
-            onClick: () => navigate({ to: '/admin/departments_/$deptId', params: { deptId: dept._id } }),
+            onClick: () => navigate({ to: '/admin/departments/$deptId', params: { deptId: dept._id } }),
           },
           {
             label: 'View details',
@@ -459,79 +459,19 @@ function DepartmentsAdminRoute() {
       </PageHeader>
 
       {/* ── SEARCH & FILTER CONTROLS ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 'var(--space-12)',
-        }}
-      >
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            maxWidth: '320px',
-          }}
-        >
-          <Search
-            size={14}
-            style={{
-              position: 'absolute',
-              left: 10,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--color-text-muted)',
-              pointerEvents: 'none',
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Search by name or description..."
-            value={querySearch}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '6px 28px 6px 30px',
-              fontSize: '0.8125rem',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-surface)',
-              color: 'var(--color-text)',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-          {querySearch && (
-            <button
-              type="button"
-              onClick={() => handleSearchChange('')}
-              aria-label="Clear search"
-              style={{
-                position: 'absolute',
-                right: 8,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                color: 'var(--color-text-muted)',
-                cursor: 'pointer',
-                display: 'flex',
-              }}
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-            Total: <strong>{departmentsWithCounts.length}</strong>
-          </span>
-        </div>
-      </div>
+      <TableFilterBar
+        searchValue={querySearch}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Search by name or description..."
+        searchWidth="320px"
+        extraRight={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+              Total: <strong>{departmentsWithCounts.length}</strong>
+            </span>
+          </div>
+        }
+      />
 
       {/* ── ERROR STATE WITH RETRY ── */}
       {errorDepts && (
@@ -887,7 +827,7 @@ function DepartmentsAdminRoute() {
                 onClick={() => {
                   const did = viewingDepartment._id;
                   setViewingDepartment(null);
-                  navigate({ to: '/admin/departments_/$deptId', params: { deptId: did } });
+                  navigate({ to: '/admin/departments/$deptId', params: { deptId: did } });
                 }}
                 style={{
                   display: 'inline-flex',

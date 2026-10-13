@@ -198,4 +198,79 @@ test.describe('Mock Exam State and Polling Integrity', () => {
     expect(timerText).not.toBe('0:00');
     expect(timerText).toMatch(/\d+:\d{2}/);
   });
+
+  test('Review page passes Answer ID rather than Question ID to explain endpoint', async ({ page }) => {
+    let capturedAnswerId: string | null = null;
+
+    await page.route('**/auth/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        json: {
+          success: true,
+          data: {
+            id: 'stu_123',
+            name: 'Student Tester',
+            role: 'student',
+            isOnboarded: true,
+            departmentId: 'dept_1',
+          },
+        },
+      });
+    });
+
+    await page.route('**/practice-sessions/sess_explain_test*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        json: {
+          success: true,
+          data: {
+            session: {
+              _id: 'sess_explain_test',
+              status: 'completed',
+              questionsServed: [
+                {
+                  _id: 'ans_spec_uuid_777',
+                  selectedAnswer: 'opt_b',
+                  correct: false,
+                  timeTaken: 12,
+                  explanationStatus: 'NOT_REQUESTED',
+                  questionId: {
+                    _id: 'q_wrong_uuid_999',
+                    questionText: 'What is the speed of light?',
+                    type: 'MULTIPLE_CHOICE',
+                    options: [
+                      { id: 'opt_a', text: '3x10^8 m/s' },
+                      { id: 'opt_b', text: '150 km/h' },
+                    ],
+                    correctAnswer: 'opt_a',
+                  },
+                },
+              ],
+            },
+          },
+        },
+      });
+    });
+
+    await page.route('**/answers/*/explain', async (route) => {
+      const url = route.request().url();
+      const match = url.match(/\/answers\/([^/]+)\/explain/);
+      if (match) {
+        capturedAnswerId = match[1];
+      }
+      await route.fulfill({
+        status: 200,
+        json: { success: true, message: 'Explanation queued' },
+      });
+    });
+
+    await page.goto('/practice/sess_explain_test/review');
+    await expect(page.locator('text=Ask AI Tutor for Explanation')).toBeVisible();
+
+    await page.click('button:has-text("Ask AI Tutor for Explanation")');
+
+    await expect(page.locator('text=Generating personalized AI explanation...')).toBeVisible();
+    expect(capturedAnswerId).toBe('ans_spec_uuid_777');
+    expect(capturedAnswerId).not.toBe('q_wrong_uuid_999');
+  });
 });

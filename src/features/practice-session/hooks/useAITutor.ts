@@ -7,8 +7,8 @@ export const useAITutor = () => {
     onSuccess: () => {
       // The generated explanation will be available in the data property of the mutation result
     },
-    onError: (err) => {
-      console.error('Failed to generate AI explanation:', err);
+    onError: () => {
+      // Error handled by mutation callers
     }
   });
 };

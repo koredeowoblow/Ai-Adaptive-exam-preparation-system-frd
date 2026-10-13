@@ -1,3 +1,4 @@
+// Stubs API calls to simulate partial failure in admin bulk deletion.
 import { test, expect } from '@playwright/test';
 
 test.describe('Admin Bulk Delete Actions', () => {
@@ -85,9 +86,14 @@ test.describe('Admin Bulk Delete Actions', () => {
     await expect(confirmBtn).toBeVisible();
     await confirmBtn.click();
 
-    // Verify API called for each ID
+    // Verify toast notifications and failure name reporting
     await expect(page.getByText(/Successfully removed 1 user/i).first()).toBeVisible();
-    await expect(page.getByText(/Failed to remove 1 user/i).first()).toBeVisible();
+    await expect(page.getByText(/Failed to remove 1 user: Student Two/i).first()).toBeVisible();
+
+    // Verify only the failed row remains selected
+    await expect(page.getByRole('button', { name: /Delete Selected \(1\)/i })).toBeVisible();
+    await expect(page.locator('tbody tr input[type="checkbox"]').nth(1)).toBeChecked();
+    await expect(page.locator('tbody tr input[type="checkbox"]').nth(0)).not.toBeChecked();
 
     expect(deletedIds).toContain('user_001');
     expect(deletedIds).toContain('user_002');

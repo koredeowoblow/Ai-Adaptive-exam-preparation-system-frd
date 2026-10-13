@@ -17,6 +17,7 @@ import { FormDrawer } from '../../shared/components/FormDrawer';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { Button } from '../../shared/components/Button';
+import { TableFilterBar } from '../../shared/components/TableFilterBar';
 import {
   Plus,
   Search,
@@ -33,7 +34,6 @@ import {
   ArrowUp,
   ArrowDown,
   HelpCircle,
-  X,
   TrendingUp,
 } from 'lucide-react';
 import type { Topic } from '../../types/topic.types';
@@ -470,7 +470,7 @@ function TopicsAdminRoute() {
       sortable: true,
       cell: (topic) => (
         <Link
-          to="/admin/topics_/$topicId"
+          to="/admin/topics/$topicId"
           params={{ topicId: topic._id }}
           style={{
             fontSize: '0.8125rem',
@@ -575,7 +575,7 @@ function TopicsAdminRoute() {
           {
             label: 'In-Depth Analytics',
             icon: <TrendingUp size={14} color="var(--color-primary)" />,
-            onClick: () => navigate({ to: '/admin/topics_/$topicId', params: { topicId: topic._id } }),
+            onClick: () => navigate({ to: '/admin/topics/$topicId', params: { topicId: topic._id } }),
           },
           {
             label: 'View details',
@@ -622,134 +622,68 @@ function TopicsAdminRoute() {
       </PageHeader>
 
       {/* ── SEARCH & FILTER CONTROLS ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 'var(--space-12)',
-        }}
+      <TableFilterBar
+        searchValue={querySearch}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Search topic or course..."
+        extraRight={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              style={{
+                fontSize: '0.8125rem',
+                color: 'var(--color-text-secondary)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              Total: <strong>{topicsWithMeta.length}</strong>
+            </span>
+          </div>
+        }
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-12)', flexWrap: 'wrap', flex: 1 }}>
-          {/* Search box */}
-          <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <BookOpen size={14} style={{ color: 'var(--color-text-muted)' }} />
+          <select
+            aria-label="Filter topics by course"
+            value={selectedCourseFilter}
+            onChange={(e) => handleCourseFilterChange(e.target.value)}
             style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '300px',
-            }}
-          >
-            <Search
-              size={14}
-              style={{
-                position: 'absolute',
-                left: 10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--color-text-muted)',
-                pointerEvents: 'none',
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search topic or course..."
-              value={querySearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '6px 28px 6px 30px',
-                fontSize: '0.8125rem',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
-            />
-            {querySearch && (
-              <button
-                type="button"
-                onClick={() => handleSearchChange('')}
-                aria-label="Clear search"
-                style={{
-                  position: 'absolute',
-                  right: 8,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  color: 'var(--color-text-muted)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                }}
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          {/* Course Filter Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <BookOpen size={14} style={{ color: 'var(--color-text-muted)' }} />
-            <select
-              aria-label="Filter topics by course"
-              value={selectedCourseFilter}
-              onChange={(e) => handleCourseFilterChange(e.target.value)}
-              style={{
-                padding: '6px 10px',
-                fontSize: '0.8125rem',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)',
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-            >
-              <option value="">All Courses</option>
-              {allCourses.map((c) => (
-                <option key={c._id} value={c._id}>
-                  [{c.code}] {c.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Clear filters shortcut */}
-          {(querySearch || selectedCourseFilter) && (
-            <button
-              type="button"
-              onClick={() => updateSearchParams({ q: undefined, courseId: undefined, page: 1 })}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '0.75rem',
-                color: 'var(--color-primary)',
-                cursor: 'pointer',
-                fontWeight: 500,
-                textDecoration: 'underline',
-              }}
-            >
-              Reset filters
-            </button>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
+              padding: '6px 10px',
               fontSize: '0.8125rem',
-              color: 'var(--color-text-secondary)',
-              fontVariantNumeric: 'tabular-nums',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text)',
+              cursor: 'pointer',
+              outline: 'none',
             }}
           >
-            Total: <strong>{topicsWithMeta.length}</strong>
-          </span>
+            <option value="">All Courses</option>
+            {allCourses.map((c) => (
+              <option key={c._id} value={c._id}>
+                [{c.code}] {c.title}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
+
+        {(querySearch || selectedCourseFilter) && (
+          <button
+            type="button"
+            onClick={() => updateSearchParams({ q: undefined, courseId: undefined, page: 1 })}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '0.75rem',
+              color: 'var(--color-primary)',
+              cursor: 'pointer',
+              fontWeight: 500,
+              textDecoration: 'underline',
+            }}
+          >
+            Reset filters
+          </button>
+        )}
+      </TableFilterBar>
 
       {/* ── ERROR STATE WITH RETRY ── */}
       {errorTopics && (
@@ -1093,7 +1027,7 @@ function TopicsAdminRoute() {
                 onClick={() => {
                   const tid = viewingTopic._id;
                   setViewingTopic(null);
-                  navigate({ to: '/admin/topics_/$topicId', params: { topicId: tid } });
+                  navigate({ to: '/admin/topics/$topicId', params: { topicId: tid } });
                 }}
                 style={{
                   display: 'inline-flex',

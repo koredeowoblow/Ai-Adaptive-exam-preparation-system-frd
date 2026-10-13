@@ -63,8 +63,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const handleLogout = async () => {
     try {
       await logout();
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Handled in auth provider
     }
   };
 

@@ -5,6 +5,7 @@ import { useDocumentTitle } from "../shared/hooks/useDocumentTitle";
 import { AppLayout } from "../shared/components/layout/AppLayout";
 import { Skeleton } from "../shared/components/Skeleton";
 import { ErrorState } from "../shared/components/ErrorState";
+import { EmptyState } from "../shared/components/EmptyState";
 import { Trophy, ArrowRight, Sparkles, Loader2, ClockAlert, Timer, Target, TrendingUp, ShieldCheck, HelpCircle } from "lucide-react";
 import type { Question } from "../types/question.types";
 import { useRequestMcqExplanation } from "../features/practice-session/hooks/usePractice";
@@ -169,6 +170,16 @@ function SessionReviewRoute() {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
               </div>
             )}
+            {total === 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 border border-gray-100 dark:border-gray-700">
+                <EmptyState
+                  title="No Review Data Available"
+                  description="There are no answered questions recorded for this session."
+                  actionLabel="Back to Dashboard"
+                  onAction={() => navigate({ to: '/dashboard' })}
+                />
+              </div>
+            )}
             {currentAns && currentQ && (() => {
               const ans = currentAns;
               const q = currentQ;
@@ -302,7 +313,7 @@ function SessionReviewRoute() {
                             {ans.aiExplanation}
                           </div>
                         </div>
-                      ) : ans.explanationStatus === 'PENDING' || pendingExplanations.has((q as any)._id) ? (
+                      ) : ans.explanationStatus === 'PENDING' || pendingExplanations.has((ans as any)._id) ? (
                         <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-sm p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
                           <Loader2 className="animate-spin text-primary" size={20} />
                           Generating personalized AI explanation...
@@ -310,7 +321,7 @@ function SessionReviewRoute() {
                       ) : (
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                           <button
-                            onClick={() => handleRequestExplanation((q as any)._id)}
+                            onClick={() => handleRequestExplanation((ans as any)._id)}
                             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
                           >
                             <Sparkles size={16} className="text-primary" />

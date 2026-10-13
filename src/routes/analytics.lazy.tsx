@@ -10,8 +10,6 @@ import {
 } from 'recharts';
 
 import { useStudentAnalytics } from '../features/analytics/hooks/useAnalytics';
-import { useAuth } from '../features/auth/hooks/useAuth';
-import { useDepartmentCourses } from '../features/curriculum/hooks/useCurriculum';
 
 export const Route = createLazyFileRoute('/analytics')({
   component: AnalyticsRoute,
@@ -83,8 +81,7 @@ const deriveSubjectData = (apiData: any) => {
 function AnalyticsRoute() {
   useDocumentTitle('Analytics — EduAdapt');
 
-  const { user } = useAuth();
-
+  const displayCourses: string[] = ['Foundation Core', 'Syllabus Review', 'Exam Simulations'];
 
   const { data, isLoading } = useStudentAnalytics();
   const [chartView, setChartView] = useState<'score' | 'frequency'>('score');

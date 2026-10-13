@@ -24,7 +24,7 @@ export async function requireAuth(context: RouterContext, options: GuardOptions 
       throw redirect({ to: '/login' });
     }
 
-    if (options.allowedRoles && !options.allowedRoles.includes(authData.role)) {
+    if (options.allowedRoles && (!authData.role || !options.allowedRoles.includes(authData.role))) {
       if (authData.role === 'admin' || authData.role === 'superAdmin') {
         throw redirect({ to: '/admin' });
       }

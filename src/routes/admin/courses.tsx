@@ -17,6 +17,7 @@ import { FormDrawer } from '../../shared/components/FormDrawer';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { Button } from '../../shared/components/Button';
+import { TableFilterBar } from '../../shared/components/TableFilterBar';
 import {
   Plus,
   Search,
@@ -31,7 +32,6 @@ import {
   Edit2,
   Trash2,
   Layers,
-  X,
   TrendingUp,
 } from 'lucide-react';
 import type { Course } from '../../types/course.types';
@@ -390,7 +390,7 @@ function CoursesAdminRoute() {
       sortable: true,
       cell: (course) => (
         <Link
-          to="/admin/courses_/$courseId"
+          to="/admin/courses/$courseId"
           params={{ courseId: course._id }}
           style={{
             fontSize: '0.8125rem',
@@ -477,7 +477,7 @@ function CoursesAdminRoute() {
           {
             label: 'In-Depth Analytics',
             icon: <TrendingUp size={14} color="var(--color-primary)" />,
-            onClick: () => navigate({ to: '/admin/courses_/$courseId', params: { courseId: course._id } }),
+            onClick: () => navigate({ to: '/admin/courses/$courseId', params: { courseId: course._id } }),
           },
           {
             label: 'View details',
@@ -514,134 +514,68 @@ function CoursesAdminRoute() {
       </PageHeader>
 
       {/* ── SEARCH & FILTER CONTROLS ── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 'var(--space-12)',
-        }}
+      <TableFilterBar
+        searchValue={querySearch}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Search code, title, or department..."
+        extraRight={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              style={{
+                fontSize: '0.8125rem',
+                color: 'var(--color-text-secondary)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              Total: <strong>{coursesWithMeta.length}</strong>
+            </span>
+          </div>
+        }
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-12)', flexWrap: 'wrap', flex: 1 }}>
-          {/* Search box */}
-          <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Building2 size={14} style={{ color: 'var(--color-text-muted)' }} />
+          <select
+            aria-label="Filter courses by department"
+            value={selectedDeptFilter}
+            onChange={(e) => handleDeptFilterChange(e.target.value)}
             style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '300px',
-            }}
-          >
-            <Search
-              size={14}
-              style={{
-                position: 'absolute',
-                left: 10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--color-text-muted)',
-                pointerEvents: 'none',
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search code, title, or department..."
-              value={querySearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '6px 28px 6px 30px',
-                fontSize: '0.8125rem',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
-            />
-            {querySearch && (
-              <button
-                type="button"
-                onClick={() => handleSearchChange('')}
-                aria-label="Clear search"
-                style={{
-                  position: 'absolute',
-                  right: 8,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  color: 'var(--color-text-muted)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                }}
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          {/* Department Filter Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Building2 size={14} style={{ color: 'var(--color-text-muted)' }} />
-            <select
-              aria-label="Filter courses by department"
-              value={selectedDeptFilter}
-              onChange={(e) => handleDeptFilterChange(e.target.value)}
-              style={{
-                padding: '6px 10px',
-                fontSize: '0.8125rem',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)',
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-            >
-              <option value="">All Departments</option>
-              {departments.map((d) => (
-                <option key={d._id} value={d._id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Clear filters shortcut */}
-          {(querySearch || selectedDeptFilter) && (
-            <button
-              type="button"
-              onClick={() => updateSearchParams({ q: undefined, departmentId: undefined, page: 1 })}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '0.75rem',
-                color: 'var(--color-primary)',
-                cursor: 'pointer',
-                fontWeight: 500,
-                textDecoration: 'underline',
-              }}
-            >
-              Reset filters
-            </button>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
+              padding: '6px 10px',
               fontSize: '0.8125rem',
-              color: 'var(--color-text-secondary)',
-              fontVariantNumeric: 'tabular-nums',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text)',
+              cursor: 'pointer',
+              outline: 'none',
             }}
           >
-            Total: <strong>{coursesWithMeta.length}</strong>
-          </span>
+            <option value="">All Departments</option>
+            {departments.map((d) => (
+              <option key={d._id} value={d._id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
+
+        {(querySearch || selectedDeptFilter) && (
+          <button
+            type="button"
+            onClick={() => updateSearchParams({ q: undefined, departmentId: undefined, page: 1 })}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '0.75rem',
+              color: 'var(--color-primary)',
+              cursor: 'pointer',
+              fontWeight: 500,
+              textDecoration: 'underline',
+            }}
+          >
+            Reset filters
+          </button>
+        )}
+      </TableFilterBar>
 
       {/* ── ERROR STATE WITH RETRY ── */}
       {errorCourses && (
@@ -1040,7 +974,7 @@ function CoursesAdminRoute() {
                 onClick={() => {
                   const cid = viewingCourse._id;
                   setViewingCourse(null);
-                  navigate({ to: '/admin/courses_/$courseId', params: { courseId: cid } });
+                  navigate({ to: '/admin/courses/$courseId', params: { courseId: cid } });
                 }}
                 style={{
                   display: 'inline-flex',

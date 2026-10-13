@@ -15,10 +15,10 @@ import { FormDrawer } from '../../shared/components/FormDrawer';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { Button } from '../../shared/components/Button';
+import { TableFilterBar } from '../../shared/components/TableFilterBar';
 import { Input } from '../../shared/components/Input';
 import { Select } from '../../shared/components/Select';
 import {
-  Search,
   Shield,
   BookOpen,
   Mail,
@@ -257,7 +257,10 @@ function UsersAdminRoute() {
     try {
       const results = await Promise.allSettled(ids.map((id) => deleteUserAsync(id)));
       const succeeded = results.filter((r) => r.status === 'fulfilled').length;
-      const failed = results.filter((r) => r.status === 'rejected').length;
+      const failedIndices = results
+        .map((r, i) => (r.status === 'rejected' ? i : -1))
+        .filter((i) => i !== -1);
+      const failed = failedIndices.length;
 
       if (succeeded > 0) {
         toast.success(`Successfully removed ${succeeded} user${succeeded === 1 ? '' : 's'}`);
@@ -270,7 +273,13 @@ function UsersAdminRoute() {
         });
       }
       if (failed > 0) {
-        toast.error(`Failed to remove ${failed} user${failed === 1 ? '' : 's'}`);
+        const failureNames = failedIndices
+          .map((i) => {
+            const match = rawUsers.find((u) => u._id === ids[i]);
+            return match ? match.name : ids[i];
+          })
+          .join(', ');
+        toast.error(`Failed to remove ${failed} user${failed === 1 ? '' : 's'}: ${failureNames}`);
       }
       setBulkDeleteConfirmOpen(false);
     } catch {
@@ -601,48 +610,35 @@ function UsersAdminRoute() {
       />
 
       {/* Filter and Search Command Bar */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '0.75rem',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          marginBottom: '1rem',
-          backgroundColor: 'var(--color-surface)',
-          padding: '0.75rem 1rem',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--color-border)',
-        }}
+      <TableFilterBar
+        searchValue={querySearch}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Search students by name or email..."
+        searchWidth="240px"
+        extraRight={
+          (querySearch || selectedDeptFilter || selectedLevelFilter !== 'all' || selectedOnboardedFilter !== 'all') ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                navigate({
+                  search: (prev) => ({
+                    ...prev,
+                    q: undefined,
+                    departmentId: undefined,
+                    level: 'all',
+                    onboarded: 'all',
+                    page: 1,
+                  }),
+                })
+              }
+              style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+            >
+              <RotateCcw size={12} style={{ marginRight: '0.25rem' }} /> Clear Filters
+            </Button>
+          ) : undefined
+        }
       >
-        {/* Search Input */}
-        <div style={{ position: 'relative', flex: '1 1 220px', minWidth: '180px' }}>
-          <Search
-            size={14}
-            style={{
-              position: 'absolute',
-              left: '10px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--color-text-muted)',
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Search students by name or email..."
-            value={querySearch}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.375rem 0.625rem 0.375rem 2rem',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-background-soft)',
-              color: 'var(--color-text)',
-              fontSize: '0.8125rem',
-            }}
-          />
-        </div>
-
         {/* Department Filter */}
         <select
           value={selectedDeptFilter}
@@ -651,7 +647,7 @@ function UsersAdminRoute() {
             padding: '0.375rem 0.625rem',
             borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-background-soft)',
+            backgroundColor: 'var(--color-surface)',
             color: 'var(--color-text)',
             fontSize: '0.8125rem',
             minWidth: '160px',
@@ -674,7 +670,7 @@ function UsersAdminRoute() {
             padding: '0.375rem 0.625rem',
             borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-background-soft)',
+            backgroundColor: 'var(--color-surface)',
             color: 'var(--color-text)',
             fontSize: '0.8125rem',
           }}
@@ -694,7 +690,7 @@ function UsersAdminRoute() {
             padding: '0.375rem 0.625rem',
             borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-background-soft)',
+            backgroundColor: 'var(--color-surface)',
             color: 'var(--color-text)',
             fontSize: '0.8125rem',
           }}
@@ -703,30 +699,7 @@ function UsersAdminRoute() {
           <option value="complete">Onboarding Complete</option>
           <option value="pending">Onboarding Pending</option>
         </select>
-
-        {/* Clear Filters Button */}
-        {(querySearch || selectedDeptFilter || selectedLevelFilter !== 'all' || selectedOnboardedFilter !== 'all') && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              navigate({
-                search: (prev) => ({
-                  ...prev,
-                  q: undefined,
-                  departmentId: undefined,
-                  level: 'all',
-                  onboarded: 'all',
-                  page: 1,
-                }),
-              })
-            }
-            style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-          >
-            <RotateCcw size={12} style={{ marginRight: '0.25rem' }} /> Clear Filters
-          </Button>
-        )}
-      </div>
+      </TableFilterBar>
 
       {/* Main Data Table */}
       <DataTable

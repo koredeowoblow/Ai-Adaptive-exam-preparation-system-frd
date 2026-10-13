@@ -8,7 +8,7 @@ import type { Department } from '../../../types/department.types';
 import type { Course } from '../../../types/course.types';
 import type { Topic } from '../../../types/topic.types';
 import type { Question } from '../../../types/question.types';
-import { analyticsApi, type DetailedStudentAnalyticsData } from '../../analytics/api/analytics.api';
+import { analyticsApi } from '../../analytics/api/analytics.api';
 import { queryKeys } from '../../../shared/queryKeys';
 import { toast } from 'sonner';
 

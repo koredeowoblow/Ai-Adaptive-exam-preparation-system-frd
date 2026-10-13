@@ -6,8 +6,9 @@ import { ExamTimer, type ExamTimerRef } from "../../features/practice-session/co
 import type { Question } from "../../types/question.types";
 import { Skeleton } from "../../shared/components/Skeleton";
 import { ErrorState } from "../../shared/components/ErrorState";
+import { EmptyState } from "../../shared/components/EmptyState";
 import { Button } from "../../shared/components/Button";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
 import { useAntiCheat } from "../../features/practice-session/hooks/useAntiCheat";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { QuestionCard } from "../../features/practice-session/components/QuestionCard";
@@ -287,6 +288,27 @@ function ExamSessionRoute() {
     );
   }
 
+  if (questionsList.length === 0) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-background)' }}>
+        <EmptyState
+          title="No Questions in Exam"
+          description="This exam session has no questions. Please start a new session."
+          actionLabel="Return to Exam Prep"
+          onAction={() => navigate({ to: '/exam-prep' })}
+        />
+      </div>
+    );
+  }
+
+  const clampedMessage = (() => {
+    try {
+      return sessionStorage.getItem(`exam_clamped_message_${sessionId}`);
+    } catch {
+      return null;
+    }
+  })();
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-background)', display: 'flex', flexDirection: 'column' }}>
     <header style={{
@@ -317,6 +339,26 @@ function ExamSessionRoute() {
 
     <main style={{ flex: 1, padding: 'var(--space-48) var(--space-24)', display: 'flex', justifyContent: 'center' }}>
       <div style={{ width: '100%', maxWidth: 760 }}>
+        {clampedMessage && (
+          <div
+            role="alert"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '12px 16px',
+              marginBottom: 20,
+              borderRadius: 8,
+              background: 'var(--color-warning-light)',
+              border: '1px solid var(--color-warning)',
+              color: 'var(--color-text-primary)',
+              fontSize: '0.9rem',
+            }}
+          >
+            <AlertTriangle size={18} style={{ flexShrink: 0, color: 'var(--color-warning)' }} />
+            <span>{clampedMessage}</span>
+          </div>
+        )}
         {activeQuestionObj && (
           <QuestionCard
             question={activeQuestionObj}

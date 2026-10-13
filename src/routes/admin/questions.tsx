@@ -140,11 +140,35 @@ function QuestionsAdminRoute() {
     sortOrder,
   });
 
-  const { data: topicsData, isLoading: isLoadingTopics } = useTopics();
+  const {
+    data: topicsData,
+    isLoading: isLoadingTopics,
+    hasNextPage: hasNextTopics,
+    fetchNextPage: fetchNextTopics,
+    isFetchingNextPage: isFetchingNextTopics,
+  } = useTopics();
   const topics: Topic[] = React.useMemo(() => topicsData?.pages.flatMap((page) => page.items) || [], [topicsData]);
 
-  const { data: coursesData, isLoading: isLoadingCourses } = useCourses();
+  const {
+    data: coursesData,
+    isLoading: isLoadingCourses,
+    hasNextPage: hasNextCourses,
+    fetchNextPage: fetchNextCourses,
+    isFetchingNextPage: isFetchingNextCourses,
+  } = useCourses();
   const courses: Course[] = React.useMemo(() => coursesData?.pages.flatMap((page) => page.items) || [], [coursesData]);
+
+  React.useEffect(() => {
+    if (hasNextTopics && !isFetchingNextTopics) {
+      fetchNextTopics();
+    }
+  }, [hasNextTopics, isFetchingNextTopics, fetchNextTopics]);
+
+  React.useEffect(() => {
+    if (hasNextCourses && !isFetchingNextCourses) {
+      fetchNextCourses();
+    }
+  }, [hasNextCourses, isFetchingNextCourses, fetchNextCourses]);
 
   const courseMap = React.useMemo(() => {
     const map = new Map<string, Course>();
@@ -208,7 +232,7 @@ function QuestionsAdminRoute() {
       const topicIdStr = topicObjFromPopulate?._id || (typeof q.topicId === 'string' ? q.topicId : '');
       const topicObjFromMap = topicMap.get(topicIdStr);
 
-      const topicName = topicObjFromPopulate?.name || topicObjFromMap?.name || 'Unknown Topic';
+      const topicName = topicObjFromPopulate?.name || topicObjFromMap?.name || (isLoadingTopics ? 'Loading...' : 'Unassigned Topic');
 
       const courseFromPopulate = topicObjFromPopulate?.courseId;
       const courseIdStr = typeof courseFromPopulate === 'object' && courseFromPopulate !== null
@@ -238,7 +262,7 @@ function QuestionsAdminRoute() {
         difficultyValue,
       };
     });
-  }, [rawQuestions, topicMap, courseMap]);
+  }, [rawQuestions, topicMap, courseMap, isLoadingTopics]);
 
   // Paginated questions is directly enrichedQuestions since backend handles pagination and filtering
   const paginatedQuestions = enrichedQuestions;
@@ -359,7 +383,10 @@ function QuestionsAdminRoute() {
     try {
       const results = await Promise.allSettled(ids.map((id) => deleteQuestionAsync(id)));
       const succeeded = results.filter((r) => r.status === 'fulfilled').length;
-      const failed = results.filter((r) => r.status === 'rejected').length;
+      const failedIndices = results
+        .map((r, i) => (r.status === 'rejected' ? i : -1))
+        .filter((i) => i !== -1);
+      const failed = failedIndices.length;
 
       if (succeeded > 0) {
         toast.success(`Successfully deleted ${succeeded} question${succeeded === 1 ? '' : 's'}`);
@@ -372,7 +399,13 @@ function QuestionsAdminRoute() {
         });
       }
       if (failed > 0) {
-        toast.error(`Failed to delete ${failed} question${failed === 1 ? '' : 's'}`);
+        const failureNames = failedIndices
+          .map((i) => {
+            const match = rawQuestions.find((q) => q._id === ids[i]);
+            return match ? (match.questionText || ids[i]).slice(0, 25) : ids[i];
+          })
+          .join(', ');
+        toast.error(`Failed to delete ${failed} question${failed === 1 ? '' : 's'}: ${failureNames}`);
       }
       setBulkDeleteConfirmOpen(false);
     } catch {

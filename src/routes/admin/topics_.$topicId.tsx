@@ -277,7 +277,7 @@ export function AdminTopicAnalyticsPage() {
               {topic.course && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginTop: '0.125rem' }}>
                   <Link
-                    to="/admin/courses_/$courseId"
+                    to="/admin/courses/$courseId"
                     params={{ courseId: topic.course._id }}
                     style={{
                       display: 'inline-flex',
@@ -816,7 +816,7 @@ export function AdminTopicAnalyticsPage() {
                     >
                       <td style={{ padding: '0.75rem 0.5rem' }}>
                         <Link
-                          to="/admin/users_/$userId"
+                          to="/admin/users/$userId"
                           params={{ userId: s.studentId }}
                           style={{
                             fontWeight: 600,
@@ -862,7 +862,7 @@ export function AdminTopicAnalyticsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate({ to: '/admin/users_/$userId', params: { userId: s.studentId } })}
+                          onClick={() => navigate({ to: '/admin/users/$userId', params: { userId: s.studentId } })}
                           style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
                         >
                           View Student <ChevronRight size={12} style={{ marginLeft: 2 }} />

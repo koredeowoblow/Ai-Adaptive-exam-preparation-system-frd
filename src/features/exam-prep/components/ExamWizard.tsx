@@ -5,6 +5,8 @@ import { useStartSession } from '../../practice-session/hooks/usePractice';
 import type { Course } from '../../../types/course.types';
 import type { QuestionTypeMix } from '../../../types/practice.types';
 import { Skeleton } from '../../../shared/components/Skeleton';
+import { EmptyState } from '../../../shared/components/EmptyState';
+import { ErrorState } from '../../../shared/components/ErrorState';
 import { ArrowLeft, ChevronRight, BookOpen, GraduationCap, Award, Briefcase, HelpCircle, AlertTriangle, BookCheck, ListChecks, Blend } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 
@@ -55,8 +57,17 @@ const StepHeading: React.FC<{ step: number; title: string; sub: string }> = ({ s
 interface LevelStepProps { onSelect: (level: number) => void; departmentId: string; }
 const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId }) => {
   const [showHelp, setShowHelp] = React.useState(false);
-  const { data: allCoursesData } = useDepartmentCourses(departmentId);
+  const { data: allCoursesData, isError, refetch } = useDepartmentCourses(departmentId);
   const courses = React.useMemo(() => allCoursesData?.pages.flatMap(p => p.items) || [], [allCoursesData]);
+
+  if (isError) {
+    return (
+      <ErrorState
+        message="Unable to load courses for your department. Please check your connection."
+        onRetry={() => refetch()}
+      />
+    );
+  }
 
   const getLevelIcon = (level: number) => {
     switch(level) {
@@ -135,6 +146,8 @@ const CourseStep: React.FC<CourseStepProps> = ({ departmentId, level, studentLev
   const { 
     data: allCoursesData, 
     isLoading,
+    isError,
+    refetch,
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage
@@ -145,6 +158,13 @@ const CourseStep: React.FC<CourseStepProps> = ({ departmentId, level, studentLev
   }, [allCoursesData]);
 
   const filteredCourses = allCoursesItems.filter((c: Course) => getCourseLevel(c.code) === level) ?? [];
+
+  if (isError) return (
+    <ErrorState
+      message="Unable to load courses for your department. Please check your connection."
+      onRetry={() => refetch()}
+    />
+  );
 
   if (isLoading) return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -258,15 +278,28 @@ export const ExamWizard: React.FC = () => {
     startSession({ courseId: course._id, totalQuestions, questionType }, {
       onSuccess: (response) => {
         if (response.data.clampedMessage) {
-          setClampWarning(response.data.clampedMessage);
-          // Still navigate — the clamped session was created, just warn the student
+          try {
+            sessionStorage.setItem(`exam_clamped_message_${response.data.session._id}`, response.data.clampedMessage);
+          } catch {
+            // Ignore storage failure
+          }
         }
         navigate({ to: '/exam/$sessionId', params: { sessionId: response.data.session._id } });
       },
     });
   };
 
-  if (!user?.departmentId) return null;
+  if (!user?.departmentId) {
+    return (
+      <EmptyState
+        icon={<AlertTriangle size={32} />}
+        title="Department Required"
+        description="Please select your academic department to view available exam prep courses."
+        actionLabel="Complete Onboarding"
+        onAction={() => navigate({ to: '/onboarding' })}
+      />
+    );
+  }
 
   return (
     <div style={{ width: '100%' }}>

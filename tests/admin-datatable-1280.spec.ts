@@ -5,9 +5,6 @@ test.describe('Admin DataTable 1280px layout proof', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test('DataTable wraps text and keeps actions column visible at 1280px', async ({ page }) => {
-    page.on('pageerror', err => console.log('PAGE_ERROR:', err.message));
-    page.on('console', msg => console.log('BROWSER_CONSOLE:', msg.text()));
-
     await page.route('**/api/v1/**', async (route) => {
       const url = route.request().url();
       if (url.includes('/auth/me')) {

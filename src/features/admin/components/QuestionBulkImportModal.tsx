@@ -39,7 +39,14 @@ export const QuestionBulkImportModal: React.FC<QuestionBulkImportModalProps> = (
   isImporting,
 }) => {
   const [activeTab, setActiveTab] = React.useState<'json' | 'csv'>('json');
-  const fallbackTopicId = selectedTopicId || topics[0]?._id || '';
+  const [fallbackTopicId, setFallbackTopicId] = React.useState<string>(selectedTopicId || topics[0]?._id || '');
+  React.useEffect(() => {
+    if (selectedTopicId) {
+      setFallbackTopicId(selectedTopicId);
+    } else if (topics[0]?._id && !fallbackTopicId) {
+      setFallbackTopicId(topics[0]._id);
+    }
+  }, [selectedTopicId, topics, fallbackTopicId]);
   const [rawText, setRawText] = React.useState<string>('');
   const [parsedRows, setParsedRows] = React.useState<ParsedQuestionItem[] | null>(null);
   const [parseGlobalError, setParseGlobalError] = React.useState<string | null>(null);

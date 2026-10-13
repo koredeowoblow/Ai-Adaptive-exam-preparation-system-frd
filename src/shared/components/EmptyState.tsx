@@ -6,6 +6,7 @@ export interface EmptyStateProps {
   description: string;
   actionLabel?: string;
   onAction?: () => void;
+  action?: { label: string; onClick: () => void | Promise<void> };
   /** Optional icon to display above the title (e.g. a Lucide icon element) */
   icon?: React.ReactNode;
 }
@@ -15,8 +16,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   description,
   actionLabel,
   onAction,
+  action,
   icon,
 }) => {
+  const finalActionLabel = actionLabel || action?.label;
+  const handleAction = onAction || action?.onClick;
   return (
     <div
       className="flex flex-col items-center justify-center text-center py-12 px-6"
@@ -57,9 +61,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       >
         {description}
       </p>
-      {actionLabel && onAction && (
-        <Button onClick={onAction} variant="secondary" size="sm">
-          {actionLabel}
+      {finalActionLabel && handleAction && (
+        <Button onClick={handleAction} variant="secondary" size="sm">
+          {finalActionLabel}
         </Button>
       )}
     </div>

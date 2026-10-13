@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { toast } from 'sonner';
+import { queryClient } from '../../app/queryClient';
 
 // The backend is running on 3000 locally
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
@@ -28,6 +29,8 @@ apiClient.interceptors.request.use((config) => {
 // The browser will automatically send the cookie on every request — no manual token attachment needed.
 // Backend must also set: Access-Control-Allow-Credentials: true and Access-Control-Allow-Origin to the exact frontend origin.
 
+let isRedirectingToLogin = false;
+
 // Interceptor for global error handling and 401 redirection
 apiClient.interceptors.response.use(
   (response) => response.data,
@@ -35,13 +38,15 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
 
     if (status === 401) {
-      const pathname = window.location.pathname;
+      const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
       const isPublicRoute = pathname === '/login' || pathname === '/register';
       const isAuthCheck = error.config?.url?.includes('/auth/me');
 
       localStorage.removeItem('accessToken');
+      queryClient.clear();
 
-      if (!isPublicRoute && !isAuthCheck) {
+      if (!isPublicRoute && !isAuthCheck && !isRedirectingToLogin) {
+        isRedirectingToLogin = true;
         window.location.href = '/login?error=401-interceptor';
       }
       return Promise.reject(error);
