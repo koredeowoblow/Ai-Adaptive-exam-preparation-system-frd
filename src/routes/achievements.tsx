@@ -90,7 +90,7 @@ function MilestonesRoute() {
           )}
         </div>
 
-        {/* ── Most Recent Milestone or Start Journey ── */}
+        {/* ── Most Recent Milestone or Start Studying ── */}
         {!isLoading && (
           unlockedCount > 0 && myAchievements?.achievements?.[0] ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: 'var(--color-surface-0)', border: '1px solid var(--color-border)', borderLeft: '4px solid var(--color-primary)', borderRadius: 8, marginBottom: 'var(--space-32)' }}>
@@ -109,7 +109,7 @@ function MilestonesRoute() {
               <Target size={18} color="var(--color-primary)" />
               <div>
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, display: 'block', marginBottom: 2 }}>
-                  Start your journey
+                  Start studying
                 </span>
                 <span style={{ fontSize: '0.95rem', color: 'var(--color-text-primary)', fontWeight: 600 }}>
                   Complete adaptive sessions to earn your first milestone.

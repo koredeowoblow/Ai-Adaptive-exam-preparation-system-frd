@@ -216,7 +216,7 @@ function AnalyticsRoute() {
         }}>
           <div style={{ flex: 1, minWidth: 300 }}>
             <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '2rem', margin: '0 0 12px', color: 'var(--color-text-primary)' }}>
-              {hasZeroActivity ? "Let's start your learning journey" : hasActivity ? "You're on a 3-day streak! Keep it up" : "Your learning journey is underway"}
+              {hasZeroActivity ? "Let's start your practice sessions" : hasActivity ? "You're on a 3-day streak! Keep it up" : "Your practice progress is underway"}
             </h1>
             <p style={{ margin: '0 0 24px', fontSize: '1.05rem', color: 'var(--color-text-secondary)' }}>
               Review your progress, celebrate milestones, and focus on weak areas.
