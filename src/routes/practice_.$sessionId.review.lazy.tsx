@@ -27,7 +27,15 @@ function SessionReviewRoute() {
 
   const handleRequestExplanation = (answerId: string) => {
     setPendingExplanations(prev => new Set(prev).add(answerId));
-    requestExplanation(answerId);
+    requestExplanation(answerId, {
+      onError: () => {
+        setPendingExplanations(prev => {
+          const next = new Set(prev);
+          next.delete(answerId);
+          return next;
+        });
+      }
+    });
   };
 
   const goToPage = (idx: number) => {
