@@ -6,7 +6,7 @@ import { AppLayout } from "../shared/components/layout/AppLayout";
 import { Skeleton } from "../shared/components/Skeleton";
 import { ErrorState } from "../shared/components/ErrorState";
 import { EmptyState } from "../shared/components/EmptyState";
-import { Trophy, ArrowRight, Sparkles, Loader2, ClockAlert, Timer, Target, TrendingUp, ShieldCheck, HelpCircle } from "lucide-react";
+import { Trophy, ArrowRight, Sparkles, Loader2, ClockAlert, Timer, Target, TrendingUp, ShieldCheck, HelpCircle, AlertCircle, Award } from "lucide-react";
 import type { Question } from "../types/question.types";
 import { useRequestMcqExplanation } from "../features/practice-session/hooks/usePractice";
 import { clsx } from "clsx";
@@ -52,15 +52,38 @@ function SessionReviewRoute() {
   }
 
   const sessionData = responseData.session;
+
+  if (sessionData?.status === 'PENDING_GRADING') {
+    return (
+      <AppLayout>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-3xl p-8 border border-gray-100 dark:border-gray-700 shadow-xl text-center space-y-4">
+            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Grading in Progress</h2>
+            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+              Your exam has been submitted and is currently being evaluated. Your results and detailed feedback will appear here in just a moment.
+            </p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   const finalScore = sessionData?.score ?? 0;
   const isFullExam = sessionData.totalQuestions >= 40;
   void isFullExam;
 
-  const accuracy = Math.round(finalScore);
-  const integrityScore = sessionData.trustScore ?? 100;
+  const questionsSummary = responseData.questionsSummary ?? [];
+  const correctCount = sessionData.correctAnswers ?? (questionsSummary.filter((q: any) => q.correct).length);
   const answeredCount = sessionData.questionsAnswered ?? 0;
+  const accuracy = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+  const integrityScore = sessionData.trustScore ?? 100;
 
-  const durationMs = new Date(sessionData.endedAt!).getTime() - new Date(sessionData.startedAt).getTime();
+  const durationMs = sessionData.endedAt 
+    ? new Date(sessionData.endedAt).getTime() - new Date(sessionData.startedAt).getTime()
+    : 0;
   const minutes = Math.floor(durationMs / 60000);
   const seconds = Math.floor((durationMs % 60000) / 1000);
   const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -68,9 +91,40 @@ function SessionReviewRoute() {
 
   const questions: any[] = sessionData?.questionsServed ?? [];
   const total = responseData.totalServed ?? questions.length;
-  const questionsSummary = responseData.questionsSummary ?? [];
   const currentAns = questions[0]; // Array only contains 1 item because of limit=1
   const currentQ = currentAns?.questionId as unknown as Question;
+
+  const getPerformanceTier = (score: number) => {
+    if (score >= 85) {
+      return {
+        label: "Excellent Performance",
+        icon: TrendingUp,
+        badgeClass: "bg-white/20 text-white",
+      };
+    }
+    if (score >= 70) {
+      return {
+        label: "Good Performance",
+        icon: TrendingUp,
+        badgeClass: "bg-white/20 text-white",
+      };
+    }
+    if (score >= 50) {
+      return {
+        label: "Passing / Fair",
+        icon: Award,
+        badgeClass: "bg-white/20 text-white",
+      };
+    }
+    return {
+      label: "Needs Improvement",
+      icon: AlertCircle,
+      badgeClass: "bg-rose-500/30 text-rose-100 border border-rose-300/30",
+    };
+  };
+
+  const tier = getPerformanceTier(finalScore);
+  const TierIcon = tier.icon;
 
   return (
     <AppLayout>
@@ -85,9 +139,9 @@ function SessionReviewRoute() {
               <div className="relative z-10">
                 <p className="text-sm font-bold opacity-80 mb-2 uppercase tracking-widest">Final Score</p>
                 <h2 className="text-7xl font-black leading-none mb-6">{Math.round(finalScore)}<span className="text-4xl opacity-80">%</span></h2>
-                <div className="mt-4 inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-bold shadow-sm">
-                  <TrendingUp size={18} />
-                  <span>Excellent Performance</span>
+                <div className={clsx("mt-4 inline-flex items-center gap-2 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold shadow-sm", tier.badgeClass)}>
+                  <TierIcon size={18} />
+                  <span>{tier.label}</span>
                 </div>
               </div>
               <div className="absolute -right-12 -bottom-12 opacity-10">
@@ -204,12 +258,21 @@ function SessionReviewRoute() {
                         "text-xs font-bold px-3 py-1 rounded-full",
                         ans.correct
                           ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : !ans.selectedAnswer
+                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40"
                           : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                       )}>
-                        {ans.correct ? '✓ Correct' : '✗ Incorrect'}
+                        {ans.correct ? '✓ Correct' : !ans.selectedAnswer ? '○ Unanswered' : '✗ Incorrect'}
                       </span>
                     )}
                   </div>
+
+                  {!isTheory && !ans.selectedAnswer && (
+                    <div className="mb-6 px-4 py-3 rounded-2xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-800/40 text-xs font-medium text-amber-800 dark:text-amber-300 flex items-center gap-2.5">
+                      <HelpCircle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                      <span>This question was left unanswered. The correct answer is highlighted in green below.</span>
+                    </div>
+                  )}
 
                   {/* Question text */}
                   <p className="text-lg font-medium text-gray-900 dark:text-white mb-6 leading-relaxed">{q.questionText}</p>
@@ -355,11 +418,12 @@ function SessionReviewRoute() {
                   {questionsSummary.map((item: any, i: number) => {
                     const isTheory2 = item?.type === 'THEORY';
                     const isCorrect2 = item?.correct;
+                    const isUnanswered2 = item?.answered === false;
                     return (
                       <button
                         key={i}
                         onClick={() => goToPage(i)}
-                        title={`Question ${i + 1}`}
+                        title={`Question ${i + 1} - ${isCorrect2 ? 'Correct' : isUnanswered2 ? 'Unanswered' : 'Incorrect'}`}
                         className={clsx(
                           "transition-all rounded-full",
                           i === currentPage
@@ -368,6 +432,8 @@ function SessionReviewRoute() {
                             ? "w-2.5 h-2.5 bg-purple-400 hover:bg-purple-500"
                             : isCorrect2
                             ? "w-2.5 h-2.5 bg-green-400 hover:bg-green-500"
+                            : isUnanswered2
+                            ? "w-2.5 h-2.5 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
                             : "w-2.5 h-2.5 bg-red-400 hover:bg-red-500"
                         )}
                       />
