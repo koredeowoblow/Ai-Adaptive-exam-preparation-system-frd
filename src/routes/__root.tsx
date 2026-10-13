@@ -71,8 +71,8 @@ function RootComponent() {
       </ErrorBoundary>
       <Toaster position="bottom-center" richColors />
       
-      {/* Devtools only render in development */}
-      {import.meta.env.DEV && (
+      {/* Devtools gated behind explicit env flag */}
+      {import.meta.env.DEV && import.meta.env.VITE_SHOW_DEVTOOLS === 'true' && (
         <>
           <TanStackRouterDevtools position="bottom-right" />
           <ReactQueryDevtools buttonPosition="bottom-left" />
