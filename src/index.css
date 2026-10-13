@@ -2372,3 +2372,16 @@ dialog::backdrop {
 .skeleton-stagger {
   animation: skeleton-shimmer 1.4s ease-in-out infinite both;
 }
+
+/* -- DataTable Rows -- */
+.data-table-row {
+  transition: background-color 0.12s ease;
+}
+
+.data-table-row:hover:not(.data-table-row-selected) {
+  background-color: var(--color-surface-0);
+}
+
+.data-table-row-selected {
+  background-color: var(--color-primary-light);
+}

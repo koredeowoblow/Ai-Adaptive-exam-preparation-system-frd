@@ -8,7 +8,15 @@ import { Skeleton } from '../shared/components/Skeleton';
 import type { Achievement, StudentAchievement } from '../features/achievements/api/achievement.api';
 import { useAuth } from '../features/auth/hooks/useAuth';
 
+import { requireAuth } from '../features/auth/utils/authGuard';
+
 export const Route = createFileRoute('/achievements')({
+  beforeLoad: async ({ context }) => {
+    return requireAuth(context, {
+      allowedRoles: ['student'],
+      requireOnboarded: true,
+    });
+  },
   component: MilestonesRoute,
 });
 

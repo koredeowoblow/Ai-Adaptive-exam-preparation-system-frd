@@ -22,7 +22,14 @@ const getMasteryTier = (elo: number = 0) => {
   return { label: 'Expert', color: 'var(--color-danger)' };
 };
 
+import { requireAuth } from '../../features/auth/utils/authGuard';
+
 export const Route = createFileRoute('/courses/$courseId')({
+  beforeLoad: async ({ context }) => {
+    return requireAuth(context, {
+      allowedRoles: ['student', 'admin', 'superAdmin'],
+    });
+  },
   component: CourseDetails,
 });
 

@@ -14,11 +14,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AiChatRouteImport } from './routes/ai-chat'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ExamPrepRouteImport } from './routes/exam-prep'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as StudyPlannerRouteImport } from './routes/study-planner'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
@@ -30,21 +33,16 @@ import { Route as AdminTopicsRouteImport } from './routes/admin/topics'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
 import { Route as CoursesCourseIdRouteImport } from './routes/courses/$courseId'
+import { Route as ExamSessionIdRouteImport } from './routes/exam/$sessionId'
+import { Route as PracticeHistoryRouteImport } from './routes/practice/history'
 import { Route as AdminCoursesCourseIdRouteImport } from './routes/admin/courses_.$courseId'
 import { Route as AdminDepartmentsDeptIdRouteImport } from './routes/admin/departments_.$deptId'
 import { Route as AdminTopicsTopicIdRouteImport } from './routes/admin/topics_.$topicId'
 import { Route as AdminUsersUserIdRouteImport } from './routes/admin/users_.$userId'
+import { Route as PracticeSessionIdReviewRouteImport } from './routes/practice_.$sessionId.review'
 
-const AiChatLazyRouteImport = createFileRoute('/ai-chat')()
-const AnalyticsLazyRouteImport = createFileRoute('/analytics')()
 const LoginLazyRouteImport = createFileRoute('/login')()
 const RegisterLazyRouteImport = createFileRoute('/register')()
-const StudyPlannerLazyRouteImport = createFileRoute('/study-planner')()
-const ExamSessionIdLazyRouteImport = createFileRoute('/exam/$sessionId')()
-const PracticeHistoryLazyRouteImport = createFileRoute('/practice/history')()
-const PracticeSessionIdReviewLazyRouteImport = createFileRoute(
-  '/practice_/$sessionId/review',
-)()
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -61,12 +59,12 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/admin.lazy').then((d) => d.Route))
-const AiChatLazyRoute = AiChatLazyRouteImport.update({
+const AiChatRoute = AiChatRouteImport.update({
   id: '/ai-chat',
   path: '/ai-chat',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/ai-chat.lazy').then((d) => d.Route))
-const AnalyticsLazyRoute = AnalyticsLazyRouteImport.update({
+const AnalyticsRoute = AnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
   getParentRoute: () => rootRouteImport,
@@ -106,7 +104,7 @@ const RegisterLazyRoute = RegisterLazyRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/register.lazy').then((d) => d.Route))
-const StudyPlannerLazyRoute = StudyPlannerLazyRouteImport.update({
+const StudyPlannerRoute = StudyPlannerRouteImport.update({
   id: '/study-planner',
   path: '/study-planner',
   getParentRoute: () => rootRouteImport,
@@ -166,14 +164,14 @@ const CoursesCourseIdRoute = CoursesCourseIdRouteImport.update({
   path: '/courses/$courseId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ExamSessionIdLazyRoute = ExamSessionIdLazyRouteImport.update({
+const ExamSessionIdRoute = ExamSessionIdRouteImport.update({
   id: '/exam/$sessionId',
   path: '/exam/$sessionId',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
   import('./routes/exam/$sessionId.lazy').then((d) => d.Route),
 )
-const PracticeHistoryLazyRoute = PracticeHistoryLazyRouteImport.update({
+const PracticeHistoryRoute = PracticeHistoryRouteImport.update({
   id: '/practice/history',
   path: '/practice/history',
   getParentRoute: () => rootRouteImport,
@@ -200,29 +198,28 @@ const AdminUsersUserIdRoute = AdminUsersUserIdRouteImport.update({
   path: '/users/$userId',
   getParentRoute: () => AdminRoute,
 } as any)
-const PracticeSessionIdReviewLazyRoute =
-  PracticeSessionIdReviewLazyRouteImport.update({
-    id: '/practice_/$sessionId/review',
-    path: '/practice/$sessionId/review',
-    getParentRoute: () => rootRouteImport,
-  } as any).lazy(() =>
-    import('./routes/practice_.$sessionId.review.lazy').then((d) => d.Route),
-  )
+const PracticeSessionIdReviewRoute = PracticeSessionIdReviewRouteImport.update({
+  id: '/practice_/$sessionId/review',
+  path: '/practice/$sessionId/review',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import('./routes/practice_.$sessionId.review.lazy').then((d) => d.Route),
+)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/admin': typeof AdminRouteWithChildren
+  '/ai-chat': typeof AiChatRoute
+  '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/exam-prep': typeof ExamPrepRoute
   '/leaderboard': typeof LeaderboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
-  '/ai-chat': typeof AiChatLazyRoute
-  '/analytics': typeof AnalyticsLazyRoute
+  '/study-planner': typeof StudyPlannerRoute
   '/login': typeof LoginLazyRoute
   '/register': typeof RegisterLazyRoute
-  '/study-planner': typeof StudyPlannerLazyRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/departments': typeof AdminDepartmentsRoute
@@ -232,29 +229,29 @@ export interface FileRoutesByFullPath {
   '/admin/topics': typeof AdminTopicsRoute
   '/admin/users': typeof AdminUsersRoute
   '/courses/$courseId': typeof CoursesCourseIdRoute
-  '/exam/$sessionId': typeof ExamSessionIdLazyRoute
-  '/practice/history': typeof PracticeHistoryLazyRoute
+  '/exam/$sessionId': typeof ExamSessionIdRoute
+  '/practice/history': typeof PracticeHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/admin/departments/$deptId': typeof AdminDepartmentsDeptIdRoute
   '/admin/topics/$topicId': typeof AdminTopicsTopicIdRoute
   '/admin/users/$userId': typeof AdminUsersUserIdRoute
-  '/practice/$sessionId/review': typeof PracticeSessionIdReviewLazyRoute
+  '/practice/$sessionId/review': typeof PracticeSessionIdReviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
+  '/ai-chat': typeof AiChatRoute
+  '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/exam-prep': typeof ExamPrepRoute
   '/leaderboard': typeof LeaderboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
-  '/ai-chat': typeof AiChatLazyRoute
-  '/analytics': typeof AnalyticsLazyRoute
+  '/study-planner': typeof StudyPlannerRoute
   '/login': typeof LoginLazyRoute
   '/register': typeof RegisterLazyRoute
-  '/study-planner': typeof StudyPlannerLazyRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/departments': typeof AdminDepartmentsRoute
@@ -264,31 +261,31 @@ export interface FileRoutesByTo {
   '/admin/topics': typeof AdminTopicsRoute
   '/admin/users': typeof AdminUsersRoute
   '/courses/$courseId': typeof CoursesCourseIdRoute
-  '/exam/$sessionId': typeof ExamSessionIdLazyRoute
-  '/practice/history': typeof PracticeHistoryLazyRoute
+  '/exam/$sessionId': typeof ExamSessionIdRoute
+  '/practice/history': typeof PracticeHistoryRoute
   '/admin': typeof AdminIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
   '/admin/departments/$deptId': typeof AdminDepartmentsDeptIdRoute
   '/admin/topics/$topicId': typeof AdminTopicsTopicIdRoute
   '/admin/users/$userId': typeof AdminUsersUserIdRoute
-  '/practice/$sessionId/review': typeof PracticeSessionIdReviewLazyRoute
+  '/practice/$sessionId/review': typeof PracticeSessionIdReviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/achievements': typeof AchievementsRoute
   '/admin': typeof AdminRouteWithChildren
+  '/ai-chat': typeof AiChatRoute
+  '/analytics': typeof AnalyticsRoute
   '/dashboard': typeof DashboardRoute
   '/exam-prep': typeof ExamPrepRoute
   '/leaderboard': typeof LeaderboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
-  '/ai-chat': typeof AiChatLazyRoute
-  '/analytics': typeof AnalyticsLazyRoute
+  '/study-planner': typeof StudyPlannerRoute
   '/login': typeof LoginLazyRoute
   '/register': typeof RegisterLazyRoute
-  '/study-planner': typeof StudyPlannerLazyRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/departments': typeof AdminDepartmentsRoute
@@ -298,15 +295,15 @@ export interface FileRoutesById {
   '/admin/topics': typeof AdminTopicsRoute
   '/admin/users': typeof AdminUsersRoute
   '/courses/$courseId': typeof CoursesCourseIdRoute
-  '/exam/$sessionId': typeof ExamSessionIdLazyRoute
-  '/practice/history': typeof PracticeHistoryLazyRoute
+  '/exam/$sessionId': typeof ExamSessionIdRoute
+  '/practice/history': typeof PracticeHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/admin/courses_/$courseId': typeof AdminCoursesCourseIdRoute
   '/admin/departments_/$deptId': typeof AdminDepartmentsDeptIdRoute
   '/admin/topics_/$topicId': typeof AdminTopicsTopicIdRoute
   '/admin/users_/$userId': typeof AdminUsersUserIdRoute
-  '/practice_/$sessionId/review': typeof PracticeSessionIdReviewLazyRoute
+  '/practice_/$sessionId/review': typeof PracticeSessionIdReviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -314,16 +311,16 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/admin'
+    | '/ai-chat'
+    | '/analytics'
     | '/dashboard'
     | '/exam-prep'
     | '/leaderboard'
     | '/onboarding'
     | '/profile'
-    | '/ai-chat'
-    | '/analytics'
+    | '/study-planner'
     | '/login'
     | '/register'
-    | '/study-planner'
     | '/admin/analytics'
     | '/admin/courses'
     | '/admin/departments'
@@ -346,16 +343,16 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/achievements'
+    | '/ai-chat'
+    | '/analytics'
     | '/dashboard'
     | '/exam-prep'
     | '/leaderboard'
     | '/onboarding'
     | '/profile'
-    | '/ai-chat'
-    | '/analytics'
+    | '/study-planner'
     | '/login'
     | '/register'
-    | '/study-planner'
     | '/admin/analytics'
     | '/admin/courses'
     | '/admin/departments'
@@ -379,16 +376,16 @@ export interface FileRouteTypes {
     | '/'
     | '/achievements'
     | '/admin'
+    | '/ai-chat'
+    | '/analytics'
     | '/dashboard'
     | '/exam-prep'
     | '/leaderboard'
     | '/onboarding'
     | '/profile'
-    | '/ai-chat'
-    | '/analytics'
+    | '/study-planner'
     | '/login'
     | '/register'
-    | '/study-planner'
     | '/admin/analytics'
     | '/admin/courses'
     | '/admin/departments'
@@ -413,21 +410,21 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AchievementsRoute: typeof AchievementsRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AiChatRoute: typeof AiChatRoute
+  AnalyticsRoute: typeof AnalyticsRoute
   DashboardRoute: typeof DashboardRoute
   ExamPrepRoute: typeof ExamPrepRoute
   LeaderboardRoute: typeof LeaderboardRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
-  AiChatLazyRoute: typeof AiChatLazyRoute
-  AnalyticsLazyRoute: typeof AnalyticsLazyRoute
+  StudyPlannerRoute: typeof StudyPlannerRoute
   LoginLazyRoute: typeof LoginLazyRoute
   RegisterLazyRoute: typeof RegisterLazyRoute
-  StudyPlannerLazyRoute: typeof StudyPlannerLazyRoute
   CoursesCourseIdRoute: typeof CoursesCourseIdRoute
-  ExamSessionIdLazyRoute: typeof ExamSessionIdLazyRoute
-  PracticeHistoryLazyRoute: typeof PracticeHistoryLazyRoute
+  ExamSessionIdRoute: typeof ExamSessionIdRoute
+  PracticeHistoryRoute: typeof PracticeHistoryRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
-  PracticeSessionIdReviewLazyRoute: typeof PracticeSessionIdReviewLazyRoute
+  PracticeSessionIdReviewRoute: typeof PracticeSessionIdReviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -457,14 +454,14 @@ declare module '@tanstack/react-router' {
       id: '/ai-chat'
       path: '/ai-chat'
       fullPath: '/ai-chat'
-      preLoaderRoute: typeof AiChatLazyRouteImport
+      preLoaderRoute: typeof AiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analytics': {
       id: '/analytics'
       path: '/analytics'
       fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsLazyRouteImport
+      preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -520,7 +517,7 @@ declare module '@tanstack/react-router' {
       id: '/study-planner'
       path: '/study-planner'
       fullPath: '/study-planner'
-      preLoaderRoute: typeof StudyPlannerLazyRouteImport
+      preLoaderRoute: typeof StudyPlannerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -604,14 +601,14 @@ declare module '@tanstack/react-router' {
       id: '/exam/$sessionId'
       path: '/exam/$sessionId'
       fullPath: '/exam/$sessionId'
-      preLoaderRoute: typeof ExamSessionIdLazyRouteImport
+      preLoaderRoute: typeof ExamSessionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/practice/history': {
       id: '/practice/history'
       path: '/practice/history'
       fullPath: '/practice/history'
-      preLoaderRoute: typeof PracticeHistoryLazyRouteImport
+      preLoaderRoute: typeof PracticeHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/courses_/$courseId': {
@@ -646,7 +643,7 @@ declare module '@tanstack/react-router' {
       id: '/practice_/$sessionId/review'
       path: '/practice/$sessionId/review'
       fullPath: '/practice/$sessionId/review'
-      preLoaderRoute: typeof PracticeSessionIdReviewLazyRouteImport
+      preLoaderRoute: typeof PracticeSessionIdReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -690,21 +687,21 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AchievementsRoute: AchievementsRoute,
   AdminRoute: AdminRouteWithChildren,
+  AiChatRoute: AiChatRoute,
+  AnalyticsRoute: AnalyticsRoute,
   DashboardRoute: DashboardRoute,
   ExamPrepRoute: ExamPrepRoute,
   LeaderboardRoute: LeaderboardRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
-  AiChatLazyRoute: AiChatLazyRoute,
-  AnalyticsLazyRoute: AnalyticsLazyRoute,
+  StudyPlannerRoute: StudyPlannerRoute,
   LoginLazyRoute: LoginLazyRoute,
   RegisterLazyRoute: RegisterLazyRoute,
-  StudyPlannerLazyRoute: StudyPlannerLazyRoute,
   CoursesCourseIdRoute: CoursesCourseIdRoute,
-  ExamSessionIdLazyRoute: ExamSessionIdLazyRoute,
-  PracticeHistoryLazyRoute: PracticeHistoryLazyRoute,
+  ExamSessionIdRoute: ExamSessionIdRoute,
+  PracticeHistoryRoute: PracticeHistoryRoute,
   CoursesIndexRoute: CoursesIndexRoute,
-  PracticeSessionIdReviewLazyRoute: PracticeSessionIdReviewLazyRoute,
+  PracticeSessionIdReviewRoute: PracticeSessionIdReviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

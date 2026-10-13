@@ -83,8 +83,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
           </div>
           <div>
             <span
-              role="heading"
-              aria-level={2}
               style={{
                 fontFamily: "'Outfit', sans-serif",
                 fontWeight: 600,

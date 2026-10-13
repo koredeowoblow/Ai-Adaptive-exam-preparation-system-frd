@@ -22,18 +22,19 @@ export const useAuth = () => {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      authApi.logout();
+      try {
+        await authApi.logout();
+      } catch {
+        // Ignored: cleanup runs regardless in finally
+      } finally {
+        localStorage.removeItem('accessToken');
+        queryClient.setQueryData(queryKeys.auth.me(), null);
+        queryClient.clear();
+      }
     },
-    onSuccess: () => {
-      // Clear the token from localStorage
-      localStorage.removeItem('accessToken');
-      
-      // Clear the user from cache and maybe invalidate other queries
-      queryClient.setQueryData(queryKeys.auth.me(), null);
-      queryClient.clear();
-      // Use standard window navigation for now
+    onSettled: () => {
       window.location.href = '/login';
-    }
+    },
   });
 
   return {

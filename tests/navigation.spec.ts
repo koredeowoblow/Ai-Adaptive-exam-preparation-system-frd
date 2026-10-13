@@ -80,4 +80,32 @@ test.describe('Navigation and Auth Route Guards', () => {
     await page.waitForURL('**/login', { timeout: 10000 });
     await expect(page).toHaveURL(/\/login$/);
   });
+
+  const protectedRoutes = [
+    '/achievements',
+    '/ai-chat',
+    '/analytics',
+    '/courses/course_123',
+    '/exam-prep',
+    '/exam/session_123',
+    '/leaderboard',
+    '/practice/history',
+    '/practice/session_123/review',
+    '/study-planner',
+    '/onboarding',
+    '/profile',
+    '/admin',
+  ];
+
+  for (const routePath of protectedRoutes) {
+    test(`Logged-out visitor at ${routePath} is redirected to /login`, async ({ page }) => {
+      await page.route('**/auth/me', async (route) => {
+        await route.fulfill({ status: 401, json: { message: 'Unauthorized' } });
+      });
+
+      await page.goto(routePath);
+      await page.waitForURL('**/login', { timeout: 10000 });
+      await expect(page).toHaveURL(/\/login$/);
+    });
+  }
 });

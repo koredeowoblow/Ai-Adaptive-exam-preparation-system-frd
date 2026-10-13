@@ -13,7 +13,15 @@ import { Trophy, Medal, Crown, Zap, User } from 'lucide-react';
 import type { LeaderboardEntryData } from '../features/leaderboard/api/leaderboard.api';
 import type { Course } from '../types/course.types';
 
+import { requireAuth } from '../features/auth/utils/authGuard';
+
 export const Route = createFileRoute('/leaderboard')({
+  beforeLoad: async ({ context }) => {
+    return requireAuth(context, {
+      allowedRoles: ['student'],
+      requireOnboarded: true,
+    });
+  },
   component: LeaderboardRoute,
 });
 

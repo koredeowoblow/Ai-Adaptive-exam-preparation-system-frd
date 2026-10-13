@@ -1,32 +1,15 @@
-import { createFileRoute, redirect, isRedirect } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { OnboardingForm } from '../features/onboarding/components/OnboardingForm';
 import { ThemeToggle } from '../shared/components/ThemeToggle';
-import { queryKeys } from '../shared/queryKeys';
-import { authApi } from '../features/auth/api/auth.api';
+import { requireAuth } from '../features/auth/utils/authGuard';
 
 export const Route = createFileRoute('/onboarding')({
   beforeLoad: async ({ context }) => {
-    try {
-      const authData = await context.queryClient.fetchQuery({
-        queryKey: queryKeys.auth.me(),
-        queryFn: async () => {
-          const response = await authApi.getMe();
-          return response.data;
-        },
-        retry: false,
-        staleTime: 5 * 60 * 1000,
-      });
-      if (!authData?.id) {
-        throw redirect({ to: '/login' });
-      }
-      if (authData?.isOnboarded || authData?.departmentId || (authData?.role && authData.role !== 'student')) {
-        throw redirect({ to: '/dashboard' });
-      }
-
-    } catch (error: any) {
-      if (isRedirect(error)) throw error;
-      throw redirect({ to: '/login' });
+    const authData = await requireAuth(context);
+    if (authData?.isOnboarded || authData?.departmentId || (authData?.role && authData.role !== 'student')) {
+      throw redirect({ to: '/dashboard' });
     }
+    return { authData };
   },
   component: () => (
     <div className="page-shell focused-task-layout relative min-h-screen">

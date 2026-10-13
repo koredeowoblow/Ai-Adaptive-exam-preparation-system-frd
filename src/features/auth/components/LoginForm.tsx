@@ -67,14 +67,14 @@ export const LoginForm: React.FC = () => {
           <label htmlFor="password" style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--color-text)' }}>
             Password
           </label>
-          <button
-            type="button"
-            onClick={() => toast.info('Password reset is managed by your institution administrator. Please contact your department support.')}
+          <a
+            href="mailto:support@eduadapt.local?subject=Password%20Reset%20Request"
             className="hover:underline"
-            style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 500, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}
+            style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 500, textDecoration: 'none' }}
+            title="Contact administrator support to reset your account password"
           >
             Forgot password?
-          </button>
+          </a>
         </div>
         <input
           id="password"

@@ -230,24 +230,14 @@ export function DataTable<T>({
                 return (
                   <tr
                     key={id}
+                    className={`data-table-row${isSelected ? ' data-table-row-selected' : ''}`}
                     style={{
                       borderBottom: '1px solid var(--color-border)',
-                      backgroundColor: isSelected ? 'var(--color-primary-light)' : 'transparent',
-                      transition: 'background-color 0.1s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.backgroundColor = 'var(--color-surface-0)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }
+                      backgroundColor: isSelected ? 'var(--color-primary-light)' : undefined,
                     }}
                   >
                     {selectable && (
-                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                      <td style={{ padding: '10px 12px', textAlign: 'center', width: '40px' }}>
                         <input
                           type="checkbox"
                           aria-label={`Select row ${id}`}
@@ -268,6 +258,8 @@ export function DataTable<T>({
                         content = null;
                       }
 
+                      const shouldWrap = col.wrap !== false;
+
                       return (
                         <td
                           key={cIdx}
@@ -275,8 +267,9 @@ export function DataTable<T>({
                             padding: '12px 16px',
                             color: 'var(--color-text)',
                             textAlign: col.align || 'left',
-                            whiteSpace: col.wrap ? 'normal' : 'nowrap',
-                            wordBreak: col.wrap ? 'break-word' : undefined,
+                            width: col.width,
+                            whiteSpace: shouldWrap ? 'normal' : 'nowrap',
+                            wordBreak: shouldWrap ? 'break-word' : undefined,
                             fontVariantNumeric: 'tabular-nums',
                           }}
                         >

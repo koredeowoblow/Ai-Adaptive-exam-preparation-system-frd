@@ -50,11 +50,7 @@ export const AdminLayout: React.FC = () => {
   const handleOverlayClick = () => setIsSidebarOpen(false);
 
   const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (e) {
-      console.error('Logout error:', e);
-    }
+    await logout();
   };
 
   const navSections = [
