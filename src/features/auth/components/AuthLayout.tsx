@@ -50,7 +50,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
             Master your curriculum.<br />Skip the busywork.
           </h1>
 
-          <p className="text-[1.05rem] leading-[1.65] text-white/75 mb-9 max-w-[380px]">
+          <p className="text-[1.05rem] leading-[1.65] text-sky-100 mb-9 max-w-[380px]">
             EduAdapt pinpoints exactly what you need to review and builds a personalised path to exam success.
           </p>
 
@@ -63,7 +63,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
-                <span className="text-[0.9rem] text-white/85 font-medium">{f}</span>
+                <span className="text-[0.9rem] text-sky-100 font-medium">{f}</span>
               </div>
             ))}
           </div>
@@ -73,7 +73,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
             {STATS.map((s) => (
               <div key={s.label}>
                 <p className="font-['Outfit',_sans-serif] font-extrabold text-2xl text-white leading-none m-0 mb-1">{s.value}</p>
-                <p className="text-xs text-white/60 m-0">{s.label}</p>
+                <p className="text-xs text-sky-200 m-0">{s.label}</p>
               </div>
             ))}
           </div>
@@ -81,7 +81,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
 
         {/* Footer */}
         <div className="relative z-10">
-          <p className="text-xs text-white/60 m-0">
+          <p className="text-xs text-sky-200 m-0">
             © 2026 EduAdapt Inc. All rights reserved.
           </p>
         </div>
@@ -105,7 +105,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
           {/* Divider */}
           <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-[var(--color-border)]" />
-            <span className="text-xs text-[var(--color-text-light)] font-medium whitespace-nowrap">or continue with</span>
+            <span className="text-xs text-[var(--color-text-muted)] font-medium whitespace-nowrap">or continue with</span>
             <div className="flex-1 h-px bg-[var(--color-border)]" />
           </div>
 

@@ -26,12 +26,12 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, badge }) => {
       {badge && (
         <span style={{
           fontSize: '0.65rem',
-          fontWeight: 500,
-          padding: '2px 6px',
+          fontWeight: 600,
+          padding: '2px 7px',
           borderRadius: 999,
-          background: 'var(--color-surface-raised)',
-          color: 'var(--app-nav-fg-muted)',
-          border: '1px solid var(--color-border)',
+          background: 'rgba(255, 255, 255, 0.12)',
+          color: '#e2e8f0',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
           flexShrink: 0,
         }}>
           {badge}
@@ -75,11 +75,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 32, height: 32, borderRadius: 8,
-            background: 'var(--color-surface-raised)',
+            background: 'rgba(255, 255, 255, 0.15)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>
-            <span style={{ color: 'var(--color-surface)', fontWeight: 700, fontSize: '0.9rem', fontFamily: "'Outfit', sans-serif" }}>E</span>
+            <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.9rem', fontFamily: "'Outfit', sans-serif" }}>E</span>
           </div>
           <div>
             <span
@@ -87,7 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
                 fontFamily: "'Outfit', sans-serif",
                 fontWeight: 600,
                 fontSize: '1rem',
-                color: 'var(--color-surface)',
+                color: '#ffffff',
                 lineHeight: 1,
                 margin: 0,
                 display: 'block',
@@ -98,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
             <p style={{
               fontSize: '0.65rem',
               fontWeight: 400,
-              color: 'var(--app-nav-fg-muted)',
+              color: '#94a3b8',
               margin: '2px 0 0',
             }}>Adaptive Learning</p>
           </div>
