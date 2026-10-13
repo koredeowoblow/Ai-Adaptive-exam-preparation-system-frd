@@ -46,7 +46,7 @@ function CoursesIndex() {
   } = useDepartmentCourses(selectedDeptId || '');
 
   const filteredCourses = React.useMemo(() => {
-    const items = coursesData?.pages.flatMap(page => page.items) || [];
+    const items = coursesData?.pages.flatMap((page: any) => (Array.isArray(page) ? page : page?.items || [])) || [];
     if (!search.trim()) return items;
     const q = search.toLowerCase();
     return items.filter((c: Course) =>

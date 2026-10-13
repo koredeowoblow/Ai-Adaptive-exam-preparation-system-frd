@@ -147,7 +147,13 @@ function QuestionsAdminRoute() {
     fetchNextPage: fetchNextTopics,
     isFetchingNextPage: isFetchingNextTopics,
   } = useTopics();
-  const topics: Topic[] = React.useMemo(() => topicsData?.pages.flatMap((page) => page.items) || [], [topicsData]);
+
+  const topics: Topic[] = React.useMemo(() => {
+    if (!topicsData?.pages) return [];
+    return topicsData.pages
+      .flatMap((page: any) => (Array.isArray(page) ? page : page?.items || []))
+      .filter((t: any): t is Topic => Boolean(t && t._id));
+  }, [topicsData]);
 
   const {
     data: coursesData,
@@ -156,7 +162,12 @@ function QuestionsAdminRoute() {
     fetchNextPage: fetchNextCourses,
     isFetchingNextPage: isFetchingNextCourses,
   } = useCourses();
-  const courses: Course[] = React.useMemo(() => coursesData?.pages.flatMap((page) => page.items) || [], [coursesData]);
+  const courses: Course[] = React.useMemo(() => {
+    if (!coursesData?.pages) return [];
+    return coursesData.pages
+      .flatMap((page: any) => (Array.isArray(page) ? page : page?.items || []))
+      .filter((c: any): c is Course => Boolean(c && c._id));
+  }, [coursesData]);
 
   React.useEffect(() => {
     if (hasNextTopics && !isFetchingNextTopics) {
@@ -787,6 +798,7 @@ function QuestionsAdminRoute() {
 
         {/* Course filter */}
         <select
+          aria-label="Filter by course"
           value={selectedCourseFilter}
           onChange={(e) => {
             const newCourseId = e.target.value;
@@ -817,6 +829,7 @@ function QuestionsAdminRoute() {
 
         {/* Topic filter (cascades based on selected course) */}
         <select
+          aria-label="Filter by topic"
           value={selectedTopicFilter}
           onChange={(e) => {
             const topicId = e.target.value;
@@ -859,6 +872,7 @@ function QuestionsAdminRoute() {
 
         {/* Question Format / Type filter */}
         <select
+          aria-label="Filter by question format"
           value={selectedTypeFilter}
           onChange={(e) => updateSearchParams({ type: e.target.value as any, page: 1 })}
           style={{
@@ -878,6 +892,7 @@ function QuestionsAdminRoute() {
 
         {/* Difficulty filter */}
         <select
+          aria-label="Filter by difficulty"
           value={selectedDifficultyFilter}
           onChange={(e) => handleDifficultyFilterChange(e.target.value as QuestionSearch['difficulty'])}
           style={{
@@ -897,6 +912,7 @@ function QuestionsAdminRoute() {
 
         {/* Status / Incomplete filter */}
         <select
+          aria-label="Filter by completion status"
           value={selectedStatusFilter}
           onChange={(e) => handleStatusFilterChange(e.target.value as QuestionSearch['status'])}
           style={{

@@ -44,7 +44,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, userName }) => {
           onMenuClick={toggleSidebar}
         />
 
-        <main className="app-main-content">
+        <main className="app-main-content" id="main-content">
           {children}
         </main>
       </div>

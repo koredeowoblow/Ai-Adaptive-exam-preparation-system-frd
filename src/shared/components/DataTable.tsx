@@ -318,6 +318,7 @@ export function DataTable<T>({
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '0.75rem' }}>Rows per page:</span>
                 <select
+                  aria-label="Rows per page"
                   value={pageSize}
                   onChange={(e) => onPageSizeChange(Number(e.target.value))}
                   style={{

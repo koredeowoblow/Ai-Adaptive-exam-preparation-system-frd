@@ -115,11 +115,16 @@ function UsersAdminRoute() {
   const departments: Department[] = React.useMemo(() => (Array.isArray(deptData) ? deptData : []), [deptData]);
 
   const { data: coursesData } = useCourses();
-  const courses: Course[] = React.useMemo(() => coursesData?.pages.flatMap((page) => page.items) || [], [coursesData]);
+  const courses: Course[] = React.useMemo(() => {
+    if (!coursesData?.pages) return [];
+    return coursesData.pages.flatMap((page: any) => (Array.isArray(page) ? page : page?.items || []));
+  }, [coursesData]);
 
   const courseMap = React.useMemo(() => {
     const map = new Map<string, Course>();
-    courses.forEach((c) => map.set(c._id, c));
+    courses.filter(Boolean).forEach((c) => {
+      if (c?._id) map.set(c._id, c);
+    });
     return map;
   }, [courses]);
 
@@ -641,6 +646,7 @@ function UsersAdminRoute() {
       >
         {/* Department Filter */}
         <select
+          aria-label="Filter users by department"
           value={selectedDeptFilter}
           onChange={(e) => handleDeptFilterChange(e.target.value)}
           style={{
@@ -664,6 +670,7 @@ function UsersAdminRoute() {
 
         {/* Level Filter */}
         <select
+          aria-label="Filter users by academic level"
           value={selectedLevelFilter}
           onChange={(e) => handleLevelFilterChange(e.target.value as UserSearch['level'])}
           style={{
@@ -684,6 +691,7 @@ function UsersAdminRoute() {
 
         {/* Onboarding Filter */}
         <select
+          aria-label="Filter users by onboarding status"
           value={selectedOnboardedFilter}
           onChange={(e) => handleOnboardedFilterChange(e.target.value as UserSearch['onboarded'])}
           style={{

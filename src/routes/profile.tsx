@@ -183,7 +183,7 @@ function ProfileRoute() {
           </div>
 
           {/* ── Content Grid ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 32 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 'var(--space-24)' }}>
             
             {/* Identity Card */}
             <div className="card" style={{ padding: 32, borderRadius: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>

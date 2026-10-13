@@ -71,7 +71,12 @@ function AIChatRoute() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: coursesData } = useDepartmentCourses(user?.departmentId || '');
-  const courses = React.useMemo(() => coursesData?.pages.flatMap(p => p.items) || [], [coursesData]);
+  const courses: Course[] = React.useMemo(() => {
+    if (!coursesData?.pages) return [];
+    return coursesData.pages
+      .flatMap((p: any) => (Array.isArray(p) ? p : p?.items || []))
+      .filter((c: any): c is Course => Boolean(c && c._id));
+  }, [coursesData]);
 
   // Try to parse search safely
   const searchString = window.location.search;
@@ -191,6 +196,7 @@ function AIChatRoute() {
                   </p>
                 </div>
                 <select
+                  aria-label="Select course context"
                   value={selectedCourse._id}
                   onChange={(e) => {
                     if (e.target.value) {
@@ -301,6 +307,7 @@ function AIChatRoute() {
                   onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
                 />
                 <button
+                  aria-label="Send message"
                   onClick={handleSend}
                   disabled={!input.trim() || isPending}
                   style={{
