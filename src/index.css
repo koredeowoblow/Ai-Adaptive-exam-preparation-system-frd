@@ -2430,3 +2430,69 @@ dialog::backdrop {
 .data-table-row-selected {
   background-color: var(--color-primary-light);
 }
+
+/* ── Auth Scoped Design Tokens [data-app="auth"] ── */
+[data-app="auth"] {
+  --auth-accent: #0b5b37;
+  --auth-accent-hover: #074227;
+  --auth-bg: #f9f8f6;
+  --auth-card-bg: #ffffff;
+  --auth-card-border: #e7e5e4;
+  --auth-text: #1c1917;
+  --auth-text-muted: #57534e;
+  --auth-placeholder: #a8a29e;
+  --auth-border: #d6d3d1;
+  --auth-input-bg: #ffffff;
+  --auth-button-secondary-bg: #f5f5f4;
+  --auth-button-secondary-hover: #e7e5e4;
+  --auth-side-bg: #f4f2ee;
+  --auth-side-border: #e7e5e4;
+  --auth-danger: #b91c1c;
+  --auth-danger-bg: #fef2f2;
+  --auth-danger-border: #fecaca;
+  --auth-success: #15803d;
+  --auth-success-bg: #f0fdf4;
+  --auth-success-border: #bbf7d0;
+  --auth-difficulty-easy: #047857;
+  --auth-difficulty-medium: #b45309;
+  --auth-difficulty-hard: #b91c1c;
+}
+
+.dark [data-app="auth"],
+[data-app="auth"].dark {
+  --auth-accent: #15803d;
+  --auth-accent-hover: #166534;
+  --auth-bg: #121316;
+  --auth-card-bg: #18191d;
+  --auth-card-border: #27272a;
+  --auth-text: #f4f4f5;
+  --auth-text-muted: #a1a1aa;
+  --auth-placeholder: #71717a;
+  --auth-border: #3f3f46;
+  --auth-input-bg: #18191d;
+  --auth-button-secondary-bg: #27272a;
+  --auth-button-secondary-hover: #3f3f46;
+  --auth-side-bg: #15161a;
+  --auth-side-border: #27272a;
+  --auth-danger: #f87171;
+  --auth-danger-bg: rgba(239, 68, 68, 0.12);
+  --auth-danger-border: rgba(239, 68, 68, 0.3);
+  --auth-success: #4ade80;
+  --auth-success-bg: rgba(34, 197, 94, 0.12);
+  --auth-success-border: rgba(34, 197, 94, 0.3);
+  --auth-difficulty-easy: #34d399;
+  --auth-difficulty-medium: #fbbf24;
+  --auth-difficulty-hard: #f87171;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .auth-feedback-transition {
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-feedback-transition {
+    transition: none;
+  }
+}
+

@@ -41,8 +41,10 @@ import { Route as AdminTopicsTopicIdRouteImport } from './routes/admin/topics_.$
 import { Route as AdminUsersUserIdRouteImport } from './routes/admin/users_.$userId'
 import { Route as PracticeSessionIdReviewRouteImport } from './routes/practice_.$sessionId.review'
 
+const ForgotPasswordLazyRouteImport = createFileRoute('/forgot-password')()
 const LoginLazyRouteImport = createFileRoute('/login')()
 const RegisterLazyRouteImport = createFileRoute('/register')()
+const ResetPasswordLazyRouteImport = createFileRoute('/reset-password')()
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -79,6 +81,13 @@ const ExamPrepRoute = ExamPrepRouteImport.update({
   path: '/exam-prep',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordLazyRoute = ForgotPasswordLazyRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import('./routes/forgot-password.lazy').then((d) => d.Route),
+)
 const LeaderboardRoute = LeaderboardRouteImport.update({
   id: '/leaderboard',
   path: '/leaderboard',
@@ -104,6 +113,13 @@ const RegisterLazyRoute = RegisterLazyRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/register.lazy').then((d) => d.Route))
+const ResetPasswordLazyRoute = ResetPasswordLazyRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import('./routes/reset-password.lazy').then((d) => d.Route),
+)
 const StudyPlannerRoute = StudyPlannerRouteImport.update({
   id: '/study-planner',
   path: '/study-planner',
@@ -218,8 +234,10 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/study-planner': typeof StudyPlannerRoute
+  '/forgot-password': typeof ForgotPasswordLazyRoute
   '/login': typeof LoginLazyRoute
   '/register': typeof RegisterLazyRoute
+  '/reset-password': typeof ResetPasswordLazyRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/departments': typeof AdminDepartmentsRoute
@@ -250,8 +268,10 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/study-planner': typeof StudyPlannerRoute
+  '/forgot-password': typeof ForgotPasswordLazyRoute
   '/login': typeof LoginLazyRoute
   '/register': typeof RegisterLazyRoute
+  '/reset-password': typeof ResetPasswordLazyRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/departments': typeof AdminDepartmentsRoute
@@ -284,8 +304,10 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/study-planner': typeof StudyPlannerRoute
+  '/forgot-password': typeof ForgotPasswordLazyRoute
   '/login': typeof LoginLazyRoute
   '/register': typeof RegisterLazyRoute
+  '/reset-password': typeof ResetPasswordLazyRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/departments': typeof AdminDepartmentsRoute
@@ -319,8 +341,10 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/study-planner'
+    | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/admin/analytics'
     | '/admin/courses'
     | '/admin/departments'
@@ -351,8 +375,10 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/study-planner'
+    | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/admin/analytics'
     | '/admin/courses'
     | '/admin/departments'
@@ -384,8 +410,10 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/study-planner'
+    | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/admin/analytics'
     | '/admin/courses'
     | '/admin/departments'
@@ -418,8 +446,10 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
   StudyPlannerRoute: typeof StudyPlannerRoute
+  ForgotPasswordLazyRoute: typeof ForgotPasswordLazyRoute
   LoginLazyRoute: typeof LoginLazyRoute
   RegisterLazyRoute: typeof RegisterLazyRoute
+  ResetPasswordLazyRoute: typeof ResetPasswordLazyRoute
   CoursesCourseIdRoute: typeof CoursesCourseIdRoute
   ExamSessionIdRoute: typeof ExamSessionIdRoute
   PracticeHistoryRoute: typeof PracticeHistoryRoute
@@ -478,6 +508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExamPrepRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leaderboard': {
       id: '/leaderboard'
       path: '/leaderboard'
@@ -511,6 +548,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordLazyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/study-planner': {
@@ -695,8 +739,10 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
   StudyPlannerRoute: StudyPlannerRoute,
+  ForgotPasswordLazyRoute: ForgotPasswordLazyRoute,
   LoginLazyRoute: LoginLazyRoute,
   RegisterLazyRoute: RegisterLazyRoute,
+  ResetPasswordLazyRoute: ResetPasswordLazyRoute,
   CoursesCourseIdRoute: CoursesCourseIdRoute,
   ExamSessionIdRoute: ExamSessionIdRoute,
   PracticeHistoryRoute: PracticeHistoryRoute,
