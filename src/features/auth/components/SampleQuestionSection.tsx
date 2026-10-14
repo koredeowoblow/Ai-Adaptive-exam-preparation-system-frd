@@ -53,11 +53,12 @@ export const SampleQuestionSection: React.FC = () => {
 
       if (isInput || isAnswered || isCompleted) return;
 
-      const key = e.key.toUpperCase();
-      if (key === 'A' || key === '1') handleSelect('A');
-      else if (key === 'B' || key === '2') handleSelect('B');
-      else if (key === 'C' || key === '3') handleSelect('C');
-      else if (key === 'D' || key === '4') handleSelect('D');
+      const key = e.key ? e.key.toUpperCase() : '';
+      const code = e.code;
+      if (key === 'A' || key === '1' || code === 'KeyA' || code === 'Digit1') handleSelect('A');
+      else if (key === 'B' || key === '2' || code === 'KeyB' || code === 'Digit2') handleSelect('B');
+      else if (key === 'C' || key === '3' || code === 'KeyC' || code === 'Digit3') handleSelect('C');
+      else if (key === 'D' || key === '4' || code === 'KeyD' || code === 'Digit4') handleSelect('D');
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -205,7 +206,7 @@ export const SampleQuestionSection: React.FC = () => {
             {/* Instant AI Feedback & Explanation */}
             {isAnswered && (
               <div
-                role="region"
+                role="status"
                 aria-live="polite"
                 className={`p-4 rounded-xl border mb-6 auth-feedback-transition ${
                   isCorrect

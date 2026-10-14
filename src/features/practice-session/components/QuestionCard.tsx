@@ -1,8 +1,11 @@
 import * as React from 'react';
-
 import { Button } from '../../../shared/components/Button';
 import type { Question } from '../../../types/question.types';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Eye } from 'lucide-react';
+import { FormattedMathText } from '../../../shared/components/FormattedMathText';
+import { MathToolbar } from '../../../shared/components/MathToolbar';
+import { insertSymbolIntoTextarea, insertTemplateIntoInputOrTextarea } from '../../../shared/utils/mathInsert';
+import type { MathSymbolItem } from '../../../shared/constants/mathSymbols';
 
 export interface QuestionCardProps {
   question: Question;
@@ -36,20 +39,44 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
   onRetry,
 }) => {
   const isTheory = question.type === 'THEORY';
-  
+
   // Local state for theory answer to prevent keystrokes from re-rendering the entire exam route
   const [localText, setLocalText] = React.useState(writtenAnswer);
-  
+  const [showPreview, setShowPreview] = React.useState(true);
+
   React.useEffect(() => {
     setLocalText(writtenAnswer);
   }, [writtenAnswer]);
+
+  const handleInsertSymbol = React.useCallback((sym: MathSymbolItem) => {
+    insertSymbolIntoTextarea(
+      theoryTextareaRef?.current || null,
+      localText,
+      sym,
+      (newVal) => {
+        setLocalText(newVal);
+        onWrittenAnswerChange?.(newVal);
+      }
+    );
+  }, [localText, onWrittenAnswerChange, theoryTextareaRef]);
+
+  const insertTemplate = React.useCallback(() => {
+    insertTemplateIntoInputOrTextarea(
+      theoryTextareaRef?.current || null,
+      localText,
+      (newVal) => {
+        setLocalText(newVal);
+        onWrittenAnswerChange?.(newVal);
+      }
+    );
+  }, [localText, onWrittenAnswerChange, theoryTextareaRef]);
 
   const isSubmitDisabled = disabled || isSubmitting || (isTheory ? !localText.trim() : !selectedOptionId);
 
   return (
     <div style={{ width: '100%', marginBottom: 'var(--space-32)' }}>
       {/* Question Text */}
-      <div style={{ marginBottom: 'var(--space-64)' }}>
+      <div style={{ marginBottom: 'var(--space-32)' }}>
         <div style={{ display: 'flex', gap: 'var(--space-12)', alignItems: 'flex-start' }}>
           <div
             aria-label="Question"
@@ -62,7 +89,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
           >
             <HelpCircle size={16} color="var(--color-surface)" aria-hidden="true" />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)', flex: 1 }}>
             {difficulty && (
               <div style={{
                 display: 'inline-flex',
@@ -75,16 +102,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
                 letterSpacing: '0.05em',
                 alignSelf: 'flex-start',
                 background: difficulty.toUpperCase() === 'HARD' ? 'var(--color-danger-light)' :
-                            difficulty.toUpperCase() === 'MEDIUM' ? 'var(--color-warning-light)' :
-                            'var(--color-success-light)',
+                  difficulty.toUpperCase() === 'MEDIUM' ? 'var(--color-warning-light)' :
+                    'var(--color-success-light)',
                 color: difficulty.toUpperCase() === 'HARD' ? 'var(--color-danger)' :
-                       difficulty.toUpperCase() === 'MEDIUM' ? 'var(--color-warning)' :
-                       'var(--color-success)',
-                border: `1px solid ${
-                  difficulty.toUpperCase() === 'HARD' ? 'var(--color-danger)' :
                   difficulty.toUpperCase() === 'MEDIUM' ? 'var(--color-warning)' :
-                  'var(--color-success)'
-                }`
+                    'var(--color-success)',
+                border: `1px solid ${difficulty.toUpperCase() === 'HARD' ? 'var(--color-danger)' :
+                  difficulty.toUpperCase() === 'MEDIUM' ? 'var(--color-warning)' :
+                    'var(--color-success)'
+                  }`
               }}>
                 {difficulty}
               </div>
@@ -93,29 +119,39 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
               lineHeight: '1.6', color: 'var(--color-text)', fontWeight: 600,
               fontSize: '1.4rem', fontFamily: "'Outfit', sans-serif"
             }}>
-              {question.questionText}
+              <FormattedMathText text={question.questionText} />
             </h2>
           </div>
         </div>
       </div>
 
       {isTheory ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-12)' }}>
+          {/* Categorized Math & Science Symbol Toolbar */}
+          <MathToolbar
+            onInsertSymbol={handleInsertSymbol}
+            onInsertTemplate={insertTemplate}
+            showPreview={showPreview}
+            onTogglePreview={() => setShowPreview((prev) => !prev)}
+            disabled={disabled || isSubmitting}
+          />
+
+          {/* Theory Textarea */}
           <textarea
             ref={theoryTextareaRef}
             value={localText}
             onChange={(e) => setLocalText(e.target.value)}
             disabled={disabled || isSubmitting}
-            placeholder="Type your answer here..."
+            placeholder="Type your explanation, formula steps, or calculations here..."
             style={{
               width: '100%',
-              minHeight: '200px',
-              padding: 'var(--space-24)',
+              minHeight: '180px',
+              padding: 'var(--space-20)',
               borderRadius: 'var(--radius-xl)',
               background: 'var(--color-surface-0)',
               border: '1px solid var(--color-border)',
               color: 'var(--color-text)',
-              fontSize: '1.1rem',
+              fontSize: '1.05rem',
               lineHeight: 1.6,
               fontFamily: 'inherit',
               resize: 'vertical',
@@ -123,20 +159,35 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
               outline: 'none',
               opacity: disabled ? 0.6 : 1,
             }}
-            onFocus={(e) => e.target.style.border = '1px solid var(--color-primary)'}
+            onFocus={(e) => (e.target.style.border = '1px solid var(--color-primary)')}
             onBlur={(e) => {
               e.target.style.border = '1px solid var(--color-border)';
               onWrittenAnswerChange?.(e.target.value);
             }}
           />
-          <div style={{ 
-            fontSize: '0.85rem', 
-            color: 'var(--color-text-muted)', 
-            display: 'flex', 
-            justifyContent: 'flex-end',
+
+          {/* Live Math Preview when active */}
+          {showPreview && localText.trim().length > 0 && (
+            <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-0)]/60 text-sm">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2 flex items-center gap-1.5">
+                <Eye size={12} className="text-primary" />
+                <span>Live Formatted Math Preview</span>
+              </div>
+              <div className="text-[var(--color-text)] whitespace-pre-wrap leading-relaxed">
+                <FormattedMathText text={localText} />
+              </div>
+            </div>
+          )}
+
+          <div style={{
+            fontSize: '0.85rem',
+            color: 'var(--color-text-muted)',
+            display: 'flex',
+            justifyContent: 'space-between',
             paddingRight: 'var(--space-8)'
           }}>
-            {localText.length} characters (aim for a concise, thorough explanation)
+            <span>Tip: Click symbols above or type <code className="text-xs bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded">x^2</code>, <code className="text-xs bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded">\frac&#123;a&#125;&#123;b&#125;</code>, or <code className="text-xs bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded">\sqrt&#123;x&#125;</code></span>
+            <span>{localText.length} characters</span>
           </div>
         </div>
       ) : (
@@ -186,9 +237,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
                     {option.id}
                   </span>
 
-                  {/* Option Text */}
+                  {/* Option Text with Mathematical Formatting */}
                   <span style={{ fontSize: '1.1rem', fontWeight: isSelected ? 600 : 500, color: 'var(--color-text)', lineHeight: 1.5 }}>
-                    {option.text}
+                    <FormattedMathText text={option.text} />
                   </span>
                 </label>
               );

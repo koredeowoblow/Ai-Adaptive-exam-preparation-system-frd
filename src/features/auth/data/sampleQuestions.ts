@@ -22,16 +22,16 @@ export const SAMPLE_QUESTIONS: SampleQuestion[] = [
     courseCode: 'MTH 101',
     courseTitle: 'Elementary Mathematics I',
     difficulty: 'Easy',
-    questionText: 'What is the limit of (sin x) / x as x approaches 0?',
+    questionText: 'What is the value of lim_{x → 0} (sin x)/x ?',
     options: [
       { id: 'A', text: '0' },
       { id: 'B', text: '1' },
-      { id: 'C', text: 'Infinity' },
+      { id: 'C', text: '∞ (Infinity)' },
       { id: 'D', text: 'Undefined' },
     ],
     correctAnswer: 'B',
     explanation:
-      "By standard trigonometric limits and L'Hôpital's rule, the derivative of sin(x) is cos(x) and the derivative of x is 1. As x approaches 0, cos(0)/1 evaluates to 1.",
+      "By standard trigonometric limits and L'Hôpital's rule: lim_{x → 0} (sin x)/x = lim_{x → 0} (cos x)/1 = 1.",
   },
   {
     id: 'sample_phy101_charge',
@@ -40,10 +40,10 @@ export const SAMPLE_QUESTIONS: SampleQuestion[] = [
     difficulty: 'Easy',
     questionText: 'What is the SI unit of electric charge?',
     options: [
-      { id: 'A', text: 'Ampere' },
-      { id: 'B', text: 'Volt' },
-      { id: 'C', text: 'Coulomb' },
-      { id: 'D', text: 'Ohm' },
+      { id: 'A', text: 'Ampere (A)' },
+      { id: 'B', text: 'Volt (V)' },
+      { id: 'C', text: 'Coulomb (C)' },
+      { id: 'D', text: 'Ohm (Ω)' },
     ],
     correctAnswer: 'C',
     explanation:
@@ -70,7 +70,7 @@ export const SAMPLE_QUESTIONS: SampleQuestion[] = [
     courseCode: 'MTH 102',
     courseTitle: 'Elementary Mathematics II',
     difficulty: 'Medium',
-    questionText: 'What is the determinant of the 2x2 matrix with row 1 [3, 2] and row 2 [1, 4]?',
+    questionText: 'What is the determinant of the 2×2 matrix with row 1 [3, 2] and row 2 [1, 4]?',
     options: [
       { id: 'A', text: '10' },
       { id: 'B', text: '14' },
@@ -79,23 +79,23 @@ export const SAMPLE_QUESTIONS: SampleQuestion[] = [
     ],
     correctAnswer: 'A',
     explanation:
-      'The determinant of a 2x2 matrix [[a, b], [c, d]] is computed as ad - bc. Here, (3 × 4) - (2 × 1) = 12 - 2 = 10.',
+      'The determinant of a 2×2 matrix [[a, b], [c, d]] is computed as ad - bc. Here, (3 × 4) - (2 × 1) = 12 - 2 = 10.',
   },
   {
     id: 'sample_mth101_exp',
     courseCode: 'MTH 101',
     courseTitle: 'Elementary Mathematics I',
     difficulty: 'Medium',
-    questionText: 'What is the derivative of f(x) = e^(3x) with respect to x?',
+    questionText: 'What is the derivative of f(x) = e³ˣ with respect to x (d/dx [e³ˣ])?',
     options: [
-      { id: 'A', text: 'e^(3x)' },
-      { id: 'B', text: '3e^(3x)' },
-      { id: 'C', text: '3e^(2x)' },
-      { id: 'D', text: '(1/3)e^(3x)' },
+      { id: 'A', text: 'e³ˣ' },
+      { id: 'B', text: '3e³ˣ' },
+      { id: 'C', text: '3e²ˣ' },
+      { id: 'D', text: '⅓e³ˣ' },
     ],
     correctAnswer: 'B',
     explanation:
-      'Applying the chain rule, the derivative of e^u with respect to x is e^u × (du/dx). Differentiating the exponent 3x gives 3, yielding 3e^(3x).',
+      'Applying the chain rule, the derivative of e^u with respect to x is e^u × (du/dx). Differentiating the exponent 3x gives 3, yielding 3e³ˣ.',
   },
   {
     id: 'sample_phy101_force',

@@ -6,6 +6,13 @@ import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
 import { Select } from '../../../shared/components/Select';
 import { CheckCircle2, Plus, Trash2, Eye, EyeOff, Sparkles, BookOpen, CheckSquare } from 'lucide-react';
+import { FormattedMathText } from '../../../shared/components/FormattedMathText';
+import { MathToolbar } from '../../../shared/components/MathToolbar';
+import type { MathSymbolItem } from '../../../shared/constants/mathSymbols';
+import {
+  insertSymbolIntoInputOrTextarea,
+  insertTemplateIntoInputOrTextarea,
+} from '../../../shared/utils/mathInsert';
 import type { CreateQuestionDTO } from '../../../types';
 import type { Topic } from '../../../types/topic.types';
 import type { Course } from '../../../types/course.types';
@@ -95,6 +102,11 @@ export interface QuestionFormProps {
 
 const DEFAULT_OPTION_IDS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
+export type AdminFocusedTarget =
+  | { field: 'questionText'; element: HTMLTextAreaElement }
+  | { field: 'modelAnswer'; element: HTMLTextAreaElement }
+  | { field: 'rubric'; index: number; element: HTMLInputElement };
+
 export const QuestionForm: React.FC<QuestionFormProps> = ({
   topics,
   courses,
@@ -104,6 +116,12 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   onCancel,
 }) => {
   const [showLivePreview, setShowLivePreview] = React.useState(true);
+  const [showMathPreview, setShowMathPreview] = React.useState(true);
+  const [lastFocusedTarget, setLastFocusedTarget] = React.useState<AdminFocusedTarget | null>(null);
+
+  const questionTextRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const modelAnswerRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const rubricInputsRef = React.useRef<(HTMLInputElement | null)[]>([]);
 
   const getTopicCourseId = React.useCallback((topic?: Topic): string => {
     if (!topic || !topic.courseId) return '';
@@ -187,6 +205,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         ],
         ...initialData,
       });
+      setLastFocusedTarget(null);
     } else {
       reset({
         type: 'MULTIPLE_CHOICE',
@@ -207,8 +226,10 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         ],
         explanation: '',
       });
+      setLastFocusedTarget(null);
     }
   }, [initialData, reset, availableTopics, topics]);
+
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -238,6 +259,129 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   const currentExplanation = watchedValues.explanation || '';
   const currentTopicId = watchedValues.topicId || '';
   const selectedTopic = topics.find((t) => t._id === currentTopicId);
+
+  const isTargetValid = React.useCallback(
+    (target: AdminFocusedTarget | null): target is AdminFocusedTarget => {
+      if (!target) return false;
+
+      if (target.field === 'questionText') {
+        return true;
+      }
+
+      if (target.field === 'modelAnswer') {
+        return currentType === 'THEORY';
+      }
+
+      if (target.field === 'rubric') {
+        if (currentType !== 'THEORY') return false;
+        const idx = target.index;
+        const isWithinBounds = idx >= 0 && idx < rubricFields.length;
+        const hasWatchedCriterion =
+          Array.isArray(watchedValues.rubric) &&
+          idx < watchedValues.rubric.length &&
+          watchedValues.rubric[idx] !== undefined;
+        return isWithinBounds && hasWatchedCriterion;
+      }
+
+      return false;
+    },
+    [currentType, rubricFields.length, watchedValues.rubric]
+  );
+
+
+  const activeTargetLabel = React.useMemo(() => {
+    if (!lastFocusedTarget || !isTargetValid(lastFocusedTarget)) {
+      return 'None (Click a field to focus)';
+    }
+    if (lastFocusedTarget.field === 'questionText') {
+      return 'Question Prompt';
+    }
+    if (lastFocusedTarget.field === 'modelAnswer') {
+      return 'Model Answer';
+    }
+    if (lastFocusedTarget.field === 'rubric') {
+      return `Rubric Criterion #${lastFocusedTarget.index + 1}`;
+    }
+    return 'None (Click a field to focus)';
+  }, [lastFocusedTarget, isTargetValid]);
+
+  const handleAdminInsertSymbol = React.useCallback(
+    (symbol: MathSymbolItem) => {
+      // Must do nothing if there is no valid target - prevents ghost rows and invalid paths
+      if (!isTargetValid(lastFocusedTarget)) {
+        return;
+      }
+
+      const target = lastFocusedTarget;
+
+      if (target.field === 'questionText') {
+        const el = target.element || questionTextRef.current;
+        const currentVal = watchedValues.questionText || '';
+        insertSymbolIntoInputOrTextarea(el, currentVal, symbol, (newVal) => {
+          setValue('questionText', newVal, { shouldValidate: true, shouldDirty: true });
+        });
+        return;
+      }
+
+      if (target.field === 'modelAnswer') {
+        const el = target.element || modelAnswerRef.current;
+        const currentVal = watchedValues.modelAnswer || '';
+        insertSymbolIntoInputOrTextarea(el, currentVal, symbol, (newVal) => {
+          setValue('modelAnswer', newVal, { shouldValidate: true, shouldDirty: true });
+        });
+        return;
+      }
+
+      if (target.field === 'rubric') {
+        const index = target.index;
+        const el = target.element || rubricInputsRef.current[index] || null;
+        const currentVal = watchedValues.rubric?.[index]?.point || '';
+        insertSymbolIntoInputOrTextarea(el, currentVal, symbol, (newVal) => {
+          setValue(`rubric.${index}.point`, newVal, { shouldValidate: true, shouldDirty: true });
+        });
+        return;
+      }
+    },
+    [lastFocusedTarget, isTargetValid, watchedValues.questionText, watchedValues.modelAnswer, watchedValues.rubric, setValue]
+  );
+
+  const handleAdminInsertTemplate = React.useCallback(() => {
+    // Must do nothing if there is no valid target - prevents ghost rows and invalid paths
+    if (!isTargetValid(lastFocusedTarget)) {
+      return;
+    }
+
+    const target = lastFocusedTarget;
+
+    if (target.field === 'questionText') {
+      const el = target.element || questionTextRef.current;
+      const currentVal = watchedValues.questionText || '';
+      insertTemplateIntoInputOrTextarea(el, currentVal, (newVal) => {
+        setValue('questionText', newVal, { shouldValidate: true, shouldDirty: true });
+      });
+      return;
+    }
+
+    if (target.field === 'modelAnswer') {
+      const el = target.element || modelAnswerRef.current;
+      const currentVal = watchedValues.modelAnswer || '';
+      insertTemplateIntoInputOrTextarea(el, currentVal, (newVal) => {
+        setValue('modelAnswer', newVal, { shouldValidate: true, shouldDirty: true });
+      });
+      return;
+    }
+
+    if (target.field === 'rubric') {
+      const index = target.index;
+      const el = target.element || rubricInputsRef.current[index] || null;
+      const currentVal = watchedValues.rubric?.[index]?.point || '';
+      insertTemplateIntoInputOrTextarea(el, currentVal, (newVal) => {
+        setValue(`rubric.${index}.point`, newVal, { shouldValidate: true, shouldDirty: true });
+      });
+      return;
+    }
+  }, [lastFocusedTarget, isTargetValid, watchedValues.questionText, watchedValues.modelAnswer, watchedValues.rubric, setValue]);
+
 
   const submitHandler = (data: FormData) => {
     if (data.type === 'THEORY') {
@@ -348,7 +492,10 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         >
           <button
             type="button"
-            onClick={() => setValue('type', 'MULTIPLE_CHOICE', { shouldValidate: true, shouldDirty: true })}
+            onClick={() => {
+              setValue('type', 'MULTIPLE_CHOICE', { shouldValidate: true, shouldDirty: true });
+              setLastFocusedTarget(null);
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -372,7 +519,10 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
 
           <button
             type="button"
-            onClick={() => setValue('type', 'THEORY', { shouldValidate: true, shouldDirty: true })}
+            onClick={() => {
+              setValue('type', 'THEORY', { shouldValidate: true, shouldDirty: true });
+              setLastFocusedTarget(null);
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -420,6 +570,22 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         error={errors.topicId?.message}
       />
 
+      {/* Formula & Symbol Helper Toolbar with dynamic target detection */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2px' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+            Active Toolbar Target:{' '}
+            <strong style={{ color: 'var(--color-primary)' }}>{activeTargetLabel}</strong>
+          </span>
+        </div>
+        <MathToolbar
+          onInsertSymbol={handleAdminInsertSymbol}
+          onInsertTemplate={handleAdminInsertTemplate}
+          showPreview={showMathPreview}
+          onTogglePreview={() => setShowMathPreview((prev) => !prev)}
+        />
+      </div>
+
       {/* Question Text */}
       <div>
         <label
@@ -433,31 +599,71 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         >
           Question Prompt *
         </label>
-        <textarea
-          rows={3}
-          placeholder={
-            currentType === 'THEORY'
-              ? 'e.g. Explain the difference between eigenvalues and eigenvectors, and discuss their significance in matrix transformations.'
-              : "e.g. Which algorithmic paradigm does Dijkstra's shortest path algorithm use?"
-          }
-          {...register('questionText')}
-          style={{
-            width: '100%',
-            padding: '0.625rem 0.75rem',
-            borderRadius: 'var(--radius-md)',
-            border: errors.questionText ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-surface)',
-            color: 'var(--color-text)',
-            fontSize: '0.875rem',
-            lineHeight: 1.5,
-            resize: 'vertical',
-            fontFamily: 'inherit',
-          }}
-        />
+        {(() => {
+          const qTextReg = register('questionText');
+          return (
+            <textarea
+              rows={3}
+              placeholder={
+                currentType === 'THEORY'
+                  ? 'e.g. Explain the difference between eigenvalues and eigenvectors, and discuss their significance in matrix transformations.'
+                  : "e.g. Which algorithmic paradigm does Dijkstra's shortest path algorithm use?"
+              }
+              {...qTextReg}
+              ref={(e) => {
+                qTextReg.ref(e);
+                questionTextRef.current = e;
+              }}
+              onFocus={(e) => {
+                setLastFocusedTarget({ field: 'questionText', element: e.currentTarget });
+              }}
+              style={{
+                width: '100%',
+                padding: '0.625rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                border: errors.questionText ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text)',
+                fontSize: '0.875rem',
+                lineHeight: 1.5,
+                resize: 'vertical',
+                fontFamily: 'inherit',
+              }}
+            />
+          );
+        })()}
         {errors.questionText?.message && (
           <span style={{ color: 'var(--color-danger)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
             {errors.questionText.message}
           </span>
+        )}
+        {showMathPreview && currentQuestionText.trim() && (
+          <div
+            style={{
+              marginTop: '0.5rem',
+              padding: '0.625rem 0.75rem',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-background-soft)',
+              border: '1px solid var(--color-border)',
+              fontSize: '0.875rem',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.6875rem',
+                fontWeight: 600,
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.25rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              Question Prompt Math Preview
+            </div>
+            <div style={{ color: 'var(--color-text)', lineHeight: 1.5 }}>
+              <FormattedMathText text={currentQuestionText} />
+            </div>
+          </div>
         )}
       </div>
 
@@ -627,27 +833,67 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                 Used for AI & Instructor Grading
               </span>
             </div>
-            <textarea
-              rows={4}
-              placeholder="Provide a comprehensive model answer covering the key definitions, expected proofs/calculations, and conceptual clarity..."
-              {...register('modelAnswer')}
-              style={{
-                width: '100%',
-                padding: '0.625rem 0.75rem',
-                borderRadius: 'var(--radius-md)',
-                border: errors.modelAnswer ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)',
-                fontSize: '0.875rem',
-                lineHeight: 1.5,
-                resize: 'vertical',
-                fontFamily: 'inherit',
-              }}
-            />
+            {(() => {
+              const modelAnswerReg = register('modelAnswer');
+              return (
+                <textarea
+                  rows={4}
+                  placeholder="Provide a comprehensive model answer covering the key definitions, expected proofs/calculations, and conceptual clarity..."
+                  {...modelAnswerReg}
+                  ref={(e) => {
+                    modelAnswerReg.ref(e);
+                    modelAnswerRef.current = e;
+                  }}
+                  onFocus={(e) => {
+                    setLastFocusedTarget({ field: 'modelAnswer', element: e.currentTarget });
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem 0.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: errors.modelAnswer ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-surface)',
+                    color: 'var(--color-text)',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.5,
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              );
+            })()}
             {errors.modelAnswer?.message && (
               <span style={{ color: 'var(--color-danger)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
                 {errors.modelAnswer.message}
               </span>
+            )}
+            {showMathPreview && currentModelAnswer.trim() && (
+              <div
+                style={{
+                  marginTop: '0.5rem',
+                  padding: '0.625rem 0.75rem',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--color-background-soft)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.875rem',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 600,
+                    color: 'var(--color-text-muted)',
+                    marginBottom: '0.25rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Model Answer Math Preview
+                </div>
+                <div style={{ color: 'var(--color-text)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                  <FormattedMathText text={currentModelAnswer} />
+                </div>
+              </div>
             )}
           </div>
 
@@ -681,95 +927,130 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {rubricFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.375rem 0.5rem',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                >
-                  <span
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                      color: '#8b5cf6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {index + 1}
-                  </span>
+              {rubricFields.map((field, index) => {
+                const rubricPointReg = register(`rubric.${index}.point`);
+                const pointText = currentRubric?.[index]?.point || '';
 
-                  <input
-                    type="text"
-                    placeholder="e.g. Correct statement of Cayley-Hamilton theorem"
-                    {...register(`rubric.${index}.point`)}
-                    style={{
-                      flex: 1,
-                      padding: '0.375rem 0.625rem',
-                      fontSize: '0.8125rem',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--color-border)',
-                      backgroundColor: 'var(--color-surface)',
-                      color: 'var(--color-text)',
-                    }}
-                  />
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <input
-                      type="number"
-                      min={1}
-                      max={100}
-                      placeholder="Marks"
-                      {...register(`rubric.${index}.weight`, { valueAsNumber: true })}
+                return (
+                  <div key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div
                       style={{
-                        width: '56px',
-                        padding: '0.375rem 0.375rem',
-                        textAlign: 'center',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600,
-                        borderRadius: 'var(--radius-sm)',
-                        border: '1px solid var(--color-border)',
-                        backgroundColor: 'var(--color-surface)',
-                        color: 'var(--color-primary)',
-                      }}
-                    />
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>pts</span>
-                  </div>
-
-                  {rubricFields.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeRubric(index)}
-                      title="Remove criterion"
-                      style={{
-                        border: 'none',
-                        background: 'none',
-                        color: 'var(--color-text-muted)',
-                        cursor: 'pointer',
-                        padding: '0.25rem',
-                        borderRadius: 'var(--radius-sm)',
                         display: 'flex',
                         alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.375rem 0.5rem',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: 'var(--color-surface)',
+                        border: '1px solid var(--color-border)',
                       }}
                     >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-              ))}
+                      <span
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                          color: '#8b5cf6',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {index + 1}
+                      </span>
+
+                      <input
+                        type="text"
+                        placeholder="e.g. Correct statement of Cayley-Hamilton theorem"
+                        {...rubricPointReg}
+                        ref={(e) => {
+                          rubricPointReg.ref(e);
+                          rubricInputsRef.current[index] = e;
+                        }}
+                        onFocus={(e) => {
+                          setLastFocusedTarget({ field: 'rubric', index, element: e.currentTarget });
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '0.375rem 0.625rem',
+                          fontSize: '0.8125rem',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--color-border)',
+                          backgroundColor: 'var(--color-surface)',
+                          color: 'var(--color-text)',
+                        }}
+                      />
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          placeholder="Marks"
+                          {...register(`rubric.${index}.weight`, { valueAsNumber: true })}
+                          style={{
+                            width: '56px',
+                            padding: '0.375rem 0.375rem',
+                            textAlign: 'center',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1px solid var(--color-border)',
+                            backgroundColor: 'var(--color-surface)',
+                            color: 'var(--color-primary)',
+                          }}
+                        />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>pts</span>
+                      </div>
+
+                      {rubricFields.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            removeRubric(index);
+                            setLastFocusedTarget(null);
+                          }}
+                          title="Remove criterion"
+                          style={{
+                            border: 'none',
+                            background: 'none',
+                            color: 'var(--color-text-muted)',
+                            cursor: 'pointer',
+                            padding: '0.25rem',
+                            borderRadius: 'var(--radius-sm)',
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+
+                    {showMathPreview && pointText.trim() && (
+                      <div
+                        style={{
+                          marginLeft: '2rem',
+                          padding: '0.3125rem 0.5rem',
+                          borderRadius: 'var(--radius-sm)',
+                          backgroundColor: 'var(--color-background-soft)',
+                          border: '1px solid var(--color-border)',
+                          fontSize: '0.75rem',
+                          color: 'var(--color-text)',
+                        }}
+                      >
+                        <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', marginRight: '0.375rem' }}>
+                          Preview:
+                        </span>
+                        <FormattedMathText text={pointText} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -952,9 +1233,13 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
               </span>
             </div>
 
-            <p style={{ margin: '0 0 0.875rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.4 }}>
-              {currentQuestionText.trim() || <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>Question prompt preview...</span>}
-            </p>
+            <div style={{ margin: '0 0 0.875rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.4 }}>
+              {currentQuestionText.trim() ? (
+                <FormattedMathText text={currentQuestionText} />
+              ) : (
+                <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>Question prompt preview...</span>
+              )}
+            </div>
 
             {currentType === 'THEORY' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.875rem' }}>
@@ -970,14 +1255,23 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
                     Model Answer:
                   </span>
                   <div style={{ fontSize: '0.8125rem', color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>
-                    {currentModelAnswer.trim() || <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>Model answer preview...</span>}
+                    {currentModelAnswer.trim() ? (
+                      <FormattedMathText text={currentModelAnswer} />
+                    ) : (
+                      <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>Model answer preview...</span>
+                    )}
                   </div>
                 </div>
 
                 {currentRubric && currentRubric.length > 0 && (
                   <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                     <span style={{ fontWeight: 600 }}>Rubric Criteria ({totalRubricScore} pts):</span>{' '}
-                    {currentRubric.map((r) => `${r.point || 'Criterion'} (${r.weight || 0} pts)`).join(', ')}
+                    {currentRubric.map((r, i) => (
+                      <span key={i}>
+                        {i > 0 && ', '}
+                        {r.point ? <FormattedMathText text={r.point} /> : 'Criterion'} ({r.weight || 0} pts)
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>

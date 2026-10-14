@@ -10,6 +10,7 @@ import { Trophy, ArrowRight, Sparkles, Loader2, ClockAlert, Timer, Target, Trend
 import type { Question } from "../types/question.types";
 import { useRequestMcqExplanation } from "../features/practice-session/hooks/usePractice";
 import { clsx } from "clsx";
+import { FormattedMathText } from "../shared/components/FormattedMathText";
 
 export const Route = createLazyFileRoute("/practice_/$sessionId/review")({
   component: SessionReviewRoute,
@@ -283,7 +284,9 @@ function SessionReviewRoute() {
                   )}
 
                   {/* Question text */}
-                  <p className="text-lg font-medium text-gray-900 dark:text-white mb-6 leading-relaxed">{q.questionText}</p>
+                  <div className="text-lg font-medium text-gray-900 dark:text-white mb-6 leading-relaxed">
+                    <FormattedMathText text={q.questionText} />
+                  </div>
 
                   {/* MCQ options */}
                   {!isTheory && q.options && (
@@ -320,7 +323,9 @@ function SessionReviewRoute() {
                                 </svg>
                               )}
                             </div>
-                            <span className="flex-1">{option.text}</span>
+                            <span className="flex-1">
+                              <FormattedMathText text={option.text} />
+                            </span>
                             {isChosen && (
                               <span className={clsx(
                                 "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
@@ -344,7 +349,9 @@ function SessionReviewRoute() {
                       {ans.writtenAnswer ? (
                         <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700">
                           <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Your Answer</p>
-                          <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{ans.writtenAnswer}</p>
+                          <div className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
+                            <FormattedMathText text={ans.writtenAnswer} />
+                          </div>
                         </div>
                       ) : (
                         <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
@@ -381,7 +388,7 @@ function SessionReviewRoute() {
                             <span>AI Tutor Explanation</span>
                           </div>
                           <div className="text-sm md:text-base leading-relaxed text-gray-700 dark:text-gray-300 relative z-10">
-                            {ans.aiExplanation}
+                            <FormattedMathText text={ans.aiExplanation} />
                           </div>
                         </div>
                       ) : ans.explanationStatus === 'PENDING' || pendingExplanations.has((ans as any)._id) ? (

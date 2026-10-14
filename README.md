@@ -1,32 +1,54 @@
-# React + TypeScript + Vite
+# AI Adaptive Exam Preparation System - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Web interface for students and administrators, supporting adaptive practice sessions, rich KaTeX mathematical formulas, and detailed performance analytics.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19 with TypeScript and Vite
+- TanStack Router and TanStack Query
+- KaTeX with mhchem for mathematical and chemical notation
+- React Hook Form with Zod validation
+- Tailwind CSS and Lucide React icons
+- Playwright for end to end testing
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Install dependencies
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### 2. Configure environment variables
+
+Create a `.env` file in the root directory based on `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Required variable:
+
+- `VITE_API_URL`: Base URL for the backend API (for example http://localhost:3000/api/v1)
+
+### 3. Run the development server
+
+```bash
+npm run dev
+```
+
+To build for production:
+
+```bash
+npm run build
+```
+
+To run lint checks:
+
+```bash
+npm run lint
+```
+
+## Note
+
+This repository is part of a final year undergraduate engineering project.

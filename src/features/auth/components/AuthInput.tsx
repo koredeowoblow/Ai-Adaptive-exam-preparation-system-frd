@@ -29,7 +29,7 @@ export const AuthInput = React.forwardRef<HTMLInputElement, AuthInputProps>(
         <div className="flex items-center justify-between mb-1.5">
           <label
             htmlFor={id}
-            className="block text-xs font-semibold uppercase tracking-wider text-[var(--auth-text-muted)] select-none"
+            className="block text-sm font-medium text-[var(--auth-text)]/90 select-none"
           >
             {label}
           </label>

@@ -37,7 +37,7 @@ export function ForgotPasswordCard() {
       <div className="pt-2 text-center">
         <Link
           to={'/login' as any}
-          className="inline-flex items-center gap-1.5 text-xs text-[var(--auth-muted)] hover:text-[var(--auth-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--auth-focus-ring)] rounded py-1 px-2 font-medium"
+          className="inline-flex items-center gap-1.5 text-xs text-[var(--auth-link)] hover:text-[var(--auth-link-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--auth-focus-ring)] rounded py-1 px-2 font-medium"
         >
           <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
           Return to sign in

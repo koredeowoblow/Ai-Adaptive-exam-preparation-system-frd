@@ -99,7 +99,9 @@ export default {
         'glow':  'var(--shadow-glow)',
       },
       fontFamily: {
-        sans:   ['Inter', 'Segoe UI', '-apple-system', 'sans-serif'],
+        sans:   ['"DM Sans"', 'Inter', 'Segoe UI', '-apple-system', 'sans-serif'],
+        heading: ['"Bricolage Grotesque"', 'sans-serif'],
+        body:   ['"DM Sans"', 'sans-serif'],
         outfit: ['Outfit', 'sans-serif'],
       },
     },

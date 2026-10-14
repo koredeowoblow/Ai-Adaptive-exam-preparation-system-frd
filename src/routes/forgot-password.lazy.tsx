@@ -23,7 +23,7 @@ function ForgotPasswordRouteComponent() {
           Remember your password?{' '}
           <Link
             to={'/login' as any}
-            className="text-[var(--auth-accent)] font-semibold hover:underline focus:outline-none focus:ring-1 focus:ring-[var(--auth-accent)] rounded"
+            className="text-[var(--auth-link)] hover:text-[var(--auth-link-hover)] font-semibold hover:underline focus:outline-none focus:ring-1 focus:ring-[var(--auth-link)] rounded"
           >
             Sign in
           </Link>

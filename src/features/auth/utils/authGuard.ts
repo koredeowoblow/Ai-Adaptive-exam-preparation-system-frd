@@ -20,7 +20,11 @@ export async function requireAuth(context: RouterContext, options: GuardOptions 
       staleTime: 5 * 60 * 1000,
     });
 
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : undefined;
     if (!authData || !authData.id) {
+      if (currentPath && currentPath !== '/login' && currentPath !== '/') {
+        try { sessionStorage.setItem('auth_redirect', currentPath); } catch {}
+      }
       throw redirect({ to: '/login' });
     }
 
@@ -38,6 +42,10 @@ export async function requireAuth(context: RouterContext, options: GuardOptions 
     return authData;
   } catch (error: any) {
     if (isRedirect(error)) throw error;
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : undefined;
+    if (currentPath && currentPath !== '/login' && currentPath !== '/') {
+      try { sessionStorage.setItem('auth_redirect', currentPath); } catch {}
+    }
     throw redirect({ to: '/login' });
   }
 }

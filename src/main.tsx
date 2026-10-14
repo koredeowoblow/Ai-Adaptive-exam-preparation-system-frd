@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { queryClient } from './app/queryClient';
 import { router } from './app/router';
+import 'katex/dist/katex.min.css';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(

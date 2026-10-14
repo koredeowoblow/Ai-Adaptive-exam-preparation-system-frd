@@ -48,7 +48,7 @@ export const WhatHappensNextCard: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-mono font-bold text-[var(--auth-accent)]">
+                <span className="text-xs font-mono font-bold text-[var(--auth-link)]">
                   Step {step.num}
                 </span>
                 <span className="text-sm font-semibold text-[var(--auth-text)]">
