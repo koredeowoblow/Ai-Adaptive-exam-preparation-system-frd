@@ -368,8 +368,14 @@ function SessionReviewRoute() {
                           <p className={clsx(
                             "text-xs font-bold uppercase tracking-wider mb-1",
                             (ans.score ?? 0) >= 0.7 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                          )}>AI Grade: {Math.round((ans.score ?? 0) * 100)}%</p>
-                          {ans.theoryFeedback && <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{ans.theoryFeedback}</p>}
+                          )}>
+                            AI Grade: {Math.round((ans.score ?? 0) * 100)}%
+                          </p>
+                          {ans.theoryFeedback && (
+                            <div className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                              <FormattedMathText text={ans.theoryFeedback} />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

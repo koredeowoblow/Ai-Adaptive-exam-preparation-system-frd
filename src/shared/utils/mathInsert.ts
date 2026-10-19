@@ -11,6 +11,52 @@ export function isCursorInsideMath(text: string, pos: number): boolean {
 
   let i = 0;
   while (i < text.length) {
+    // Check for display math \[...\]
+    if (text[i] === '\\' && text[i + 1] === '[') {
+      const innerStart = i + 2;
+      let closeStart = -1;
+      let j = innerStart;
+
+      while (j < text.length) {
+        if (text[j] === '\\' && text[j + 1] === ']') {
+          closeStart = j;
+          break;
+        }
+        j++;
+      }
+
+      if (closeStart !== -1) {
+        if (pos >= innerStart && pos <= closeStart) {
+          return true;
+        }
+        i = closeStart + 2;
+        continue;
+      }
+    }
+
+    // Check for inline math \(...\)
+    if (text[i] === '\\' && text[i + 1] === '(') {
+      const innerStart = i + 2;
+      let closeStart = -1;
+      let j = innerStart;
+
+      while (j < text.length) {
+        if (text[j] === '\\' && text[j + 1] === ')') {
+          closeStart = j;
+          break;
+        }
+        j++;
+      }
+
+      if (closeStart !== -1) {
+        if (pos >= innerStart && pos <= closeStart) {
+          return true;
+        }
+        i = closeStart + 2;
+        continue;
+      }
+    }
+
     // Skip escaped characters (e.g. \$)
     if (text[i] === '\\') {
       i += 2;

@@ -60,6 +60,35 @@ function escapeHtml(str: string): string {
 }
 
 /**
+ * Normalizes alternative standard LaTeX delimiters \(...\) and \[...\] to $...$ and $$...$$
+ */
+export function normalizeDelimiters(input: string): string {
+  if (!input) return '';
+  if (!input.includes('\\(') && !input.includes('\\[') && !input.includes('\\)') && !input.includes('\\]')) {
+    return input;
+  }
+  return input
+    .replace(/\\\[([\s\S]+?)\\\]/g, (_m, inner) => `$$${inner}$$`)
+    .replace(/\\\(([\s\S]+?)\\\)/g, (_m, inner) => `$${inner}$`);
+}
+
+/**
+ * Strips math delimiters and commands for plain-text contexts (such as document titles or tooltips)
+ */
+export function stripMathDelimiters(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\\\[([\s\S]+?)\\\]/g, '$1')
+    .replace(/\\\(([\s\S]+?)\\\)/g, '$1')
+    .replace(/\$\$[\s\S]+?\$\$/g, (m) => m.slice(2, -2).trim())
+    .replace(/\$[^\$]+?\$/g, (m) => m.slice(1, -1).trim())
+    .replace(/\\[a-zA-Z]+(\{[^{}]*\})*/g, ' ')
+    .replace(/[{}]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Safely renders LaTeX into HTML using KaTeX with mhchem extension
  */
 function renderKatexHtml(rawMath: string, displayMode: boolean): string {
@@ -68,6 +97,9 @@ function renderKatexHtml(rawMath: string, displayMode: boolean): string {
     return katex.renderToString(math, {
       displayMode,
       throwOnError: false,
+      trust: false,
+      maxSize: 25,
+      maxExpand: 500,
     });
   } catch {
     // Fallback: return escaped string so thrown errors never inject raw HTML
@@ -97,18 +129,21 @@ export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
 }) => {
   if (!text) return null;
 
+  // Convert \(...\) to $...$ and \[...\] to $$...$$ before delimiter parsing
+  const normalizedText = normalizeDelimiters(text);
+
   // 1. Check for explicit $ or $$ delimiters
-  if (DELIMITER_REGEX.test(text)) {
+  if (DELIMITER_REGEX.test(normalizedText)) {
     DELIMITER_REGEX.lastIndex = 0;
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
     let match: RegExpExecArray | null;
 
-    while ((match = DELIMITER_REGEX.exec(text)) !== null) {
+    while ((match = DELIMITER_REGEX.exec(normalizedText)) !== null) {
       if (match.index > lastIndex) {
         parts.push(
           <span key={`txt-${lastIndex}`} className="whitespace-pre-wrap">
-            {text.slice(lastIndex, match.index)}
+            {normalizedText.slice(lastIndex, match.index)}
           </span>
         );
       }
@@ -137,10 +172,10 @@ export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
       lastIndex = DELIMITER_REGEX.lastIndex;
     }
 
-    if (lastIndex < text.length) {
+    if (lastIndex < normalizedText.length) {
       parts.push(
         <span key={`txt-end`} className="whitespace-pre-wrap">
-          {text.slice(lastIndex)}
+          {normalizedText.slice(lastIndex)}
         </span>
       );
     }
@@ -152,7 +187,7 @@ export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
     );
   }
 
-  const trimmed = text.trim();
+  const trimmed = normalizedText.trim();
 
   // 2. If entire string starts with backslash, treat the entire string as LaTeX math
   if (trimmed.startsWith('\\')) {
@@ -168,17 +203,17 @@ export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
   }
 
   // 3. If string contains bare LaTeX commands/equations without $ delimiters
-  if (BARE_MATH_REGEX.test(text)) {
+  if (BARE_MATH_REGEX.test(normalizedText)) {
     BARE_MATH_REGEX.lastIndex = 0;
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
     let match: RegExpExecArray | null;
 
-    while ((match = BARE_MATH_REGEX.exec(text)) !== null) {
+    while ((match = BARE_MATH_REGEX.exec(normalizedText)) !== null) {
       if (match.index > lastIndex) {
         parts.push(
           <span key={`txt-${lastIndex}`} className="whitespace-pre-wrap">
-            {text.slice(lastIndex, match.index)}
+            {normalizedText.slice(lastIndex, match.index)}
           </span>
         );
       }
@@ -194,10 +229,10 @@ export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
       lastIndex = BARE_MATH_REGEX.lastIndex;
     }
 
-    if (lastIndex < text.length) {
+    if (lastIndex < normalizedText.length) {
       parts.push(
         <span key={`txt-end`} className="whitespace-pre-wrap">
-          {text.slice(lastIndex)}
+          {normalizedText.slice(lastIndex)}
         </span>
       );
     }

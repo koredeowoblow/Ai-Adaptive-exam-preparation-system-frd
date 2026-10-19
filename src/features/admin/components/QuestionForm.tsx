@@ -105,7 +105,9 @@ const DEFAULT_OPTION_IDS = ['A', 'B', 'C', 'D', 'E', 'F'];
 export type AdminFocusedTarget =
   | { field: 'questionText'; element: HTMLTextAreaElement }
   | { field: 'modelAnswer'; element: HTMLTextAreaElement }
-  | { field: 'rubric'; index: number; element: HTMLInputElement };
+  | { field: 'rubric'; index: number; element: HTMLInputElement }
+  | { field: 'options'; index: number; element: HTMLInputElement }
+  | { field: 'explanation'; element: HTMLTextAreaElement };
 
 export const QuestionForm: React.FC<QuestionFormProps> = ({
   topics,
@@ -122,6 +124,18 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   const questionTextRef = React.useRef<HTMLTextAreaElement | null>(null);
   const modelAnswerRef = React.useRef<HTMLTextAreaElement | null>(null);
   const rubricInputsRef = React.useRef<(HTMLInputElement | null)[]>([]);
+  const optionInputsRef = React.useRef<(HTMLInputElement | null)[]>([]);
+  const explanationRef = React.useRef<HTMLTextAreaElement | null>(null);
+
+  const [showOptionPreviews, setShowOptionPreviews] = React.useState<Record<number, boolean>>({});
+  const [showExplanationPreview, setShowExplanationPreview] = React.useState(true);
+
+  const toggleOptionPreview = React.useCallback((idx: number) => {
+    setShowOptionPreviews((prev) => ({
+      ...prev,
+      [idx]: prev[idx] !== undefined ? !prev[idx] : false,
+    }));
+  }, []);
 
   const getTopicCourseId = React.useCallback((topic?: Topic): string => {
     if (!topic || !topic.courseId) return '';
@@ -283,9 +297,24 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         return isWithinBounds && hasWatchedCriterion;
       }
 
+      if (target.field === 'options') {
+        if (currentType !== 'MULTIPLE_CHOICE') return false;
+        const idx = target.index;
+        const isWithinBounds = idx >= 0 && idx < fields.length;
+        const hasWatchedOption =
+          Array.isArray(watchedValues.options) &&
+          idx < watchedValues.options.length &&
+          watchedValues.options[idx] !== undefined;
+        return isWithinBounds && hasWatchedOption;
+      }
+
+      if (target.field === 'explanation') {
+        return true;
+      }
+
       return false;
     },
-    [currentType, rubricFields.length, watchedValues.rubric]
+    [currentType, rubricFields.length, fields.length, watchedValues.rubric, watchedValues.options]
   );
 
 
@@ -302,8 +331,15 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     if (lastFocusedTarget.field === 'rubric') {
       return `Rubric Criterion #${lastFocusedTarget.index + 1}`;
     }
+    if (lastFocusedTarget.field === 'options') {
+      const optId = currentOptions[lastFocusedTarget.index]?.id || `#${lastFocusedTarget.index + 1}`;
+      return `Option ${optId}`;
+    }
+    if (lastFocusedTarget.field === 'explanation') {
+      return 'Explanation';
+    }
     return 'None (Click a field to focus)';
-  }, [lastFocusedTarget, isTargetValid]);
+  }, [lastFocusedTarget, isTargetValid, currentOptions]);
 
   const handleAdminInsertSymbol = React.useCallback(
     (symbol: MathSymbolItem) => {
@@ -341,8 +377,27 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         });
         return;
       }
+
+      if (target.field === 'options') {
+        const index = target.index;
+        const el = target.element || optionInputsRef.current[index] || null;
+        const currentVal = watchedValues.options?.[index]?.text || '';
+        insertSymbolIntoInputOrTextarea(el, currentVal, symbol, (newVal) => {
+          setValue(`options.${index}.text`, newVal, { shouldValidate: true, shouldDirty: true });
+        });
+        return;
+      }
+
+      if (target.field === 'explanation') {
+        const el = target.element || explanationRef.current;
+        const currentVal = watchedValues.explanation || '';
+        insertSymbolIntoInputOrTextarea(el, currentVal, symbol, (newVal) => {
+          setValue('explanation', newVal, { shouldValidate: true, shouldDirty: true });
+        });
+        return;
+      }
     },
-    [lastFocusedTarget, isTargetValid, watchedValues.questionText, watchedValues.modelAnswer, watchedValues.rubric, setValue]
+    [lastFocusedTarget, isTargetValid, watchedValues.questionText, watchedValues.modelAnswer, watchedValues.rubric, watchedValues.options, watchedValues.explanation, setValue]
   );
 
   const handleAdminInsertTemplate = React.useCallback(() => {
@@ -380,7 +435,26 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
       });
       return;
     }
-  }, [lastFocusedTarget, isTargetValid, watchedValues.questionText, watchedValues.modelAnswer, watchedValues.rubric, setValue]);
+
+    if (target.field === 'options') {
+      const index = target.index;
+      const el = target.element || optionInputsRef.current[index] || null;
+      const currentVal = watchedValues.options?.[index]?.text || '';
+      insertTemplateIntoInputOrTextarea(el, currentVal, (newVal) => {
+        setValue(`options.${index}.text`, newVal, { shouldValidate: true, shouldDirty: true });
+      });
+      return;
+    }
+
+    if (target.field === 'explanation') {
+      const el = target.element || explanationRef.current;
+      const currentVal = watchedValues.explanation || '';
+      insertTemplateIntoInputOrTextarea(el, currentVal, (newVal) => {
+        setValue('explanation', newVal, { shouldValidate: true, shouldDirty: true });
+      });
+      return;
+    }
+  }, [lastFocusedTarget, isTargetValid, watchedValues.questionText, watchedValues.modelAnswer, watchedValues.rubric, watchedValues.options, watchedValues.explanation, setValue]);
 
 
   const submitHandler = (data: FormData) => {
@@ -421,6 +495,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     if (fields.length <= 2) return;
     const removedId = currentOptions[index]?.id;
     remove(index);
+    setLastFocusedTarget(null);
     if (removedId === currentCorrectAnswer) {
       const remaining = currentOptions.filter((_, idx) => idx !== index);
       if (remaining[0]?.id) {
@@ -428,6 +503,22 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
       }
     }
   };
+
+  const prevTypeRef = React.useRef(currentType);
+  React.useEffect(() => {
+    if (prevTypeRef.current !== currentType) {
+      prevTypeRef.current = currentType;
+      setLastFocusedTarget(null);
+    }
+  }, [currentType]);
+
+  const prevCorrectRef = React.useRef(currentCorrectAnswer);
+  React.useEffect(() => {
+    if (prevCorrectRef.current !== currentCorrectAnswer) {
+      prevCorrectRef.current = currentCorrectAnswer;
+      setLastFocusedTarget(null);
+    }
+  }, [currentCorrectAnswer]);
 
   const handleAddRubricCriterion = () => {
     appendRubric({ point: '', weight: 5 });
@@ -717,95 +808,148 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
             {fields.map((field, index) => {
               const optId = currentOptions[index]?.id || `opt${index + 1}`;
               const isCorrect = currentCorrectAnswer === optId;
+              const optText = currentOptions[index]?.text || '';
+              const optTextReg = register(`options.${index}.text`);
+              const isPreviewOpen = showOptionPreviews[index] ?? true;
 
               return (
-                <div
-                  key={field.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.375rem 0.5rem',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: isCorrect ? 'rgba(34, 197, 94, 0.08)' : 'var(--color-surface)',
-                    border: isCorrect ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid var(--color-border)',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <label
-                    title={`Mark ${optId} as correct`}
+                <div key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      cursor: 'pointer',
-                      padding: '0.25rem',
+                      gap: '0.5rem',
+                      padding: '0.375rem 0.5rem',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: isCorrect ? 'rgba(34, 197, 94, 0.08)' : 'var(--color-surface)',
+                      border: isCorrect ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid var(--color-border)',
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    <input
-                      type="radio"
-                      value={optId}
-                      checked={isCorrect}
-                      onChange={() => setValue('correctAnswer', optId, { shouldValidate: true })}
+                    <label
+                      title={`Mark ${optId} as correct`}
                       style={{
+                        display: 'flex',
+                        alignItems: 'center',
                         cursor: 'pointer',
-                        accentColor: 'var(--color-success, #22c55e)',
+                        padding: '0.25rem',
                       }}
-                    />
-                  </label>
+                    >
+                      <input
+                        type="radio"
+                        value={optId}
+                        checked={isCorrect}
+                        onChange={() => {
+                          setValue('correctAnswer', optId, { shouldValidate: true });
+                          setLastFocusedTarget(null);
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          accentColor: 'var(--color-success, #22c55e)',
+                        }}
+                      />
+                    </label>
 
-                  <input
-                    type="text"
-                    maxLength={4}
-                    placeholder="Key"
-                    {...register(`options.${index}.id`)}
-                    style={{
-                      width: '42px',
-                      textAlign: 'center',
-                      padding: '0.375rem 0.25rem',
-                      fontWeight: 700,
-                      fontSize: '0.8125rem',
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--color-border)',
-                      backgroundColor: 'var(--color-background-soft)',
-                      color: isCorrect ? 'var(--color-success, #22c55e)' : 'var(--color-text)',
-                    }}
-                  />
-
-                  <div style={{ flex: 1 }}>
                     <input
                       type="text"
-                      placeholder={`Option ${optId} text...`}
-                      {...register(`options.${index}.text`)}
+                      maxLength={4}
+                      placeholder="Key"
+                      {...register(`options.${index}.id`)}
                       style={{
-                        width: '100%',
-                        padding: '0.375rem 0.625rem',
+                        width: '42px',
+                        textAlign: 'center',
+                        padding: '0.375rem 0.25rem',
+                        fontWeight: 700,
                         fontSize: '0.8125rem',
                         borderRadius: 'var(--radius-sm)',
                         border: '1px solid var(--color-border)',
-                        backgroundColor: 'var(--color-surface)',
-                        color: 'var(--color-text)',
+                        backgroundColor: 'var(--color-background-soft)',
+                        color: isCorrect ? 'var(--color-success, #22c55e)' : 'var(--color-text)',
                       }}
                     />
-                  </div>
 
-                  {fields.length > 2 && (
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <input
+                        type="text"
+                        placeholder={`Option ${optId} text...`}
+                        {...optTextReg}
+                        ref={(e) => {
+                          optTextReg.ref(e);
+                          optionInputsRef.current[index] = e;
+                        }}
+                        onFocus={(e) => {
+                          setLastFocusedTarget({ field: 'options', index, element: e.currentTarget });
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.375rem 0.625rem',
+                          fontSize: '0.8125rem',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--color-border)',
+                          backgroundColor: 'var(--color-surface)',
+                          color: 'var(--color-text)',
+                        }}
+                      />
+                    </div>
+
                     <button
                       type="button"
-                      onClick={() => handleRemoveOption(index)}
-                      title="Remove option"
+                      onClick={() => toggleOptionPreview(index)}
+                      title={isPreviewOpen ? `Hide math preview for ${optId}` : `Show math preview for ${optId}`}
                       style={{
                         border: 'none',
                         background: 'none',
-                        color: 'var(--color-text-muted)',
+                        color: isPreviewOpen && optText.trim() ? 'var(--color-primary)' : 'var(--color-text-muted)',
                         cursor: 'pointer',
                         padding: '0.25rem',
                         borderRadius: 'var(--radius-sm)',
                         display: 'flex',
                         alignItems: 'center',
+                        flexShrink: 0,
                       }}
                     >
-                      <Trash2 size={14} />
+                      {isPreviewOpen ? <Eye size={14} /> : <EyeOff size={14} />}
                     </button>
+
+                    {fields.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveOption(index)}
+                        title="Remove option"
+                        style={{
+                          border: 'none',
+                          background: 'none',
+                          color: 'var(--color-text-muted)',
+                          cursor: 'pointer',
+                          padding: '0.25rem',
+                          borderRadius: 'var(--radius-sm)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {showMathPreview && isPreviewOpen && optText.trim() && (
+                    <div
+                      style={{
+                        marginLeft: '1.5rem',
+                        padding: '0.3125rem 0.5rem',
+                        borderRadius: 'var(--radius-sm)',
+                        backgroundColor: 'var(--color-background-soft)',
+                        border: '1px solid var(--color-border)',
+                        fontSize: '0.75rem',
+                        color: 'var(--color-text)',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', marginRight: '0.375rem' }}>
+                        Preview {optId}:
+                      </span>
+                      <FormattedMathText text={optText} />
+                    </div>
                   )}
                 </div>
               );
@@ -1058,42 +1202,102 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
 
       {/* Answer Explanation (Required for MCQ, Optional for Theory) */}
       <div>
-        <label
-          style={{
-            display: 'block',
-            fontSize: '0.8125rem',
-            fontWeight: 500,
-            color: 'var(--color-text)',
-            marginBottom: '0.375rem',
-          }}
-        >
-          {currentType === 'THEORY' ? 'Additional Notes / Explanation (Optional)' : 'Answer Explanation *'}
-        </label>
-        <textarea
-          rows={3}
-          placeholder={
-            currentType === 'THEORY'
-              ? 'Provide any extra pedagogical notes, common misconceptions, or reference formulas...'
-              : 'Explain why the selected option is correct and why other choices are invalid...'
-          }
-          {...register('explanation')}
-          style={{
-            width: '100%',
-            padding: '0.625rem 0.75rem',
-            borderRadius: 'var(--radius-md)',
-            border: errors.explanation ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-surface)',
-            color: 'var(--color-text)',
-            fontSize: '0.875rem',
-            lineHeight: 1.5,
-            resize: 'vertical',
-            fontFamily: 'inherit',
-          }}
-        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+          <label
+            style={{
+              fontSize: '0.8125rem',
+              fontWeight: 500,
+              color: 'var(--color-text)',
+            }}
+          >
+            {currentType === 'THEORY' ? 'Additional Notes / Explanation (Optional)' : 'Answer Explanation *'}
+          </label>
+          {showMathPreview && currentExplanation.trim() && (
+            <button
+              type="button"
+              onClick={() => setShowExplanationPreview((prev) => !prev)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: showExplanationPreview ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: '0.75rem',
+                padding: '0.125rem 0.25rem',
+              }}
+            >
+              {showExplanationPreview ? <EyeOff size={13} /> : <Eye size={13} />}
+              <span>{showExplanationPreview ? 'Hide Preview' : 'Show Preview'}</span>
+            </button>
+          )}
+        </div>
+        {(() => {
+          const expReg = register('explanation');
+          return (
+            <textarea
+              rows={3}
+              placeholder={
+                currentType === 'THEORY'
+                  ? 'Provide any extra pedagogical notes, common misconceptions, or reference formulas...'
+                  : 'Explain why the selected option is correct and why other choices are invalid...'
+              }
+              {...expReg}
+              ref={(e) => {
+                expReg.ref(e);
+                explanationRef.current = e;
+              }}
+              onFocus={(e) => {
+                setLastFocusedTarget({ field: 'explanation', element: e.currentTarget });
+              }}
+              style={{
+                width: '100%',
+                padding: '0.625rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                border: errors.explanation ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text)',
+                fontSize: '0.875rem',
+                lineHeight: 1.5,
+                resize: 'vertical',
+                fontFamily: 'inherit',
+              }}
+            />
+          );
+        })()}
         {errors.explanation?.message && (
           <span style={{ color: 'var(--color-danger)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
             {errors.explanation.message}
           </span>
+        )}
+        {showMathPreview && showExplanationPreview && currentExplanation.trim() && (
+          <div
+            style={{
+              marginTop: '0.5rem',
+              padding: '0.625rem 0.75rem',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-background-soft)',
+              border: '1px solid var(--color-border)',
+              fontSize: '0.875rem',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.6875rem',
+                fontWeight: 600,
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.25rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              Explanation Math Preview
+            </div>
+            <div style={{ color: 'var(--color-text)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              <FormattedMathText text={currentExplanation} />
+            </div>
+          </div>
         )}
       </div>
 

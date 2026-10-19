@@ -40,13 +40,25 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
 }) => {
   const isTheory = question.type === 'THEORY';
 
-  // Local state for theory answer to prevent keystrokes from re-rendering the entire exam route
+  // Local state for theory answer to prevent keystrokes from resetting caret on parent re-renders
   const [localText, setLocalText] = React.useState(writtenAnswer);
   const [showPreview, setShowPreview] = React.useState(true);
+  const lastQuestionIdRef = React.useRef(question._id);
 
+  // Sync external writtenAnswer into localText on question switch or when unfocused
   React.useEffect(() => {
-    setLocalText(writtenAnswer);
-  }, [writtenAnswer]);
+    if (question._id !== lastQuestionIdRef.current) {
+      lastQuestionIdRef.current = question._id;
+      setLocalText(writtenAnswer);
+    } else if (writtenAnswer !== localText && document.activeElement !== theoryTextareaRef?.current) {
+      setLocalText(writtenAnswer);
+    }
+  }, [question._id, writtenAnswer, theoryTextareaRef]);
+
+  const handleTextChange = React.useCallback((val: string) => {
+    setLocalText(val);
+    onWrittenAnswerChange?.(val);
+  }, [onWrittenAnswerChange]);
 
   const handleInsertSymbol = React.useCallback((sym: MathSymbolItem) => {
     insertSymbolIntoTextarea(
@@ -140,7 +152,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
           <textarea
             ref={theoryTextareaRef}
             value={localText}
-            onChange={(e) => setLocalText(e.target.value)}
+            onChange={(e) => handleTextChange(e.target.value)}
             disabled={disabled || isSubmitting}
             placeholder="Type your explanation, formula steps, or calculations here..."
             style={{

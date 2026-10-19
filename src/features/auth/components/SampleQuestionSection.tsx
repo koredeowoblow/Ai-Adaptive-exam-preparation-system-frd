@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { CheckCircle2, XCircle, RotateCcw, ArrowRight, Sparkles } from 'lucide-react';
 import { SAMPLE_QUESTIONS, type SampleQuestion, type DifficultyLevel } from '../data/sampleQuestions';
+import { FormattedMathText } from '../../../shared/components/FormattedMathText';
 
 export const SampleQuestionSection: React.FC = () => {
   // Rotate selection across visits
@@ -133,7 +134,7 @@ export const SampleQuestionSection: React.FC = () => {
         <div className="flex-1 flex flex-col justify-between">
           <div>
             <h3 className="text-lg sm:text-xl font-semibold text-[var(--auth-text)] tracking-[-0.01em] mb-6 leading-snug">
-              {currentQ.questionText}
+              <FormattedMathText text={currentQ.questionText} />
             </h3>
 
             {/* Options List */}
@@ -183,7 +184,9 @@ export const SampleQuestionSection: React.FC = () => {
                     >
                       {opt.id}
                     </span>
-                    <span className="flex-1 text-sm font-medium">{opt.text}</span>
+                    <span className="flex-1 text-sm font-medium">
+                      <FormattedMathText text={opt.text} />
+                    </span>
 
                     {/* Feedback Icon */}
                     {isAnswered && isCorrectOption && (
@@ -220,9 +223,9 @@ export const SampleQuestionSection: React.FC = () => {
                     {isCorrect ? 'Correct analysis' : 'Explanation'}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-[var(--auth-text)] leading-relaxed m-0">
-                  {currentQ.explanation}
-                </p>
+                <div className="text-xs sm:text-sm text-[var(--auth-text)] leading-relaxed m-0">
+                  <FormattedMathText text={currentQ.explanation} />
+                </div>
               </div>
             )}
           </div>

@@ -28,6 +28,7 @@ import {
 import type { AdminExamSession } from '../../types/practice.types';
 import type { Course } from '../../types/course.types';
 import { toast } from 'sonner';
+import { FormattedMathText } from '../../shared/components/FormattedMathText';
 
 interface SessionSearch {
   q?: string;
@@ -1141,7 +1142,7 @@ function SessionInspector({
                   </div>
 
                   {/* Question Prompt */}
-                  <p
+                  <div
                     style={{
                       fontSize: '0.85rem',
                       color: 'var(--color-text-primary)',
@@ -1149,8 +1150,12 @@ function SessionInspector({
                       margin: 0,
                     }}
                   >
-                    {qDoc?.questionText || `Question ID: ${q.questionId}`}
-                  </p>
+                    {qDoc?.questionText ? (
+                      <FormattedMathText text={qDoc.questionText} />
+                    ) : (
+                      `Question ID: ${q.questionId}`
+                    )}
+                  </div>
 
                   {/* Student Submission vs Correct Answer */}
                   <div
@@ -1174,7 +1179,20 @@ function SessionInspector({
                           color: isCorrect ? '#10b981' : '#ef4444',
                         }}
                       >
-                        {q.selectedAnswer || q.writtenAnswer || '(No response provided)'}
+                        {q.selectedAnswer ? (
+                          qDoc?.options?.find((o: any) => o.id === q.selectedAnswer) ? (
+                            <span>
+                              <strong>{q.selectedAnswer}: </strong>
+                              <FormattedMathText text={qDoc.options.find((o: any) => o.id === q.selectedAnswer)!.text} />
+                            </span>
+                          ) : (
+                            q.selectedAnswer
+                          )
+                        ) : q.writtenAnswer ? (
+                          <FormattedMathText text={q.writtenAnswer} />
+                        ) : (
+                          '(No response provided)'
+                        )}
                       </span>
                     </div>
 
@@ -1184,14 +1202,21 @@ function SessionInspector({
                           Expected Correct:
                         </span>{' '}
                         <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                          {qDoc.correctAnswer}
+                          {qDoc.options?.find((o: any) => o.id === qDoc.correctAnswer) ? (
+                            <span>
+                              <strong>{qDoc.correctAnswer}: </strong>
+                              <FormattedMathText text={qDoc.options.find((o: any) => o.id === qDoc.correctAnswer)!.text} />
+                            </span>
+                          ) : (
+                            qDoc.correctAnswer
+                          )}
                         </span>
                       </div>
                     )}
 
                     {q.feedback && (
                       <div style={{ marginTop: '4px', fontStyle: 'italic', color: 'var(--color-text-secondary)' }}>
-                        Feedback: {q.feedback}
+                        Feedback: <FormattedMathText text={q.feedback} />
                       </div>
                     )}
                   </div>

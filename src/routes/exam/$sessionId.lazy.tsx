@@ -132,6 +132,46 @@ function ExamSessionRoute() {
     }));
   }, [activeQuestionId]);
 
+  const flushCurrentDraft = React.useCallback(() => {
+    if (activeQuestionId && theoryTextareaRef.current && activeQuestionObj?.type === 'THEORY') {
+      const currentText = theoryTextareaRef.current.value;
+      setAnswersMap(prev => {
+        if (prev[activeQuestionId]?.writtenAnswer === currentText) return prev;
+        const updated = {
+          ...prev,
+          [activeQuestionId]: {
+            ...prev[activeQuestionId],
+            writtenAnswer: currentText,
+          }
+        };
+        try {
+          localStorage.setItem(`exam_answers_${sessionId}`, JSON.stringify(updated));
+        } catch {
+          // Ignore storage write failure
+        }
+        return updated;
+      });
+    }
+  }, [activeQuestionId, activeQuestionObj, sessionId]);
+
+  // Synchronously persist draft to localStorage on tab switch or page close
+  React.useEffect(() => {
+    const handleBeforeUnload = () => {
+      flushCurrentDraft();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushCurrentDraft();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [flushCurrentDraft]);
+
   const saveCurrentTime = React.useCallback(() => {
     if (activeQuestionId) {
       setAnswersMap(prev => ({
@@ -145,26 +185,29 @@ function ExamSessionRoute() {
   }, [activeQuestionId, getQuestionElapsedSeconds]);
 
   const handleNext = React.useCallback(() => {
+    flushCurrentDraft();
     saveCurrentTime();
     if (currentIndex < questionsList.length - 1) {
       questionStartTimeRef.current = Date.now();
       setCurrentIndex(currentIndex + 1);
     }
-  }, [currentIndex, questionsList.length, saveCurrentTime]);
+  }, [currentIndex, questionsList.length, saveCurrentTime, flushCurrentDraft]);
 
   const handlePrev = React.useCallback(() => {
+    flushCurrentDraft();
     saveCurrentTime();
     if (currentIndex > 0) {
       questionStartTimeRef.current = Date.now();
       setCurrentIndex(currentIndex - 1);
     }
-  }, [currentIndex, saveCurrentTime]);
+  }, [currentIndex, saveCurrentTime, flushCurrentDraft]);
 
   const handleJumpToQuestion = React.useCallback((index: number) => {
+    flushCurrentDraft();
     saveCurrentTime();
     questionStartTimeRef.current = Date.now();
     setCurrentIndex(index);
-  }, [saveCurrentTime]);
+  }, [saveCurrentTime, flushCurrentDraft]);
 
   const processSubmission = React.useCallback((answersToSubmit: Record<string, AnswerState>) => {
     const payload = {
@@ -193,25 +236,30 @@ function ExamSessionRoute() {
   }, [submitBatchAnswers, navigate, sessionId]);
 
   const handleSubmit = React.useCallback(() => {
-    // Flush local answer if active question is THEORY to prevent data loss if submit is clicked before blur
-    if (activeQuestionObj?.type === 'THEORY' && theoryTextareaRef.current) {
-      const currentText = theoryTextareaRef.current.value;
-      if (currentText !== answersMap[activeQuestionId]?.writtenAnswer) {
-        setAnswersMap(prev => ({
-          ...prev,
-          [activeQuestionId]: {
-            ...prev[activeQuestionId],
-            writtenAnswer: currentText,
-            timeTaken: (prev[activeQuestionId]?.timeTaken || 0) + getQuestionElapsedSeconds()
-          }
-        }));
-      }
-    }
-
+    flushCurrentDraft();
     saveCurrentTime();
     
     // Process submit using functional state update to guarantee we have the freshly flushed state
     setAnswersMap(currentAnswersMap => {
+      // Ensure the latest text in theory textarea is included even if focused
+      if (activeQuestionObj?.type === 'THEORY' && theoryTextareaRef.current) {
+        const liveVal = theoryTextareaRef.current.value;
+        if (currentAnswersMap[activeQuestionId]?.writtenAnswer !== liveVal) {
+          currentAnswersMap = {
+            ...currentAnswersMap,
+            [activeQuestionId]: {
+              ...currentAnswersMap[activeQuestionId],
+              writtenAnswer: liveVal,
+            }
+          };
+          try {
+            localStorage.setItem(`exam_answers_${sessionId}`, JSON.stringify(currentAnswersMap));
+          } catch {
+            // Ignore storage write failure
+          }
+        }
+      }
+
       const answeredCount = Object.keys(currentAnswersMap).filter(id => currentAnswersMap[id].selectedAnswer || currentAnswersMap[id].writtenAnswer).length;
 
       if (answeredCount < questionsList.length) {
@@ -225,7 +273,7 @@ function ExamSessionRoute() {
       processSubmission(currentAnswersMap);
       return currentAnswersMap;
     });
-  }, [activeQuestionObj, activeQuestionId, answersMap, questionsList.length, saveCurrentTime, processSubmission]);
+  }, [activeQuestionObj, activeQuestionId, questionsList.length, saveCurrentTime, processSubmission, flushCurrentDraft, sessionId]);
 
   if (isLoading) {
     return (

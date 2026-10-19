@@ -19,6 +19,7 @@ import { EmptyState } from '../../shared/components/EmptyState';
 import { Button } from '../../shared/components/Button';
 import { QuestionForm } from '../../features/admin/components/QuestionForm';
 import { QuestionBulkImportModal } from '../../features/admin/components/QuestionBulkImportModal';
+import { FormattedMathText, stripMathDelimiters } from '../../shared/components/FormattedMathText';
 import {
   Plus,
   Search,
@@ -413,7 +414,7 @@ function QuestionsAdminRoute() {
         const failureNames = failedIndices
           .map((i) => {
             const match = rawQuestions.find((q) => q._id === ids[i]);
-            return match ? (match.questionText || ids[i]).slice(0, 25) : ids[i];
+            return match ? (stripMathDelimiters(match.questionText) || ids[i]).slice(0, 25) : ids[i];
           })
           .join(', ');
         toast.error(`Failed to delete ${failed} question${failed === 1 ? '' : 's'}: ${failureNames}`);
@@ -549,9 +550,9 @@ function QuestionsAdminRoute() {
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
               }}
-              title={q.cleanPrompt}
+              title={stripMathDelimiters(q.cleanPrompt)}
             >
-              {q.cleanPrompt}
+              <FormattedMathText text={q.cleanPrompt} />
             </span>
           </div>
           {q.variantTag && (
@@ -1139,7 +1140,7 @@ function QuestionsAdminRoute() {
                   color: 'var(--color-text)',
                 }}
               >
-                {viewingQuestion.cleanPrompt}
+                <FormattedMathText text={viewingQuestion.cleanPrompt} />
               </div>
               {viewingQuestion.variantTag && (
                 <div style={{ marginTop: '0.375rem', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
@@ -1187,7 +1188,9 @@ function QuestionsAdminRoute() {
                       whiteSpace: 'pre-wrap',
                     }}
                   >
-                    {viewingQuestion.modelAnswer || (
+                    {viewingQuestion.modelAnswer ? (
+                      <FormattedMathText text={viewingQuestion.modelAnswer} />
+                    ) : (
                       <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                         No formal model answer specified. Free response evaluated against course rubric.
                       </span>
@@ -1211,7 +1214,9 @@ function QuestionsAdminRoute() {
                         <tbody>
                           {viewingQuestion.rubric.map((r, idx) => (
                             <tr key={idx} style={{ borderBottom: idx < viewingQuestion.rubric!.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
-                              <td style={{ padding: '0.5rem 0.75rem', color: 'var(--color-text)' }}>{r.point}</td>
+                              <td style={{ padding: '0.5rem 0.75rem', color: 'var(--color-text)' }}>
+                                <FormattedMathText text={r.point} />
+                              </td>
                               <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 600, color: '#8b5cf6' }}>
                                 {r.weight} pt{r.weight !== 1 ? 's' : ''}
                               </td>
@@ -1296,7 +1301,7 @@ function QuestionsAdminRoute() {
                               {opt.id}
                             </span>
                             <span style={{ color: 'var(--color-text)', fontWeight: isCorrect ? 600 : 400 }}>
-                              {opt.text}
+                              <FormattedMathText text={opt.text} />
                             </span>
                           </div>
                           {isCorrect && (
@@ -1339,7 +1344,11 @@ function QuestionsAdminRoute() {
                   color: 'var(--color-text-secondary)',
                 }}
               >
-                {viewingQuestion.explanation || 'No explanation provided.'}
+                {viewingQuestion.explanation ? (
+                  <FormattedMathText text={viewingQuestion.explanation} />
+                ) : (
+                  'No explanation provided.'
+                )}
               </div>
             </div>
 

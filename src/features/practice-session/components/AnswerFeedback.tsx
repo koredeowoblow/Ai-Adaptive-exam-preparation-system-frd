@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Button } from '../../../shared/components/Button';
 import { useAITutor } from '../hooks/useAITutor';
 import { CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { FormattedMathText } from '../../../shared/components/FormattedMathText';
 
 export interface AnswerFeedbackProps {
   isCorrect?: boolean;
@@ -86,7 +87,7 @@ export const AnswerFeedback: React.FC<AnswerFeedbackProps> = ({
               AI Grade: {Math.round(score * 100)}%
             </h3>
             <div style={{ fontSize: '1.1rem', color: 'var(--color-text)', lineHeight: 1.6 }}>
-              {theoryFeedback}
+              <FormattedMathText text={theoryFeedback} />
             </div>
           </div>
         </div>
@@ -139,7 +140,7 @@ export const AnswerFeedback: React.FC<AnswerFeedbackProps> = ({
             {isCorrect ? 'Correct!' : 'Incorrect'}
           </h3>
           <div style={{ fontSize: '1.1rem', color: 'var(--color-text)', lineHeight: 1.6 }}>
-            {explanation}
+            <FormattedMathText text={explanation} />
           </div>
         </div>
       </div>
@@ -178,7 +179,7 @@ export const AnswerFeedback: React.FC<AnswerFeedbackProps> = ({
                 <h4 style={{ fontWeight: 600, fontSize: '1.1rem' }}>AI Concept Review</h4>
               </div>
               <div style={{ color: 'var(--color-text)', whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: '0.95rem' }}>
-                {aiResponse.data.explanation}
+                <FormattedMathText text={aiResponse.data.explanation} />
               </div>
             </div>
           )}

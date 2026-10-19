@@ -5,6 +5,7 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { Skeleton } from '../../shared/components/Skeleton';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { Button } from '../../shared/components/Button';
+import { FormattedMathText, stripMathDelimiters } from '../../shared/components/FormattedMathText';
 import {
   BarChart,
   Bar,
@@ -721,8 +722,20 @@ export function AdminTopicAnalyticsPage() {
                           {q.type}
                         </span>
                       </td>
-                      <td style={{ padding: '0.75rem 0.5rem', fontWeight: 500, color: 'var(--color-text)', maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {q.questionText}
+                      <td 
+                        style={{ 
+                          padding: '0.75rem 0.5rem', 
+                          fontWeight: 500, 
+                          color: 'var(--color-text)', 
+                          maxWidth: 400, 
+                          overflow: 'hidden', 
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'normal',
+                          lineHeight: 1.4,
+                        }}
+                        title={stripMathDelimiters(q.questionText)}
+                      >
+                        <FormattedMathText text={q.questionText} />
                       </td>
                       <td style={{ padding: '0.75rem 0.5rem' }}>
                         <span
