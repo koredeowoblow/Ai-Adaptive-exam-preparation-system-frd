@@ -1,7 +1,10 @@
 import * as React from 'react';
+import { ShieldAlert, X } from 'lucide-react';
+
+export type IntegrityViolationType = 'tab_switch' | 'copy_paste' | 'screenshot' | 'right_click' | 'window_blur';
 
 interface IntegrityWarningBannerProps {
-  violationType: 'tab_switch' | 'copy_paste' | null;
+  violationType: IntegrityViolationType | null;
   onDismiss: () => void;
 }
 
@@ -11,9 +14,12 @@ export const IntegrityWarningBanner: React.FC<IntegrityWarningBannerProps> = ({
 }) => {
   if (!violationType) return null;
 
-  const messages = {
+  const messages: Record<IntegrityViolationType, string> = {
     tab_switch: "Warning: Leaving the exam tab is recorded. Please stay focused on this window.",
-    copy_paste: "Warning: Copy-pasting is not permitted during the exam."
+    copy_paste: "Warning: Copying, cutting, or pasting is not permitted during proctored exams.",
+    screenshot: "Security Alert: Screenshot attempt detected and blocked. Screen capture is strictly prohibited.",
+    right_click: "Notice: Right-click context menus are disabled during proctored exams.",
+    window_blur: "Warning: Exam window lost focus. Please remain in the exam window."
   };
 
   return (
@@ -23,22 +29,18 @@ export const IntegrityWarningBanner: React.FC<IntegrityWarningBannerProps> = ({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: 'var(--color-danger-light)',
-        border: '1px solid var(--color-danger)',
-        color: 'var(--color-danger)',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        border: '1px solid var(--color-danger, #ef4444)',
+        color: 'var(--color-danger, #ef4444)',
         padding: 'var(--space-12) var(--space-16)',
-        borderRadius: 'var(--radius-lg)',
-        marginBottom: 'var(--space-32)',
+        borderRadius: 'var(--radius-lg, 12px)',
+        marginBottom: 'var(--space-24)',
         boxShadow: 'var(--shadow-sm)',
         animation: 'slideUp 0.3s ease-out'
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-12)' }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/>
-          <line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
+        <ShieldAlert size={20} style={{ flexShrink: 0 }} />
         <span className="body-base" style={{ fontWeight: 600 }}>{messages[violationType]}</span>
       </div>
       <button 
@@ -51,9 +53,7 @@ export const IntegrityWarningBanner: React.FC<IntegrityWarningBannerProps> = ({
           transition: 'opacity 0.2s ease'
         }}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
+        <X size={18} />
       </button>
     </div>
   );

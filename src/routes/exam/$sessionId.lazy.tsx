@@ -11,6 +11,8 @@ import { Button } from "../../shared/components/Button";
 import { ChevronLeft, ChevronRight, Loader2, AlertTriangle, ShieldAlert, Maximize2 } from "lucide-react";
 import { useAntiCheat } from "../../features/practice-session/hooks/useAntiCheat";
 import { IntegrityWarningBanner } from "../../features/practice-session/components/IntegrityWarningBanner";
+import { ExamNoticeModal } from "../../features/practice-session/components/ExamNoticeModal";
+import { FullscreenEnforcerOverlay } from "../../features/practice-session/components/FullscreenEnforcerOverlay";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { QuestionCard } from "../../features/practice-session/components/QuestionCard";
 import { ConfirmDialog } from "../../shared/components/ConfirmDialog";
@@ -98,9 +100,37 @@ function ExamSessionRoute() {
     ? (questionsList[currentIndex]?.questionId as any)?._id 
     : questionsList[currentIndex]?.questionId;
 
-  const { isFullscreen, requestFullscreen, lastViolationType, clearViolation } = useAntiCheat(
+  const [hasStartedExam, setHasStartedExam] = React.useState<boolean>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(`exam_answers_${sessionId}`);
+        if (saved && Object.keys(JSON.parse(saved)).length > 0) return true;
+        return sessionStorage.getItem(`exam_started_${sessionId}`) === 'true';
+      }
+    } catch {
+      // fallback
+    }
+    return false;
+  });
+
+  const handleStartExam = React.useCallback(() => {
+    try {
+      sessionStorage.setItem(`exam_started_${sessionId}`, 'true');
+    } catch {
+      // ignore
+    }
+    setHasStartedExam(true);
+  }, [sessionId]);
+
+  const {
+    isFullscreen,
+    requestFullscreen,
+    lastViolationType,
+    clearViolation,
+    isProtectionFlashing,
+  } = useAntiCheat(
     sessionId,
-    isMonitoring,
+    isMonitoring && hasStartedExam,
     theoryTextareaRef,
     activeQuestionId
   );
@@ -376,7 +406,48 @@ function ExamSessionRoute() {
   })();
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-background)', display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--color-background)',
+        display: 'flex',
+        flexDirection: 'column',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+      }}
+    >
+      {/* Blackout Flash Screen on Screenshot Attempt */}
+      {isProtectionFlashing && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999999,
+            backgroundColor: '#000000',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
+      {/* Pre-Exam Anti-Cheat Notice & Gatekeeper Modal */}
+      <ExamNoticeModal
+        isOpen={!hasStartedExam && isMonitoring}
+        onStartExam={handleStartExam}
+        onRequestFullscreen={requestFullscreen}
+        courseTitle={
+          typeof responseData?.session?.courseId === 'object'
+            ? (responseData?.session?.courseId as any)?.title
+            : 'Assessment'
+        }
+        questionCount={questionsList.length}
+      />
+
+      {/* Strict Fullscreen Enforcer Overlay during Exam */}
+      <FullscreenEnforcerOverlay
+        isVisible={hasStartedExam && isMonitoring && !isFullscreen}
+        onRequestFullscreen={requestFullscreen}
+      />
+
     <header style={{
       background: 'var(--color-surface-0)',
       borderBottom: '1px solid var(--color-border)',

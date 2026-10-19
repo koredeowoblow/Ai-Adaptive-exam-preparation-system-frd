@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { practiceApi } from '../api/practice.api';
 import type { AntiCheatEventType, IAntiCheatEvent } from '../../../types/practice.types';
+import type { IntegrityViolationType } from '../components/IntegrityWarningBanner';
 
 export const useAntiCheat = (
   sessionId?: string,
@@ -16,7 +17,9 @@ export const useAntiCheat = (
   const [isFullscreen, setIsFullscreen] = useState<boolean>(() => {
     return typeof document !== 'undefined' && Boolean(document.fullscreenElement);
   });
-  const [lastViolationType, setLastViolationType] = useState<'tab_switch' | 'copy_paste' | null>(null);
+  const [lastViolationType, setLastViolationType] = useState<IntegrityViolationType | null>(null);
+  const [isProtectionFlashing, setIsProtectionFlashing] = useState<boolean>(false);
+  const [violationCount, setViolationCount] = useState<number>(0);
 
   const clearViolation = useCallback(() => {
     setLastViolationType(null);
@@ -25,7 +28,9 @@ export const useAntiCheat = (
   const requestFullscreen = useCallback(async () => {
     try {
       if (typeof document !== 'undefined' && !document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        }
       }
     } catch (err) {
       console.warn('Failed to enter fullscreen mode:', err);
@@ -61,6 +66,23 @@ export const useAntiCheat = (
       });
     };
 
+    // Trigger black overlay defense & clipboard wipe for screen capture attempts
+    const triggerScreenshotDefense = (keyName: string) => {
+      setIsProtectionFlashing(true);
+      setTimeout(() => {
+        setIsProtectionFlashing(false);
+      }, 700);
+
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText('').catch(() => {});
+      }
+
+      pushEvent('TAB_SWITCH', { reason: 'screenshot_attempt', key: keyName });
+      setLastViolationType('screenshot');
+      setViolationCount((prev) => prev + 1);
+      flushEvents();
+    };
+
     // 1. Fullscreen monitoring
     const handleFullscreenChange = () => {
       const active = Boolean(document.fullscreenElement);
@@ -68,6 +90,7 @@ export const useAntiCheat = (
       if (!active) {
         pushEvent('TAB_SWITCH', { reason: 'fullscreen_exit' });
         setLastViolationType('tab_switch');
+        setViolationCount((prev) => prev + 1);
         flushEvents();
       }
     };
@@ -76,18 +99,25 @@ export const useAntiCheat = (
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         blurTimeRef.current = Date.now();
+        pushEvent('TAB_SWITCH', { reason: 'tab_hidden' });
         setLastViolationType('tab_switch');
+        setViolationCount((prev) => prev + 1);
+        flushEvents();
       } else if (blurTimeRef.current) {
         const awayDurationMs = Date.now() - blurTimeRef.current;
         pushEvent('TAB_SWITCH', { awayDurationMs });
         blurTimeRef.current = null;
+        flushEvents();
       }
     };
 
     const handleBlur = () => {
       if (!blurTimeRef.current) {
         blurTimeRef.current = Date.now();
-        setLastViolationType('tab_switch');
+        pushEvent('TAB_SWITCH', { reason: 'window_blur' });
+        setLastViolationType('window_blur');
+        setViolationCount((prev) => prev + 1);
+        flushEvents();
       }
     };
 
@@ -96,6 +126,7 @@ export const useAntiCheat = (
         const awayDurationMs = Date.now() - blurTimeRef.current;
         pushEvent('TAB_SWITCH', { awayDurationMs });
         blurTimeRef.current = null;
+        flushEvents();
       }
     };
 
@@ -104,6 +135,8 @@ export const useAntiCheat = (
       const text = e.clipboardData?.getData('text/plain') || '';
       pushEvent('PASTE_DETECTED', { pastedLength: text.length });
       setLastViolationType('copy_paste');
+      setViolationCount((prev) => prev + 1);
+      flushEvents();
     };
 
     const textarea = theoryTextareaRef?.current;
@@ -111,19 +144,94 @@ export const useAntiCheat = (
       textarea.addEventListener('paste', handlePaste);
     }
 
-    // 4. Right Click
+    // 4. Copy and Cut Blocking
+    const handleCopyCut = (e: ClipboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInsideAllowed = activeEl === theoryTextareaRef?.current;
+      if (!isInsideAllowed) {
+        e.preventDefault();
+        pushEvent('PASTE_DETECTED', { reason: 'copy_blocked' });
+        setLastViolationType('copy_paste');
+        setViolationCount((prev) => prev + 1);
+        flushEvents();
+      }
+    };
+
+    // 5. Right Click
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault(); // Block context menu
       pushEvent('RIGHT_CLICK_BLOCKED');
+      setLastViolationType('right_click');
+      setViolationCount((prev) => prev + 1);
+      flushEvents();
     };
 
-    // 5. DevTools Detection (Heuristic)
+    // 6. Screenshot & Shortcut Interception
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // PrintScreen Key
+      if (e.key === 'PrintScreen' || e.code === 'PrintScreen') {
+        e.preventDefault();
+        triggerScreenshotDefense('PrintScreen');
+        return;
+      }
+
+      // Windows Snipping Tool (Win+Shift+S triggers shift+S in browser) or Ctrl+Shift+S
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault();
+        triggerScreenshotDefense('SnippingTool_Shortcut');
+        return;
+      }
+
+      // Mac Screenshot Shortcuts (Cmd+Shift+3, Cmd+Shift+4, Cmd+Shift+5)
+      if (e.metaKey && e.shiftKey && ['3', '4', '5'].includes(e.key)) {
+        e.preventDefault();
+        triggerScreenshotDefense('Mac_Screenshot');
+        return;
+      }
+
+      // Print Page (Ctrl+P, Cmd+P)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'P' || e.key === 'p')) {
+        e.preventDefault();
+        pushEvent('TAB_SWITCH', { reason: 'print_attempt' });
+        setLastViolationType('screenshot');
+        setViolationCount((prev) => prev + 1);
+        flushEvents();
+        return;
+      }
+
+      // Save Page (Ctrl+S, Cmd+S)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault();
+        return;
+      }
+
+      // DevTools Shortcuts (F12, Ctrl+Shift+I/J/C)
+      if (
+        e.key === 'F12' ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key))
+      ) {
+        e.preventDefault();
+        pushEvent('DEVTOOLS_DETECTED', { key: e.key });
+        setLastViolationType('tab_switch');
+        setViolationCount((prev) => prev + 1);
+        flushEvents();
+        return;
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'PrintScreen' || e.code === 'PrintScreen') {
+        triggerScreenshotDefense('PrintScreen_Release');
+      }
+    };
+
+    // 7. DevTools Window Dimension Detection (Heuristic)
     let devToolsOpen = false;
     const checkDevTools = setInterval(() => {
       const widthDiff = window.outerWidth - window.innerWidth;
       const heightDiff = window.outerHeight - window.innerHeight;
       
-      const threshold = 160; // Common threshold for open devtools
+      const threshold = 160;
       const isCurrentlyOpen = widthDiff > threshold || heightDiff > threshold;
 
       if (isCurrentlyOpen && !devToolsOpen) {
@@ -142,6 +250,10 @@ export const useAntiCheat = (
     window.addEventListener('blur', handleBlur);
     window.addEventListener('focus', handleFocus);
     document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('copy', handleCopyCut);
+    document.addEventListener('cut', handleCopyCut);
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    window.addEventListener('keyup', handleKeyUp, { capture: true });
 
     return () => {
       clearInterval(checkDevTools);
@@ -151,6 +263,10 @@ export const useAntiCheat = (
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('copy', handleCopyCut);
+      document.removeEventListener('cut', handleCopyCut);
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+      window.removeEventListener('keyup', handleKeyUp, { capture: true });
       
       if (textarea) {
         textarea.removeEventListener('paste', handlePaste);
@@ -160,5 +276,12 @@ export const useAntiCheat = (
     };
   }, [isMonitoring, flushEvents, theoryTextareaRef]);
 
-  return { isFullscreen, requestFullscreen, lastViolationType, clearViolation };
+  return {
+    isFullscreen,
+    requestFullscreen,
+    lastViolationType,
+    clearViolation,
+    isProtectionFlashing,
+    violationCount,
+  };
 };
