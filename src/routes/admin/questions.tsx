@@ -1422,6 +1422,7 @@ function QuestionsAdminRoute() {
         isOpen={isBulkImportOpen}
         onClose={() => setIsBulkImportOpen(false)}
         topics={topics}
+        courses={courses}
         selectedTopicId={selectedTopicFilter || undefined}
         onImport={handleBulkImport}
         isImporting={isBulkImporting}
