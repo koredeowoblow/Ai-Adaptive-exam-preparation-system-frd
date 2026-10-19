@@ -36,9 +36,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
             className="inline-flex items-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-[var(--auth-accent)] rounded-lg p-1 -ml-1 text-[var(--auth-text)]"
             aria-label="EduAdapt Home"
           >
-            <div className="w-8 h-8 rounded-lg bg-[var(--auth-accent)]/10 text-[var(--auth-accent)] flex items-center justify-center">
-              <EduAdaptLogo size={20} />
-            </div>
+            <EduAdaptLogo size={32} />
             <span className="font-bold text-lg tracking-[-0.01em]">EduAdapt</span>
           </Link>
 

@@ -1,5 +1,5 @@
 import { createLazyFileRoute, Link } from '@tanstack/react-router';
-import { GraduationCap } from 'lucide-react';
+import { EduAdaptLogo } from '../features/auth/components/EduAdaptLogo';
 import { LoginForm } from '../features/auth/components/LoginForm';
 import { LoginSampleQuestionCard } from '../features/auth/components/LoginSampleQuestionCard';
 import { LoginThemeToggle } from '../features/auth/components/LoginThemeToggle';
@@ -28,9 +28,7 @@ function LoginRouteComponent() {
             className="inline-flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#0E6BA8] rounded-xl p-1 -ml-1"
             aria-label="EduAdapt Home"
           >
-            <div className="w-10 h-10 rounded-xl bg-[#0E6BA8] flex items-center justify-center text-white shadow-sm">
-              <GraduationCap size={22} aria-hidden="true" />
-            </div>
+            <EduAdaptLogo size={40} />
             <span className="font-heading font-bold text-2xl tracking-tight text-white">
               EduAdapt
             </span>
@@ -70,9 +68,7 @@ function LoginRouteComponent() {
               className="inline-flex items-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-[#0E6BA8] rounded-xl p-1 -ml-1 text-[#0B2239] dark:text-white"
               aria-label="EduAdapt Home"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#0E6BA8] flex items-center justify-center text-white shadow-sm">
-                <GraduationCap size={22} aria-hidden="true" />
-              </div>
+              <EduAdaptLogo size={36} />
               <span className="font-heading font-bold text-xl tracking-tight">
                 EduAdapt
               </span>

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { useAuth } from '../../../features/auth/hooks/useAuth';
+import { EduAdaptLogo } from '../../../features/auth/components/EduAdaptLogo';
 import {
   LayoutDashboard, ClipboardList, BarChart3, Trophy, Award, User,
   BookOpen, MessageSquare, CalendarDays, LogOut, History,
@@ -73,14 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
       {/* Brand */}
       <div className="app-sidebar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'rgba(255, 255, 255, 0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.9rem', fontFamily: "'Outfit', sans-serif" }}>E</span>
-          </div>
+          <EduAdaptLogo size={32} />
           <div>
             <span
               style={{

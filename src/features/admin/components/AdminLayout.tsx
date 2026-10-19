@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { FocusTrap } from 'focus-trap-react';
 import { useAuth } from '../../../features/auth/hooks/useAuth';
+import { EduAdaptLogo } from '../../../features/auth/components/EduAdaptLogo';
 import { useTheme } from '../../../shared/hooks/useTheme';
 import {
   useDepartments,
@@ -174,23 +175,7 @@ export const AdminLayout: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '6px',
-                  backgroundColor: 'var(--color-primary, #0ea5e9)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#ffffff',
-                  fontWeight: 800,
-                  fontSize: '0.95rem',
-                  boxShadow: '0 1px 4px rgba(14, 165, 233, 0.35)',
-                }}
-              >
-                E
-              </div>
+              <EduAdaptLogo size={32} />
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span
                   style={{
