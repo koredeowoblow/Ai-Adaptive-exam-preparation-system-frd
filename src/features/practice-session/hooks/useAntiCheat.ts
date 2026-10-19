@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { practiceApi } from '../api/practice.api';
 import type { AntiCheatEventType, IAntiCheatEvent } from '../../../types/practice.types';
 
@@ -12,6 +12,25 @@ export const useAntiCheat = (
   const activeQuestionIdRef = useRef(activeQuestionId);
   const eventBufferRef = useRef<IAntiCheatEvent[]>([]);
   const blurTimeRef = useRef<number | null>(null);
+
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(() => {
+    return typeof document !== 'undefined' && Boolean(document.fullscreenElement);
+  });
+  const [lastViolationType, setLastViolationType] = useState<'tab_switch' | 'copy_paste' | null>(null);
+
+  const clearViolation = useCallback(() => {
+    setLastViolationType(null);
+  }, []);
+
+  const requestFullscreen = useCallback(async () => {
+    try {
+      if (typeof document !== 'undefined' && !document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (err) {
+      console.warn('Failed to enter fullscreen mode:', err);
+    }
+  }, []);
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -42,10 +61,22 @@ export const useAntiCheat = (
       });
     };
 
-    // 1. Tab Focus / Visibility
+    // 1. Fullscreen monitoring
+    const handleFullscreenChange = () => {
+      const active = Boolean(document.fullscreenElement);
+      setIsFullscreen(active);
+      if (!active) {
+        pushEvent('TAB_SWITCH', { reason: 'fullscreen_exit' });
+        setLastViolationType('tab_switch');
+        flushEvents();
+      }
+    };
+
+    // 2. Tab Focus / Visibility
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         blurTimeRef.current = Date.now();
+        setLastViolationType('tab_switch');
       } else if (blurTimeRef.current) {
         const awayDurationMs = Date.now() - blurTimeRef.current;
         pushEvent('TAB_SWITCH', { awayDurationMs });
@@ -56,6 +87,7 @@ export const useAntiCheat = (
     const handleBlur = () => {
       if (!blurTimeRef.current) {
         blurTimeRef.current = Date.now();
+        setLastViolationType('tab_switch');
       }
     };
 
@@ -67,10 +99,11 @@ export const useAntiCheat = (
       }
     };
 
-    // 2. Paste Detection (Target theory textarea)
+    // 3. Paste Detection (Target theory textarea)
     const handlePaste = (e: ClipboardEvent) => {
       const text = e.clipboardData?.getData('text/plain') || '';
       pushEvent('PASTE_DETECTED', { pastedLength: text.length });
+      setLastViolationType('copy_paste');
     };
 
     const textarea = theoryTextareaRef?.current;
@@ -78,19 +111,19 @@ export const useAntiCheat = (
       textarea.addEventListener('paste', handlePaste);
     }
 
-    // 3. Right Click
+    // 4. Right Click
     const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault(); // Only one that is blocked
+      e.preventDefault(); // Block context menu
       pushEvent('RIGHT_CLICK_BLOCKED');
     };
 
-    // 4. DevTools Detection (Heuristic)
+    // 5. DevTools Detection (Heuristic)
     let devToolsOpen = false;
     const checkDevTools = setInterval(() => {
       const widthDiff = window.outerWidth - window.innerWidth;
       const heightDiff = window.outerHeight - window.innerHeight;
       
-      const threshold = 160; // common threshold for open devtools
+      const threshold = 160; // Common threshold for open devtools
       const isCurrentlyOpen = widthDiff > threshold || heightDiff > threshold;
 
       if (isCurrentlyOpen && !devToolsOpen) {
@@ -104,6 +137,7 @@ export const useAntiCheat = (
       flushEvents();
     }, 10000);
 
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleBlur);
     window.addEventListener('focus', handleFocus);
@@ -112,6 +146,7 @@ export const useAntiCheat = (
     return () => {
       clearInterval(checkDevTools);
       clearInterval(batchInterval);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('focus', handleFocus);
@@ -125,7 +160,5 @@ export const useAntiCheat = (
     };
   }, [isMonitoring, flushEvents, theoryTextareaRef]);
 
-  // Hook returns nothing for the UI to render natively
-  // But we'll return a dummy object to satisfy any old destructured imports temporarily
-  return { lastViolationType: null, clearViolation: () => {} };
+  return { isFullscreen, requestFullscreen, lastViolationType, clearViolation };
 };

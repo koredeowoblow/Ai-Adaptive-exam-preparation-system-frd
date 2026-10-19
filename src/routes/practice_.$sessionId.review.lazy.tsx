@@ -285,7 +285,7 @@ function SessionReviewRoute() {
 
                   {/* Question text */}
                   <div className="text-lg font-medium text-gray-900 dark:text-white mb-6 leading-relaxed">
-                    <FormattedMathText text={q.questionText} />
+                    <FormattedMathText text={q.questionText ? q.questionText.replace(/\s*\[Variant\s+\d+\]\s*$/i, '').trim() : ''} />
                   </div>
 
                   {/* MCQ options */}

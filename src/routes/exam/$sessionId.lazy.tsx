@@ -8,8 +8,9 @@ import { Skeleton } from "../../shared/components/Skeleton";
 import { ErrorState } from "../../shared/components/ErrorState";
 import { EmptyState } from "../../shared/components/EmptyState";
 import { Button } from "../../shared/components/Button";
-import { ChevronLeft, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, AlertTriangle, ShieldAlert, Maximize2 } from "lucide-react";
 import { useAntiCheat } from "../../features/practice-session/hooks/useAntiCheat";
+import { IntegrityWarningBanner } from "../../features/practice-session/components/IntegrityWarningBanner";
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { QuestionCard } from "../../features/practice-session/components/QuestionCard";
 import { ConfirmDialog } from "../../shared/components/ConfirmDialog";
@@ -97,7 +98,12 @@ function ExamSessionRoute() {
     ? (questionsList[currentIndex]?.questionId as any)?._id 
     : questionsList[currentIndex]?.questionId;
 
-  useAntiCheat(sessionId, isMonitoring, theoryTextareaRef, activeQuestionId);
+  const { isFullscreen, requestFullscreen, lastViolationType, clearViolation } = useAntiCheat(
+    sessionId,
+    isMonitoring,
+    theoryTextareaRef,
+    activeQuestionId
+  );
 
   // Extract full question object
   const activeQuestionObj = React.useMemo(() => questionsList[currentIndex]?.questionId as unknown as Question, [questionsList, currentIndex]);
@@ -211,12 +217,16 @@ function ExamSessionRoute() {
 
   const processSubmission = React.useCallback((answersToSubmit: Record<string, AnswerState>) => {
     const payload = {
-      answers: Object.keys(answersToSubmit).map(qId => ({
-        questionId: qId,
-        selectedAnswer: answersToSubmit[qId].selectedAnswer,
-        writtenAnswer: answersToSubmit[qId].writtenAnswer,
-        timeTaken: answersToSubmit[qId].timeTaken
-      }))
+      answers: questionsList.map((q: any) => {
+        const qId = typeof q.questionId === 'object' ? q.questionId?._id : q.questionId;
+        const ans = answersToSubmit[qId] || {};
+        return {
+          questionId: String(qId),
+          selectedAnswer: ans.selectedAnswer || undefined,
+          writtenAnswer: ans.writtenAnswer || undefined,
+          timeTaken: Math.max(0, Math.round(ans.timeTaken || 0)),
+        };
+      })
     };
 
     submitBatchAnswers(payload, {
@@ -229,11 +239,12 @@ function ExamSessionRoute() {
         toast.success("Exam submitted successfully");
         navigate({ to: `/practice/$sessionId/review`, params: { sessionId } });
       },
-      onError: () => {
-        toast.error("Failed to submit exam. Please try again.");
+      onError: (err: any) => {
+        const message = err?.response?.data?.message || err?.message || "Failed to submit exam. Please try again.";
+        toast.error(message);
       }
     });
-  }, [submitBatchAnswers, navigate, sessionId]);
+  }, [questionsList, submitBatchAnswers, navigate, sessionId]);
 
   const handleSubmit = React.useCallback(() => {
     flushCurrentDraft();
@@ -385,6 +396,11 @@ function ExamSessionRoute() {
       />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-24)' }}>
+        {isMonitoring && !isFullscreen && (
+          <Button variant="outline" size="sm" onClick={requestFullscreen}>
+            <Maximize2 size={14} style={{ marginRight: 6 }} /> Enter Full Screen
+          </Button>
+        )}
         <ExamTimer ref={timerRef} />
         <Button variant="accent" onClick={handleSubmit} isLoading={isSubmitting}>
           Submit Exam
@@ -394,6 +410,46 @@ function ExamSessionRoute() {
 
     <main style={{ flex: 1, padding: 'var(--space-48) var(--space-24)', display: 'flex', justifyContent: 'center' }}>
       <div style={{ width: '100%', maxWidth: 760 }}>
+        {/* Anti-Cheat Fullscreen Requirement Banner */}
+        {isMonitoring && !isFullscreen && (
+          <div
+            role="alert"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              padding: '12px 16px',
+              marginBottom: 20,
+              borderRadius: 12,
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: 'var(--color-danger, #ef4444)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <ShieldAlert size={20} style={{ flexShrink: 0 }} />
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.875rem' }}>Anti-Cheat Proctoring Active</strong>
+                <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                  This exam requires full screen mode. Leaving fullscreen or switching windows is logged.
+                </span>
+              </div>
+            </div>
+            <Button variant="danger" size="sm" onClick={requestFullscreen}>
+              <Maximize2 size={14} style={{ marginRight: 6 }} /> Full Screen
+            </Button>
+          </div>
+        )}
+
+        {/* Integrity Violation Warning Banner */}
+        {lastViolationType && (
+          <IntegrityWarningBanner
+            violationType={lastViolationType}
+            onDismiss={clearViolation}
+          />
+        )}
+
         {clampedMessage && (
           <div
             role="alert"

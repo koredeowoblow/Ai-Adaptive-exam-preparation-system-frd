@@ -131,7 +131,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
               lineHeight: '1.6', color: 'var(--color-text)', fontWeight: 600,
               fontSize: '1.4rem', fontFamily: "'Outfit', sans-serif"
             }}>
-              <FormattedMathText text={question.questionText} />
+              <FormattedMathText text={question.questionText ? question.questionText.replace(/\s*\[Variant\s+\d+\]\s*$/i, '').trim() : ''} />
             </h2>
           </div>
         </div>
