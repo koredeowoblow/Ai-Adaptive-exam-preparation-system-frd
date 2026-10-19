@@ -12,7 +12,7 @@ import {
   Edit3, BookOpen, ExternalLink,
 } from 'lucide-react';
 import { Skeleton } from '../shared/components/Skeleton';
-import { Modal } from '../shared/components/Modal';
+import { Dialog as Modal } from '../shared/components/Dialog';
 import { Button } from '../shared/components/Button';
 import { Input } from '../shared/components/Input';
 import { Select } from '../shared/components/Select';

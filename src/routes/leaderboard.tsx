@@ -5,7 +5,7 @@ import { useDocumentTitle } from '../shared/hooks/useDocumentTitle';
 import { useGlobalLeaderboard, useCourseLeaderboard } from '../features/leaderboard/hooks/useLeaderboard';
 import { useDepartmentCourses } from '../features/curriculum/hooks/useCurriculum';
 import { useAuth } from '../features/auth/hooks/useAuth';
-import { Modal } from '../shared/components/Modal';
+import { Dialog as Modal } from '../shared/components/Dialog';
 import { Button } from '../shared/components/Button';
 import { Skeleton } from '../shared/components/Skeleton';
 import { EmptyState } from '../shared/components/EmptyState';

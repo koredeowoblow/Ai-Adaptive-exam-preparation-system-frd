@@ -9,7 +9,7 @@ import { useStudentProfile, useUpdateProfile } from '../features/profile/hooks/u
 import type { StudyPlan, StudyDayPlan } from '../features/ai-study/api/ai.api';
 import { Sparkles, Clock, Target, AlertCircle, RefreshCw, Calendar } from 'lucide-react';
 import { useAuth } from '../features/auth/hooks/useAuth';
-import { Modal } from '../shared/components/Modal';
+import { Dialog as Modal } from '../shared/components/Dialog';
 import { Button } from '../shared/components/Button';
 import { Input } from '../shared/components/Input';
 

@@ -3,39 +3,64 @@ import { Link, useLocation } from '@tanstack/react-router';
 import { useAuth } from '../../../features/auth/hooks/useAuth';
 import { EduAdaptLogo } from '../../../features/auth/components/EduAdaptLogo';
 import {
-  LayoutDashboard, ClipboardList, BarChart3, Trophy, Award, User,
-  BookOpen, MessageSquare, CalendarDays, LogOut, History,
+  LayoutDashboard,
+  ClipboardList,
+  BarChart3,
+  Trophy,
+  Award,
+  User,
+  BookOpen,
+  MessageSquare,
+  CalendarDays,
+  LogOut,
+  History,
+  ShieldAlert,
+  X,
 } from 'lucide-react';
 
 interface NavItemProps {
   to: string;
   icon: React.ReactNode;
   label: string;
-  badge?: string;
+  tag?: string;
+  showDot?: boolean;
+  onClick?: () => void;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ to, icon, label, badge }) => {
+const NavItem: React.FC<NavItemProps> = ({ to, icon, label, tag, showDot, onClick }) => {
   const location = useLocation();
-  const isActive = location.pathname.startsWith(to) && (to !== '/' || location.pathname === '/');
+  // Exact match for dashboard/root, startsWith for others
+  const isActive = to === '/dashboard' || to === '/'
+    ? location.pathname === '/dashboard' || location.pathname === '/'
+    : location.pathname.startsWith(to);
 
   return (
-    <Link to={to} className={`app-nav-item ${isActive ? 'active' : ''}`}>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+    <Link
+      to={to}
+      onClick={onClick}
+      aria-current={isActive ? 'page' : undefined}
+      className={`app-nav-item group relative flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 select-none ${
+        isActive
+          ? 'bg-primary/20 text-white font-semibold border-l-[3px] border-primary pl-[9px]'
+          : 'text-slate-300 hover:text-white hover:bg-white/5 border-l-[3px] border-transparent pl-[9px]'
+      }`}
+    >
+      <span className={`shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-slate-200'}`}>
         {icon}
-        <span>{label}</span>
       </span>
-      {badge && (
-        <span style={{
-          fontSize: '0.65rem',
-          fontWeight: 600,
-          padding: '2px 7px',
-          borderRadius: 999,
-          background: 'rgba(255, 255, 255, 0.12)',
-          color: '#e2e8f0',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          flexShrink: 0,
-        }}>
-          {badge}
+      <span className="flex-1 truncate">{label}</span>
+
+      {showDot && (
+        <span
+          className="w-1.5 h-1.5 rounded-full bg-primary shrink-0"
+          title="New feature"
+          aria-label="New feature indicator"
+        />
+      )}
+
+      {tag && (
+        <span className="text-[10px] font-medium text-slate-400 bg-white/10 px-1.5 py-0.5 rounded shrink-0">
+          {tag}
         </span>
       )}
     </Link>
@@ -48,19 +73,43 @@ interface NavSectionProps {
 }
 
 const NavSection: React.FC<NavSectionProps> = ({ label, children }) => (
-  <div style={{ marginBottom: 16 }}>
-    <span className="app-nav-section-label">{label}</span>
-    {children}
+  <div className="mb-3">
+    <span className="text-[12px] font-semibold tracking-wider text-[var(--sidebar-text-muted)] uppercase px-3 mb-1 mt-3 block select-none">
+      {label}
+    </span>
+    <div className="space-y-0.5">{children}</div>
   </div>
 );
 
-interface SidebarProps {
+export interface SidebarProps {
   onClose?: () => void;
+  className?: string;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onClose, className = '' }) => {
   const { logout, user } = useAuth();
-  
+  const location = useLocation();
+
+  const [hasVisitedAiTutor, setHasVisitedAiTutor] = React.useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('visited_ai_tutor') === 'true';
+  });
+
+  React.useEffect(() => {
+    if (location.pathname === '/ai-chat' && !hasVisitedAiTutor) {
+      localStorage.setItem('visited_ai_tutor', 'true');
+      setHasVisitedAiTutor(true);
+    }
+  }, [location.pathname, hasVisitedAiTutor]);
+
+  const handleAiTutorClick = () => {
+    if (!hasVisitedAiTutor) {
+      localStorage.setItem('visited_ai_tutor', 'true');
+      setHasVisitedAiTutor(true);
+    }
+    if (onClose) onClose();
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -69,86 +118,140 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     }
   };
 
+  const ICON_SIZE = 18;
+  const STROKE_WIDTH = 2;
+
   return (
-    <>
-      {/* Brand */}
-      <div className="app-sidebar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <EduAdaptLogo size={32} />
-          <div>
-            <span
-              style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontWeight: 600,
-                fontSize: '1rem',
-                color: '#ffffff',
-                lineHeight: 1,
-                margin: 0,
-                display: 'block',
-              }}
-            >
+    <div className={`h-full flex flex-col bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)] text-[var(--sidebar-text)] select-none ${className}`}>
+      {/* Brand Header */}
+      <div className="h-[60px] flex items-center justify-between px-4 border-b border-white/10 shrink-0">
+        <Link
+          to="/dashboard"
+          onClick={onClose}
+          className="flex items-center gap-2.5 text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-lg p-1 -ml-1"
+          aria-label="EduAdapt Home"
+        >
+          <EduAdaptLogo size={28} />
+          <div className="flex flex-col">
+            <span className="font-outfit font-semibold text-base text-white tracking-tight leading-none">
               EduAdapt
             </span>
-            <p style={{
-              fontSize: '0.65rem',
-              fontWeight: 400,
-              color: '#94a3b8',
-              margin: '2px 0 0',
-            }}>Adaptive Learning</p>
+            <span className="text-[10px] text-slate-400 leading-none mt-1">
+              Adaptive Learning
+            </span>
           </div>
-        </div>
-        
+        </Link>
+
         {onClose && (
-          <button aria-label="Close sidebar" className="icon-btn admin-close-btn" onClick={onClose} style={{ color: 'rgba(255,255,255,0.7)', padding: 0, margin: 0 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+          <button
+            id="drawer-close-btn"
+            type="button"
+            aria-label="Close navigation"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors md:flex lg:hidden items-center justify-center min-w-[36px] min-h-[36px]"
+            onClick={onClose}
+          >
+            <X size={18} />
           </button>
         )}
       </div>
 
-      {/* Navigation — consistent label casing, grouped by function */}
-      <nav className="app-nav" style={{ flex: 1 }}>
+      {/* Navigation Groups */}
+      <nav aria-label="Main Navigation" className="flex-1 overflow-y-auto px-2 py-3 space-y-1">
         <NavSection label="Overview">
-          <NavItem to="/dashboard" icon={<LayoutDashboard size={17} />} label="Dashboard" />
+          <NavItem
+            to="/dashboard"
+            icon={<LayoutDashboard size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="Dashboard"
+            onClick={onClose}
+          />
         </NavSection>
 
         <NavSection label="Learn">
-          <NavItem to="/exam-prep" icon={<ClipboardList size={17} />} label="Practice" badge="AI" />
-          <NavItem to="/courses" icon={<BookOpen size={17} />} label="Courses" />
-          <NavItem to="/ai-chat" icon={<MessageSquare size={17} />} label="AI Tutor" badge="New" />
+          <NavItem
+            to="/exam-prep"
+            icon={<ClipboardList size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="Practice"
+            tag="AI"
+            onClick={onClose}
+          />
+          <NavItem
+            to="/courses"
+            icon={<BookOpen size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="Courses"
+            onClick={onClose}
+          />
+          <NavItem
+            to="/ai-chat"
+            icon={<MessageSquare size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="AI Tutor"
+            showDot={!hasVisitedAiTutor}
+            onClick={handleAiTutorClick}
+          />
         </NavSection>
 
         <NavSection label="Progress">
-          <NavItem to="/practice/history" icon={<History size={17} />} label="History" />
-          <NavItem to="/analytics" icon={<BarChart3 size={17} />} label="Analytics" />
-          <NavItem to="/achievements" icon={<Award size={17} />} label="Achievements" />
-          <NavItem to="/leaderboard" icon={<Trophy size={17} />} label="Leaderboard" />
+          <NavItem
+            to="/practice/history"
+            icon={<History size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="History"
+            onClick={onClose}
+          />
+          <NavItem
+            to="/analytics"
+            icon={<BarChart3 size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="Analytics"
+            onClick={onClose}
+          />
+          <NavItem
+            to="/achievements"
+            icon={<Award size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="Achievements"
+            onClick={onClose}
+          />
+          <NavItem
+            to="/leaderboard"
+            icon={<Trophy size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="Leaderboard"
+            onClick={onClose}
+          />
         </NavSection>
 
         <NavSection label="Tools">
-          <NavItem to="/study-planner" icon={<CalendarDays size={17} />} label="Study Planner" />
+          <NavItem
+            to="/study-planner"
+            icon={<CalendarDays size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="Study Planner"
+            onClick={onClose}
+          />
         </NavSection>
 
         <NavSection label="Account">
           {(user?.role === 'admin' || user?.role === 'superAdmin') && (
-            <NavItem to="/admin" icon={<LayoutDashboard size={17} />} label="Admin Console" badge="Staff" />
+            <NavItem
+              to="/admin"
+              icon={<ShieldAlert size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+              label="Admin Console"
+              tag="Staff"
+              onClick={onClose}
+            />
           )}
-          <NavItem to="/profile" icon={<User size={17} />} label="Profile" />
-          
-          <button 
+          <NavItem
+            to="/profile"
+            icon={<User size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="Profile"
+            onClick={onClose}
+          />
+
+          <button
+            type="button"
             onClick={handleLogout}
-            className="app-nav-item"
-            style={{ width: '100%', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', color: 'var(--app-nav-fg-muted)' }}
+            className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-danger hover:bg-danger/10 transition-colors select-none pl-[9px] border-l-[3px] border-transparent"
           >
-            <span style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-              <LogOut size={17} />
-              <span>Log out</span>
-            </span>
+            <LogOut size={ICON_SIZE} strokeWidth={STROKE_WIDTH} className="shrink-0" />
+            <span className="truncate">Log out</span>
           </button>
         </NavSection>
       </nav>
-    </>
+    </div>
   );
 };

@@ -18,5 +18,22 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react-is', 'recharts'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/katex/')) {
+            return 'vendor-katex';
+          }
+          if (
+            id.includes('node_modules/recharts/') ||
+            id.includes('node_modules/d3-') ||
+            id.includes('node_modules/victory-vendor/')
+          ) {
+            return 'vendor-charts';
+          }
+        },
+      },
+    },
+  },
 })
-

@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { AppLayout } from '../../shared/components/layout/AppLayout';
-import { useCourseTopics } from '../../features/curriculum/hooks/useCurriculum';
+import { useCourseTopics, useCourse } from '../../features/curriculum/hooks/useCurriculum';
+import { useTopbar } from '../../shared/context/TopbarContext';
 import { useStartSession } from '../../features/practice-session/hooks/usePractice';
 import { useStudentProfile, useEnrollCourse } from '../../features/profile/hooks/useProfile';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
@@ -34,9 +35,23 @@ export const Route = createFileRoute('/courses/$courseId')({
 });
 
 function CourseDetails() {
-  useDocumentTitle('Course Details');
   const { courseId } = Route.useParams();
   const navigate = useNavigate();
+
+  const { data: course } = useCourse(courseId);
+  const courseCode = course?.code || 'Course';
+  const courseTitle = course?.title ? `${course.code}: ${course.title}` : 'Course Details';
+
+  useDocumentTitle(courseTitle);
+
+  useTopbar({
+    title: courseTitle,
+    breadcrumbs: [
+      { label: 'Courses', to: '/courses' },
+      { label: courseCode },
+    ],
+  });
+
   const {
     data: topicsData,
     isLoading,
@@ -59,19 +74,37 @@ function CourseDetails() {
     return topicsData?.pages.flatMap(page => page.items) || [];
   }, [topicsData]);
   const { mutate: startSession, isPending: isStarting } = useStartSession();
+  const isStartingRef = React.useRef(false);
+  const [isImmediateStarting, setIsImmediateStarting] = React.useState(false);
 
   const handleStartPractice = () => {
+    if (isStartingRef.current || isStarting) return;
+    isStartingRef.current = true;
+    setIsImmediateStarting(true);
+
     startSession({ courseId, totalQuestions: 10 }, {
       onSuccess: (response) => {
         navigate({ to: `/exam/$sessionId`, params: { sessionId: response.data.session._id } });
+      },
+      onError: () => {
+        isStartingRef.current = false;
+        setIsImmediateStarting(false);
       }
     });
   };
 
   const handleStartExam = () => {
+    if (isStartingRef.current || isStarting) return;
+    isStartingRef.current = true;
+    setIsImmediateStarting(true);
+
     startSession({ courseId, totalQuestions: 40 }, {
       onSuccess: (response) => {
         navigate({ to: `/exam/$sessionId`, params: { sessionId: response.data.session._id } });
+      },
+      onError: () => {
+        isStartingRef.current = false;
+        setIsImmediateStarting(false);
       }
     });
   };
@@ -135,10 +168,22 @@ function CourseDetails() {
             <p className="body-large" style={{ color: 'var(--color-text-muted)', margin: 0 }}>Master these topics to complete the course.</p>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-12)', flexWrap: 'wrap' }}>
-            <Button variant="outline" size="lg" onClick={handleStartPractice} isLoading={isStarting}>
-              Start Quick Practice
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={handleStartPractice}
+              isLoading={isStarting || isImmediateStarting}
+              disabled={isStarting || isImmediateStarting}
+            >
+              Start Quick Practice (10 Qs)
             </Button>
-            <Button variant="accent" size="lg" onClick={handleStartExam} isLoading={isStarting}>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={handleStartExam}
+              isLoading={isStarting || isImmediateStarting}
+              disabled={isStarting || isImmediateStarting}
+            >
               Start Full Exam (40 Qs)
             </Button>
           </div>

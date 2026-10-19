@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Modal } from '../../../shared/components/Modal';
+import { Dialog as Modal } from '../../../shared/components/Dialog';
 import { Button } from '../../../shared/components/Button';
 import { Select } from '../../../shared/components/Select';
 import { FormattedMathText } from '../../../shared/components/FormattedMathText';

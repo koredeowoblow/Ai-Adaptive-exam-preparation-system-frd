@@ -26,4 +26,7 @@ export const curriculumApi = {
     const params = cursor ? { cursor } : {};
     return apiClient.get(`/courses/${courseId}/topics`, { params });
   },
+  getCourse: async (courseId: string): Promise<ApiResponse<Course>> => {
+    return apiClient.get(`/courses/${courseId}`);
+  },
 };

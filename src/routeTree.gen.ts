@@ -33,6 +33,7 @@ import { Route as AdminTopicsRouteImport } from './routes/admin/topics'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
 import { Route as CoursesCourseIdRouteImport } from './routes/courses/$courseId'
+import { Route as DevComponentsRouteImport } from './routes/dev.components'
 import { Route as ExamSessionIdRouteImport } from './routes/exam/$sessionId'
 import { Route as PracticeHistoryRouteImport } from './routes/practice/history'
 import { Route as AdminCoursesCourseIdRouteImport } from './routes/admin/courses_.$courseId'
@@ -180,6 +181,11 @@ const CoursesCourseIdRoute = CoursesCourseIdRouteImport.update({
   path: '/courses/$courseId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevComponentsRoute = DevComponentsRouteImport.update({
+  id: '/dev/components',
+  path: '/dev/components',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExamSessionIdRoute = ExamSessionIdRouteImport.update({
   id: '/exam/$sessionId',
   path: '/exam/$sessionId',
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/admin/topics': typeof AdminTopicsRoute
   '/admin/users': typeof AdminUsersRoute
   '/courses/$courseId': typeof CoursesCourseIdRoute
+  '/dev/components': typeof DevComponentsRoute
   '/exam/$sessionId': typeof ExamSessionIdRoute
   '/practice/history': typeof PracticeHistoryRoute
   '/admin/': typeof AdminIndexRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/admin/topics': typeof AdminTopicsRoute
   '/admin/users': typeof AdminUsersRoute
   '/courses/$courseId': typeof CoursesCourseIdRoute
+  '/dev/components': typeof DevComponentsRoute
   '/exam/$sessionId': typeof ExamSessionIdRoute
   '/practice/history': typeof PracticeHistoryRoute
   '/admin': typeof AdminIndexRoute
@@ -317,6 +325,7 @@ export interface FileRoutesById {
   '/admin/topics': typeof AdminTopicsRoute
   '/admin/users': typeof AdminUsersRoute
   '/courses/$courseId': typeof CoursesCourseIdRoute
+  '/dev/components': typeof DevComponentsRoute
   '/exam/$sessionId': typeof ExamSessionIdRoute
   '/practice/history': typeof PracticeHistoryRoute
   '/admin/': typeof AdminIndexRoute
@@ -354,6 +363,7 @@ export interface FileRouteTypes {
     | '/admin/topics'
     | '/admin/users'
     | '/courses/$courseId'
+    | '/dev/components'
     | '/exam/$sessionId'
     | '/practice/history'
     | '/admin/'
@@ -388,6 +398,7 @@ export interface FileRouteTypes {
     | '/admin/topics'
     | '/admin/users'
     | '/courses/$courseId'
+    | '/dev/components'
     | '/exam/$sessionId'
     | '/practice/history'
     | '/admin'
@@ -423,6 +434,7 @@ export interface FileRouteTypes {
     | '/admin/topics'
     | '/admin/users'
     | '/courses/$courseId'
+    | '/dev/components'
     | '/exam/$sessionId'
     | '/practice/history'
     | '/admin/'
@@ -451,6 +463,7 @@ export interface RootRouteChildren {
   RegisterLazyRoute: typeof RegisterLazyRoute
   ResetPasswordLazyRoute: typeof ResetPasswordLazyRoute
   CoursesCourseIdRoute: typeof CoursesCourseIdRoute
+  DevComponentsRoute: typeof DevComponentsRoute
   ExamSessionIdRoute: typeof ExamSessionIdRoute
   PracticeHistoryRoute: typeof PracticeHistoryRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
@@ -641,6 +654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesCourseIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/components': {
+      id: '/dev/components'
+      path: '/dev/components'
+      fullPath: '/dev/components'
+      preLoaderRoute: typeof DevComponentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/exam/$sessionId': {
       id: '/exam/$sessionId'
       path: '/exam/$sessionId'
@@ -744,6 +764,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterLazyRoute: RegisterLazyRoute,
   ResetPasswordLazyRoute: ResetPasswordLazyRoute,
   CoursesCourseIdRoute: CoursesCourseIdRoute,
+  DevComponentsRoute: DevComponentsRoute,
   ExamSessionIdRoute: ExamSessionIdRoute,
   PracticeHistoryRoute: PracticeHistoryRoute,
   CoursesIndexRoute: CoursesIndexRoute,

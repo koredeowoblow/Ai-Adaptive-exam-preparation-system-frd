@@ -11,7 +11,7 @@ import {
   useCreateCourse,
   useCreateTopic,
 } from '../../features/admin/hooks/useAdmin';
-import { Modal } from '../../shared/components/Modal';
+import { Dialog as Modal } from '../../shared/components/Dialog';
 import { Button } from '../../shared/components/Button';
 import { DepartmentForm } from '../../features/admin/components/DepartmentForm';
 import { CourseForm } from '../../features/admin/components/CourseForm';

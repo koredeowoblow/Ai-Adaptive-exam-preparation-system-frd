@@ -3,50 +3,47 @@ import * as React from 'react';
 export interface PageHeaderProps {
   title: string;
   description?: string;
+  breadcrumb?: React.ReactNode;
+  actions?: React.ReactNode;
   children?: React.ReactNode;
+  className?: string;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({ title, description, children }) => {
+export const PageHeader: React.FC<PageHeaderProps> = ({
+  title,
+  description,
+  breadcrumb,
+  actions,
+  children,
+  className = '',
+}) => {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 'var(--space-16)',
-        marginBottom: 'var(--space-24)',
-      }}
-    >
-      <div>
-        <h1
-          style={{
-            fontSize: '1.5rem',
-            fontWeight: 700,
-            color: 'var(--color-text)',
-            margin: '0 0 var(--space-4) 0',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          {title}
-        </h1>
-        {description && (
-          <p
-            style={{
-              fontSize: '0.875rem',
-              color: 'var(--color-text-secondary)',
-              margin: 0,
-            }}
-          >
-            {description}
-          </p>
+    <header className={`flex flex-col gap-3 mb-6 sm:mb-8 ${className}`}>
+      {breadcrumb && (
+        <nav aria-label="Breadcrumb" className="text-xs text-text-muted flex items-center gap-1.5 font-medium">
+          {breadcrumb}
+        </nav>
+      )}
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-[28px] font-bold text-text-primary tracking-[-0.01em] leading-tight">
+            {title}
+          </h1>
+          {description && (
+            <p className="mt-1 text-sm text-text-secondary leading-relaxed max-w-2xl">
+              {description}
+            </p>
+          )}
+        </div>
+
+        {(actions || children) && (
+          <div className="flex items-center gap-3 flex-wrap shrink-0">
+            {actions}
+            {children}
+          </div>
         )}
       </div>
-      {children && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-8)', flexWrap: 'wrap' }}>
-          {children}
-        </div>
-      )}
-    </div>
+    </header>
   );
 };

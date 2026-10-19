@@ -265,6 +265,8 @@ export const ExamWizard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { mutate: startSession, isPending: isStarting } = useStartSession();
+  const isStartingRef = React.useRef(false);
+  const [isImmediateStarting, setIsImmediateStarting] = React.useState(false);
   const [clampWarning, setClampWarning] = React.useState<string | null>(null);
 
   const [step, setStep] = React.useState<WizardStep>('level');
@@ -274,7 +276,11 @@ export const ExamWizard: React.FC = () => {
 
   const handleLevelSelect = (level: number) => { setSelectedLevel(level); setStep('course'); };
   const handleCourseSelect = (course: Course, totalQuestions: number, questionType: QuestionTypeMix) => {
+    if (isStartingRef.current || isStarting) return;
+    isStartingRef.current = true;
+    setIsImmediateStarting(true);
     setClampWarning(null);
+
     startSession({ courseId: course._id, totalQuestions, questionType }, {
       onSuccess: (response) => {
         if (response.data.clampedMessage) {
@@ -285,6 +291,10 @@ export const ExamWizard: React.FC = () => {
           }
         }
         navigate({ to: '/exam/$sessionId', params: { sessionId: response.data.session._id } });
+      },
+      onError: () => {
+        isStartingRef.current = false;
+        setIsImmediateStarting(false);
       },
     });
   };
@@ -335,7 +345,7 @@ export const ExamWizard: React.FC = () => {
             studentLevel={studentLevel}
             onSelect={handleCourseSelect}
             onBack={() => setStep('level')}
-            isStarting={isStarting}
+            isStarting={isStarting || isImmediateStarting}
           />
         )}
       </div>

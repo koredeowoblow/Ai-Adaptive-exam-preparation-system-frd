@@ -47,3 +47,14 @@ export const useCourseTopics = (courseId: string) => {
     enabled: !!courseId,
   });
 };
+
+export const useCourse = (courseId: string) => {
+  return useQuery({
+    queryKey: ['courses', courseId],
+    queryFn: async () => {
+      const response = await curriculumApi.getCourse(courseId);
+      return response.data;
+    },
+    enabled: !!courseId,
+  });
+};

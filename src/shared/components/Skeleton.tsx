@@ -1,20 +1,37 @@
 import * as React from 'react';
 
-interface SkeletonProps {
+export interface SkeletonProps {
   className?: string;
   style?: React.CSSProperties;
+  variant?: 'text' | 'rect' | 'circle' | 'card';
+  width?: number | string;
+  height?: number | string;
 }
 
-/**
- * Skeleton loader with shimmer animation.
- * Uses the `.skeleton` CSS class defined in index.css which applies a
- * left-to-right shimmer gradient (brief spec: skeleton loading pattern).
- */
-export const Skeleton: React.FC<SkeletonProps> = ({ className = '', style }) => {
+export const Skeleton: React.FC<SkeletonProps> = ({
+  className = '',
+  style = {},
+  variant = 'rect',
+  width,
+  height,
+}) => {
+  const variantClasses = {
+    text: 'h-4 w-full rounded',
+    rect: 'rounded-lg',
+    circle: 'rounded-full shrink-0',
+    card: 'rounded-xl h-36 w-full',
+  };
+
+  const combinedStyles: React.CSSProperties = {
+    ...style,
+    ...(width != null ? { width } : {}),
+    ...(height != null ? { height } : {}),
+  };
+
   return (
     <div
-      className={`skeleton ${className}`}
-      style={style}
+      className={`skeleton ${variantClasses[variant]} ${className}`}
+      style={combinedStyles}
       aria-hidden="true"
       role="presentation"
     />

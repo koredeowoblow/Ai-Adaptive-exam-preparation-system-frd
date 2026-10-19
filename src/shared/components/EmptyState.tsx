@@ -7,8 +7,8 @@ export interface EmptyStateProps {
   actionLabel?: string;
   onAction?: () => void;
   action?: { label: string; onClick: () => void | Promise<void> };
-  /** Optional icon to display above the title (e.g. a Lucide icon element) */
   icon?: React.ReactNode;
+  className?: string;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
@@ -18,51 +18,31 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   onAction,
   action,
   icon,
+  className = '',
 }) => {
   const finalActionLabel = actionLabel || action?.label;
   const handleAction = onAction || action?.onClick;
+
   return (
     <div
-      className="flex flex-col items-center justify-center text-center py-12 px-6"
-      style={{ maxWidth: 320, margin: '0 auto' }}
+      className={`flex flex-col items-center justify-center text-center py-10 px-6 max-w-[420px] mx-auto ${className}`}
     >
       {icon && (
         <div
-          className="mb-4 flex items-center justify-center"
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: '50%',
-            backgroundColor: 'var(--color-background-soft)',
-            color: 'var(--color-text-light)',
-          }}
+          className="mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-surface-1 text-text-muted shrink-0"
           aria-hidden="true"
         >
           {icon}
         </div>
       )}
-      <h3
-        style={{
-          fontSize: '1rem',
-          fontWeight: 600,
-          color: 'var(--color-text)',
-          marginBottom: '0.5rem',
-        }}
-      >
+      <h3 className="text-base font-semibold text-text-primary mb-1.5 leading-snug">
         {title}
       </h3>
-      <p
-        style={{
-          fontSize: '0.8125rem',
-          color: 'var(--color-text-muted)',
-          lineHeight: 1.5,
-          marginBottom: actionLabel ? '1.25rem' : 0,
-        }}
-      >
+      <p className="text-sm text-text-secondary leading-relaxed mb-5 max-w-[340px]">
         {description}
       </p>
       {finalActionLabel && handleAction && (
-        <Button onClick={handleAction} variant="secondary" size="sm">
+        <Button onClick={handleAction} variant="primary" size="md">
           {finalActionLabel}
         </Button>
       )}
