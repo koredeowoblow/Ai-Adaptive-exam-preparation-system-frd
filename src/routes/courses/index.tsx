@@ -7,7 +7,7 @@ import { Skeleton } from '../../shared/components/Skeleton';
 import { ErrorState } from '../../shared/components/ErrorState';
 import type { Department } from '../../types/department.types';
 import type { Course } from '../../types/course.types';
-import { Search, X, SearchX, Library } from 'lucide-react';
+import { Search, X, SearchX, Library, Building2 } from 'lucide-react';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { requireAuth } from '../../features/auth/utils/authGuard';
@@ -27,15 +27,34 @@ function CoursesIndex() {
   const [selectedLevel, setSelectedLevel] = React.useState<number | 'ALL'>('ALL');
   const [search, setSearch] = React.useState('');
 
-  React.useEffect(() => {
-    if (departments && departments.length > 0 && !selectedDeptId) {
-      if (user?.departmentId && departments.some((d: any) => d._id === user.departmentId)) {
-        setSelectedDeptId(user.departmentId);
-      } else {
-        setSelectedDeptId(departments[0]._id);
-      }
+  const isAdmin = user?.role === 'admin' || user?.role === 'superAdmin' || (user as any)?.type === 'admin';
+  const userDeptId = (typeof user?.departmentId === 'object' && user?.departmentId !== null)
+    ? (user.departmentId as any)._id
+    : user?.departmentId;
+
+  const visibleDepartments = React.useMemo(() => {
+    if (!departments || !Array.isArray(departments)) return [];
+    if (isAdmin) return departments;
+    if (userDeptId) {
+      const match = departments.filter((d: any) => d._id === userDeptId);
+      if (match.length > 0) return match;
     }
-  }, [departments, selectedDeptId, user]);
+    return departments;
+  }, [departments, isAdmin, userDeptId]);
+
+  const currentDeptName = React.useMemo(() => {
+    if (!departments || !Array.isArray(departments)) return '';
+    const d = departments.find((dept: any) => dept._id === (selectedDeptId || userDeptId));
+    return d?.name || '';
+  }, [departments, selectedDeptId, userDeptId]);
+
+  React.useEffect(() => {
+    if (userDeptId && !isAdmin) {
+      setSelectedDeptId(userDeptId);
+    } else if (visibleDepartments.length > 0 && !selectedDeptId) {
+      setSelectedDeptId(visibleDepartments[0]._id);
+    }
+  }, [visibleDepartments, selectedDeptId, userDeptId, isAdmin]);
 
   const {
     data: coursesData,
@@ -94,55 +113,77 @@ function CoursesIndex() {
               Course Catalog
             </h1>
             <p style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text-secondary)', maxWidth: 600 }}>
-              Explore authentic LASUSTECH departments and courses organized by academic level.
+              {isAdmin
+                ? 'Explore authentic LASUSTECH departments and courses organized by academic level.'
+                : `Academic courses for ${currentDeptName ? `the Department of ${currentDeptName}` : 'your department'}, organized by academic level.`}
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
-            {/* Department Tabs */}
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, maxWidth: '100%' }}>
-              {departments?.map((dept: Department) => {
-                const isActive = selectedDeptId === dept._id;
-                const isUserDept = user?.departmentId === dept._id;
-                return (
-                  <button
-                    key={dept._id}
-                    onClick={() => { setSelectedDeptId(dept._id); setSearch(''); }}
-                    style={{
-                      all: 'unset', cursor: 'pointer', padding: '6px 16px',
-                      fontWeight: 500, fontSize: '0.9rem',
-                      color: isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                      background: isActive ? 'var(--color-primary-light)' : 'transparent',
-                      border: '1px solid',
-                      borderColor: isActive ? 'var(--color-primary-light)' : 'transparent',
-                      borderRadius: 20,
-                      whiteSpace: 'nowrap',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6
-                    }}
-                    onMouseOver={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-1)'; }}
-                    onMouseOut={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <span>{dept.name}</span>
-                    {isUserDept && (
-                      <span style={{
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        padding: '1px 5px',
-                        borderRadius: 8,
-                        background: 'var(--color-primary)',
-                        color: '#fff'
-                      }}>
-                        My Dept
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {/* Department Tabs (Only rendered if admin has multiple departments available) */}
+            {visibleDepartments.length > 1 ? (
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, maxWidth: '100%' }}>
+                {visibleDepartments.map((dept: Department) => {
+                  const isActive = selectedDeptId === dept._id;
+                  const isUserDept = userDeptId === dept._id;
+                  return (
+                    <button
+                      key={dept._id}
+                      onClick={() => { setSelectedDeptId(dept._id); setSearch(''); }}
+                      style={{
+                        all: 'unset', cursor: 'pointer', padding: '6px 16px',
+                        fontWeight: 500, fontSize: '0.9rem',
+                        color: isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                        background: isActive ? 'var(--color-primary-light)' : 'transparent',
+                        border: '1px solid',
+                        borderColor: isActive ? 'var(--color-primary-light)' : 'transparent',
+                        borderRadius: 20,
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                      onMouseOver={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-1)'; }}
+                      onMouseOut={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <span>{dept.name}</span>
+                      {isUserDept && (
+                        <span style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          padding: '1px 5px',
+                          borderRadius: 8,
+                          background: 'var(--color-primary)',
+                          color: '#fff'
+                        }}>
+                          My Dept
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  background: 'var(--color-primary-light)',
+                  color: 'var(--color-primary)',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  border: '1px solid var(--color-primary-border)',
+                }}>
+                  <Building2 size={15} />
+                  <span>{currentDeptName || 'Your Department'}</span>
+                </span>
+              </div>
+            )}
 
             {/* Search Bar */}
             <div style={{
