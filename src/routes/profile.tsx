@@ -17,6 +17,8 @@ import { Button } from '../shared/components/Button';
 import { Input } from '../shared/components/Input';
 import { Select } from '../shared/components/Select';
 import type { Department } from '../types/department.types';
+import type { Course } from '../types/course.types';
+import { curriculumApi } from '../features/curriculum/api/curriculum.api';
 import { requireAuth } from '../features/auth/utils/authGuard';
 
 export const Route = createFileRoute('/profile')({
@@ -58,7 +60,7 @@ function ProfileRecordRow({
 }
 
 function ProfileRoute() {
-  useDocumentTitle('Academic Record — EduAdapt');
+  useDocumentTitle('Academic Record - EduAdapt');
   const { data: profile, isLoading: profileLoading } = useStudentProfile();
   const { data: dashData, isLoading: dashLoading } = useStudentDashboard('me');
   const { data: enrolledCourses, isLoading: enrolledLoading } = useEnrolledCourses();
@@ -72,6 +74,16 @@ function ProfileRoute() {
   // Edit form state
   const [nameInput, setNameInput] = React.useState('');
   const [deptInput, setDeptInput] = React.useState('');
+  const [levelInput, setLevelInput] = React.useState<'100L' | '200L' | '300L' | '400L' | '500L'>('100L');
+  const [examDateInput, setExamDateInput] = React.useState('');
+
+  // Move to next level promotion state
+  const [isPromoteOpen, setIsPromoteOpen] = React.useState(false);
+  const [promoteLevel, setPromoteLevel] = React.useState<'100L' | '200L' | '300L' | '400L' | '500L'>('200L');
+  const [promoteExamDate, setPromoteExamDate] = React.useState('');
+  const [promoteAvailableCourses, setPromoteAvailableCourses] = React.useState<Course[]>([]);
+  const [promoteSelectedCourseIds, setPromoteSelectedCourseIds] = React.useState<string[]>([]);
+  const [isLoadingPromoteCourses, setIsLoadingPromoteCourses] = React.useState(false);
 
   const isLoading = profileLoading || dashLoading;
 
@@ -80,13 +92,67 @@ function ProfileRoute() {
   };
 
   const displayName = user?.name || profile?.name || 'Student';
-  const displayEmail = user?.email || '—';
+  const displayEmail = user?.email || '-';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'ST';
+
+  const loadCoursesForLevel = async (lvl: string) => {
+    const deptId = typeof profile?.departmentId === 'object' ? profile.departmentId?._id : (profile?.departmentId || user?.departmentId);
+    if (!deptId) return;
+    setIsLoadingPromoteCourses(true);
+    try {
+      const res = await curriculumApi.getDepartmentCourses(deptId);
+      const items = res.data?.items || (Array.isArray(res.data) ? res.data : []);
+      const num = parseInt(lvl.replace('L', ''), 10);
+      const matching = items.filter((c: Course) => c.level === num);
+      const available = matching.length > 0 ? matching : items;
+      setPromoteAvailableCourses(available);
+      setPromoteSelectedCourseIds(available.map((c: Course) => c._id));
+    } catch {
+      setPromoteAvailableCourses([]);
+    } finally {
+      setIsLoadingPromoteCourses(false);
+    }
+  };
+
+  const handleOpenPromote = () => {
+    const currentLvl = (profile?.level || user?.level || '100L') as '100L' | '200L' | '300L' | '400L' | '500L';
+    const nextLvlMap: Record<string, '100L' | '200L' | '300L' | '400L' | '500L'> = {
+      '100L': '200L',
+      '200L': '300L',
+      '300L': '400L',
+      '400L': '500L',
+      '500L': '500L',
+    };
+    const targetNext = nextLvlMap[currentLvl] || '200L';
+    setPromoteLevel(targetNext);
+    setPromoteExamDate(profile?.nextExamDate ? new Date(profile.nextExamDate).toISOString().split('T')[0] : '');
+    setIsPromoteOpen(true);
+    loadCoursesForLevel(targetNext);
+  };
+
+  const handleSavePromotion = (e: React.FormEvent) => {
+    e.preventDefault();
+    const currentEnrolled = enrolledCourses?.map(c => c._id) || [];
+    const mergedCourseIds = Array.from(new Set([...currentEnrolled, ...promoteSelectedCourseIds]));
+
+    updateProfile({
+      level: promoteLevel,
+      nextExamDate: promoteExamDate ? new Date(promoteExamDate).toISOString() : null,
+      enrolledCourseIds: mergedCourseIds,
+    }, {
+      onSuccess: () => {
+        setIsPromoteOpen(false);
+      }
+    });
+  };
 
   const handleOpenEdit = () => {
     setNameInput(displayName);
     const currentDeptId = typeof profile?.departmentId === 'object' ? profile.departmentId?._id : (profile?.departmentId || user?.departmentId || '');
     setDeptInput(currentDeptId || '');
+    setLevelInput((profile?.level || user?.level || '100L') as any);
+    const existingDate = profile?.nextExamDate || user?.nextExamDate;
+    setExamDateInput(existingDate ? new Date(existingDate).toISOString().split('T')[0] : '');
     setIsEditOpen(true);
   };
 
@@ -95,12 +161,22 @@ function ProfileRoute() {
     updateProfile({
       name: nameInput.trim() || undefined,
       departmentId: deptInput || undefined,
+      level: levelInput || undefined,
+      nextExamDate: examDateInput ? new Date(examDateInput).toISOString() : null,
     }, {
       onSuccess: () => {
         setIsEditOpen(false);
       }
     });
   };
+
+  const levelOptions = [
+    { value: '100L', label: '100 Level (100L)' },
+    { value: '200L', label: '200 Level (200L)' },
+    { value: '300L', label: '300 Level (300L)' },
+    { value: '400L', label: '400 Level (400L)' },
+    { value: '500L', label: '500 Level (500L)' },
+  ];
 
   const deptOptions = departments?.map((d: Department) => ({
     value: d._id,
@@ -235,9 +311,52 @@ function ProfileRoute() {
                   }
                 />
                 <ProfileRecordRow 
+                  label="Academic Level" 
+                  value={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>{profile?.level || user?.level || '100L'}</span>
+                      <span style={{ fontSize: '0.72rem', padding: '1px 8px', borderRadius: 10, background: 'var(--color-primary-light)', color: 'var(--color-primary)', fontWeight: 600 }}>
+                        Active
+                      </span>
+                    </div>
+                  } 
+                  icon={<GraduationCap size={16} />} 
+                  loading={isLoading}
+                  action={
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <Button variant="primary" size="sm" onClick={handleOpenPromote}>
+                        Move to Next Level
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={handleOpenEdit}>
+                        Change
+                      </Button>
+                    </div>
+                  }
+                />
+                <ProfileRecordRow 
+                  label="Next Exam Date" 
+                  value={
+                    profile?.nextExamDate ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>{new Date(profile.nextExamDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                        <span style={{ fontSize: '0.72rem', padding: '1px 8px', borderRadius: 10, background: 'var(--color-surface-1)', color: 'var(--color-text-secondary)', fontWeight: 600 }}>
+                          {Math.max(0, Math.ceil((new Date(profile.nextExamDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days left
+                        </span>
+                      </div>
+                    ) : 'Not scheduled'
+                  } 
+                  icon={<Calendar size={16} />} 
+                  loading={isLoading}
+                  action={
+                    <Button variant="ghost" size="sm" onClick={handleOpenEdit}>
+                      {profile?.nextExamDate ? 'Edit Date' : 'Set Date'}
+                    </Button>
+                  }
+                />
+                <ProfileRecordRow 
                   label="Enrolled Courses" 
                   value={`${profile?.enrolledCourses?.length ?? 0} courses`} 
-                  icon={<GraduationCap size={16} />} 
+                  icon={<BookOpen size={16} />} 
                   loading={isLoading} 
                   isLast={true}
                   action={
@@ -294,12 +413,165 @@ function ProfileRoute() {
             options={deptOptions}
           />
 
+          <Select
+            label="Academic Level"
+            value={levelInput}
+            onChange={(e) => setLevelInput(e.target.value as any)}
+            options={levelOptions}
+          />
+
+          <Input
+            label="Target Next Exam Date"
+            type="date"
+            value={examDateInput}
+            min={new Date().toISOString().split('T')[0]}
+            onChange={(e) => setExamDateInput(e.target.value)}
+            helperText="Calibrates the study planner timeline and daily prep tasks."
+          />
+
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-12)', marginTop: 'var(--space-12)' }}>
             <Button variant="secondary" type="button" onClick={() => setIsEditOpen(false)} disabled={isUpdating}>
               Cancel
             </Button>
             <Button variant="accent" type="submit" isLoading={isUpdating}>
               Save Changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MOVE TO NEXT LEVEL PROMOTION MODAL */}
+      <Modal
+        isOpen={isPromoteOpen}
+        onClose={() => setIsPromoteOpen(false)}
+        title="Move to a New Level"
+        description="Advance your academic year, enroll in your new level's curriculum, and set your upcoming exam deadline."
+        size="lg"
+      >
+        <form onSubmit={handleSavePromotion} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-20)' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            background: 'var(--color-primary-light)',
+            borderRadius: 12,
+            border: '1px solid var(--color-border)',
+          }}>
+            <div>
+              <p style={{ margin: '0 0 2px', fontSize: '0.8rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                Current Level
+              </p>
+              <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                {profile?.level || user?.level || '100L'}
+              </p>
+            </div>
+            <div style={{ fontSize: '1.25rem', color: 'var(--color-primary)' }}>→</div>
+            <div>
+              <p style={{ margin: '0 0 2px', fontSize: '0.8rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                Promoting To
+              </p>
+              <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                {promoteLevel}
+              </p>
+            </div>
+          </div>
+
+          <Select
+            label="Select New Academic Level"
+            value={promoteLevel}
+            onChange={(e) => {
+              const newLvl = e.target.value as any;
+              setPromoteLevel(newLvl);
+              loadCoursesForLevel(newLvl);
+            }}
+            options={levelOptions}
+          />
+
+          <Input
+            label="Next Exam Date for this Level"
+            type="date"
+            value={promoteExamDate}
+            min={new Date().toISOString().split('T')[0]}
+            onChange={(e) => setPromoteExamDate(e.target.value)}
+            helperText="Set your upcoming semester or certification exam date for your new academic year."
+          />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text)' }}>
+                Select {promoteLevel} Courses to Enroll In:
+              </span>
+              {promoteAvailableCourses.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (promoteSelectedCourseIds.length === promoteAvailableCourses.length) {
+                      setPromoteSelectedCourseIds([]);
+                    } else {
+                      setPromoteSelectedCourseIds(promoteAvailableCourses.map(c => c._id));
+                    }
+                  }}
+                  style={{ all: 'unset', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-primary)' }}
+                >
+                  {promoteSelectedCourseIds.length === promoteAvailableCourses.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}
+            </div>
+
+            {isLoadingPromoteCourses ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[1, 2, 3].map(i => <Skeleton key={i} style={{ height: 50, borderRadius: 8 }} />)}
+              </div>
+            ) : promoteAvailableCourses.length === 0 ? (
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                No courses currently found for {promoteLevel} in this department. You can still advance and enroll in courses anytime in the catalog.
+              </p>
+            ) : (
+              <div style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+                {promoteAvailableCourses.map(c => {
+                  const isChecked = promoteSelectedCourseIds.includes(c._id);
+                  return (
+                    <label
+                      key={c._id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 14px',
+                        background: isChecked ? 'var(--color-surface-raised)' : 'var(--color-surface-0)',
+                        border: `1px solid ${isChecked ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                        borderRadius: 8,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-primary)' }}>{c.code}</span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--color-text)' }}>{c.title}</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setPromoteSelectedCourseIds(prev =>
+                            prev.includes(c._id) ? prev.filter(id => id !== c._id) : [...prev, c._id]
+                          );
+                        }}
+                        style={{ accentColor: 'var(--color-primary)' }}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
+            <Button variant="secondary" type="button" onClick={() => setIsPromoteOpen(false)} disabled={isUpdating}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" isLoading={isUpdating}>
+              Confirm & Advance to {promoteLevel}
             </Button>
           </div>
         </form>

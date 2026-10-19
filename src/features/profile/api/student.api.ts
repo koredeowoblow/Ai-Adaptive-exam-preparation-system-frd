@@ -6,6 +6,8 @@ export interface StudentProfile {
   userId: string;
   name?: string;
   departmentId?: { _id: string; name: string };
+  level?: '100L' | '200L' | '300L' | '400L' | '500L';
+  nextExamDate?: string | null;
   enrolledCourses: (string | Course)[];
   totalSessions: number;
   averageScore: number;
@@ -14,6 +16,9 @@ export interface StudentProfile {
 export interface UpdateProfilePayload {
   name?: string;
   departmentId?: string;
+  level?: '100L' | '200L' | '300L' | '400L' | '500L';
+  nextExamDate?: string | null;
+  enrolledCourseIds?: string[];
 }
 
 export const studentApi = {

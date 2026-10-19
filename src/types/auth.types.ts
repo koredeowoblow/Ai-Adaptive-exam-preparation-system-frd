@@ -3,7 +3,8 @@ export interface AuthUser {
   name: string;
   email: string;
   departmentId?: string;
-  level?: '100L' | '200L' | '300L' | '400L';
+  level?: '100L' | '200L' | '300L' | '400L' | '500L';
+  nextExamDate?: string | null;
   isOnboarded?: boolean;
   role?: 'student' | 'admin' | 'superAdmin';
 }

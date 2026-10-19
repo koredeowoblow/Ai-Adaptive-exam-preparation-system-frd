@@ -43,6 +43,17 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
               {course.code}
             </span>
           </div>
+          {course.level && (
+            <span style={{
+              fontSize: '0.75rem', fontWeight: 600,
+              padding: '2px 8px', borderRadius: 12,
+              background: 'var(--color-primary-light)',
+              color: 'var(--color-primary)',
+              border: '1px solid var(--color-border)',
+            }}>
+              {course.level}L
+            </span>
+          )}
         </div>
 
         <h3 style={{

@@ -4,6 +4,7 @@ export interface Course {
   code: string;
   title: string;
   description?: string;
+  level?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -13,6 +14,7 @@ export interface CreateCourseDTO {
   code: string;
   title: string;
   description?: string;
+  level?: number;
 }
 
 export interface UpdateCourseDTO {
@@ -20,4 +22,5 @@ export interface UpdateCourseDTO {
   code?: string;
   title?: string;
   description?: string;
+  level?: number;
 }

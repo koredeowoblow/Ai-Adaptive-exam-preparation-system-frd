@@ -40,7 +40,7 @@ import { toast } from 'sonner';
 interface UserSearch {
   q?: string;
   departmentId?: string;
-  level?: 'all' | '100L' | '200L' | '300L' | '400L';
+  level?: 'all' | '100L' | '200L' | '300L' | '400L' | '500L';
   onboarded?: 'all' | 'complete' | 'pending';
   page?: number;
   limit?: number;
@@ -73,7 +73,7 @@ export const Route = createFileRoute('/admin/users')({
 interface UserFormState {
   name: string;
   departmentId: string;
-  level: '100L' | '200L' | '300L' | '400L';
+  level: '100L' | '200L' | '300L' | '400L' | '500L';
   isOnboarded: boolean;
 }
 
@@ -1057,10 +1057,11 @@ function UsersAdminRoute() {
               value={editForm.level}
               onChange={(e) => setEditForm((prev) => ({ ...prev, level: e.target.value as UserFormState['level'] }))}
               options={[
-                { value: '100L', label: '100L — Freshman' },
-                { value: '200L', label: '200L — Sophomore' },
-                { value: '300L', label: '300L — Junior' },
-                { value: '400L', label: '400L — Senior' },
+                { value: '100L', label: '100L - Freshman' },
+                { value: '200L', label: '200L - Sophomore' },
+                { value: '300L', label: '300L - Junior' },
+                { value: '400L', label: '400L - Senior' },
+                { value: '500L', label: '500L - Final Year / 500L' },
               ]}
             />
 

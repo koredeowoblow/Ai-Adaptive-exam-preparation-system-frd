@@ -31,6 +31,11 @@ export const aiApi = {
     return apiClient.post('/ai/chat', messagesOrParams);
   },
 
-  generateStudyPlan: async (studentStats: string, department?: string): Promise<{ success: boolean; data: { plan: StudyPlan } }> =>
-    apiClient.post('/ai/study-plan', { studentStats, department }),
+  generateStudyPlan: async (params: {
+    studentStats: string;
+    department?: string;
+    level?: string;
+    nextExamDate?: string | null;
+  }): Promise<{ success: boolean; data: { plan: StudyPlan } }> =>
+    apiClient.post('/ai/study-plan', params),
 };

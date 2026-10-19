@@ -24,6 +24,7 @@ function CoursesIndex() {
   const { user } = useAuth();
   const { data: departments, isLoading: deptsLoading, error: deptsError } = useDepartments();
   const [selectedDeptId, setSelectedDeptId] = React.useState<string | null>(null);
+  const [selectedLevel, setSelectedLevel] = React.useState<number | 'ALL'>('ALL');
   const [search, setSearch] = React.useState('');
 
   React.useEffect(() => {
@@ -47,12 +48,16 @@ function CoursesIndex() {
 
   const filteredCourses = React.useMemo(() => {
     const items = coursesData?.pages.flatMap((page: any) => (Array.isArray(page) ? page : page?.items || [])) || [];
-    if (!search.trim()) return items;
+    let result = items;
+    if (selectedLevel !== 'ALL') {
+      result = result.filter((c: Course) => c.level === selectedLevel);
+    }
+    if (!search.trim()) return result;
     const q = search.toLowerCase();
-    return items.filter((c: Course) =>
+    return result.filter((c: Course) =>
       c.title.toLowerCase().includes(q) || c.code?.toLowerCase().includes(q)
     );
-  }, [coursesData, search]);
+  }, [coursesData, search, selectedLevel]);
 
   if (deptsLoading) return (
     <AppLayout userName={user?.name || "Student"}>
@@ -82,25 +87,23 @@ function CoursesIndex() {
   return (
     <AppLayout userName={user?.name || "Student"}>
       <div className="page-container page-catalog">
-        {/* ── Page Header ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }}>
+        {/* -- Page Header -- */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 32 }}>
           <div>
             <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '1.75rem', margin: '0 0 8px', color: 'var(--color-text-primary)' }}>
               Course Catalog
             </h1>
             <p style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text-secondary)', maxWidth: 600 }}>
-              Explore courses and start building mastery.
+              Explore authentic LASUSTECH departments and courses organized by academic level.
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
             {/* Department Tabs */}
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-              {(user?.role === 'student' && user?.departmentId
-                ? departments?.filter((d: Department) => d._id === user.departmentId)
-                : departments
-              )?.map((dept: Department) => {
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, maxWidth: '100%' }}>
+              {departments?.map((dept: Department) => {
                 const isActive = selectedDeptId === dept._id;
+                const isUserDept = user?.departmentId === dept._id;
                 return (
                   <button
                     key={dept._id}
@@ -115,11 +118,27 @@ function CoursesIndex() {
                       borderRadius: 20,
                       whiteSpace: 'nowrap',
                       transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6
                     }}
                     onMouseOver={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-1)'; }}
                     onMouseOut={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                   >
-                    {dept.name}
+                    <span>{dept.name}</span>
+                    {isUserDept && (
+                      <span style={{
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        padding: '1px 5px',
+                        borderRadius: 8,
+                        background: 'var(--color-primary)',
+                        color: '#fff'
+                      }}>
+                        My Dept
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -129,7 +148,7 @@ function CoursesIndex() {
             <div style={{
               display: 'flex', alignItems: 'center', gap: 10,
               background: 'var(--color-surface-0)', border: '1px solid var(--color-border)',
-              borderRadius: 24, padding: '8px 16px', minWidth: 260, flex: 1, maxWidth: 400,
+              borderRadius: 24, padding: '8px 16px', minWidth: 240, flex: '1 1 240px', maxWidth: 360,
               transition: 'border-color 0.2s ease',
             }}>
               <Search size={16} color="var(--color-text-muted)" style={{ flexShrink: 0 }} />
@@ -146,6 +165,48 @@ function CoursesIndex() {
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Academic Level Filter Bar */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            overflowX: 'auto',
+            padding: '8px 12px',
+            background: 'var(--color-surface-0)',
+            borderRadius: 12,
+            border: '1px solid var(--color-border)'
+          }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>
+              Filter by Level:
+            </span>
+            {(['ALL', 100, 200, 300, 400, 500] as const).map((lvl) => {
+              const isActive = selectedLevel === lvl;
+              return (
+                <button
+                  key={lvl}
+                  onClick={() => setSelectedLevel(lvl)}
+                  style={{
+                    all: 'unset',
+                    cursor: 'pointer',
+                    padding: '4px 14px',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    borderRadius: 16,
+                    background: isActive ? 'var(--color-primary)' : 'var(--color-surface-1)',
+                    color: isActive ? '#ffffff' : 'var(--color-text-secondary)',
+                    border: '1px solid',
+                    borderColor: isActive ? 'var(--color-primary)' : 'var(--color-border)',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseOver={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                  onMouseOut={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-1)'; }}
+                >
+                  {lvl === 'ALL' ? 'All Levels' : `${lvl}L`}
+                </button>
+              );
+            })}
           </div>
         </div>
 

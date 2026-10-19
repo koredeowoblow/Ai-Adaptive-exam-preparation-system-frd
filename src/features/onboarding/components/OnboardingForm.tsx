@@ -32,6 +32,8 @@ export const OnboardingForm: React.FC = () => {
   const [selectedDepartmentId, setSelectedDepartmentId] = React.useState<string>(() => {
     return departments && departments.length > 0 ? departments[0]._id : '';
   });
+  const [selectedLevel, setSelectedLevel] = React.useState<'100L' | '200L' | '300L' | '400L' | '500L'>('100L');
+  const [courseFilter, setCourseFilter] = React.useState<'MY_LEVEL' | 'ALL'>('MY_LEVEL');
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [selectedCourseIds, setSelectedCourseIds] = React.useState<string[]>([]);
   const [failedCourseIds, setFailedCourseIds] = React.useState<string[]>([]);
@@ -44,9 +46,29 @@ export const OnboardingForm: React.FC = () => {
     label: d.name,
   })) || [];
 
+  const levelOptions = [
+    { value: '100L', label: '100 Level (100L)' },
+    { value: '200L', label: '200 Level (200L)' },
+    { value: '300L', label: '300 Level (300L)' },
+    { value: '400L', label: '400 Level (400L)' },
+    { value: '500L', label: '500 Level (500L)' },
+  ];
+
   const selectedDepartmentName = React.useMemo(() => {
     return departments?.find(d => d._id === selectedDepartmentId)?.name || 'Department';
   }, [departments, selectedDepartmentId]);
+
+  const numericSelectedLevel = React.useMemo(() => {
+    return parseInt(selectedLevel.replace('L', ''), 10);
+  }, [selectedLevel]);
+
+  const displayedCourses = React.useMemo(() => {
+    if (courseFilter === 'MY_LEVEL') {
+      const match = courses.filter((c: Course) => c.level === numericSelectedLevel);
+      return match.length > 0 ? match : courses;
+    }
+    return courses;
+  }, [courses, courseFilter, numericSelectedLevel]);
 
   const handleProceedToStep2 = async () => {
     if (!selectedDepartmentId) {
@@ -61,9 +83,15 @@ export const OnboardingForm: React.FC = () => {
       const res = await curriculumApi.getDepartmentCourses(selectedDepartmentId);
       const items = res.data?.items || (Array.isArray(res.data) ? res.data : []);
       setCourses(items);
-      // Automatically preselect all courses by default
-      if (items.length > 0) {
+
+      // Pre-select courses matching the student's chosen academic level
+      const matchingLevelCourses = items.filter((c: Course) => c.level === numericSelectedLevel);
+      if (matchingLevelCourses.length > 0) {
+        setSelectedCourseIds(matchingLevelCourses.map((c: Course) => c._id));
+        setCourseFilter('MY_LEVEL');
+      } else if (items.length > 0) {
         setSelectedCourseIds(items.map((c: Course) => c._id));
+        setCourseFilter('ALL');
       } else {
         setSelectedCourseIds([]);
       }
@@ -85,17 +113,19 @@ export const OnboardingForm: React.FC = () => {
         ? prev.filter(id => id !== courseId)
         : [...prev, courseId]
     );
-    // If user interacts, clear it from failed list if present
     setFailedCourseIds(prev => prev.filter(id => id !== courseId));
   };
 
   const handleToggleAllCourses = () => {
-    if (selectedCourseIds.length === courses.length) {
-      setSelectedCourseIds([]);
-      setFailedCourseIds([]);
+    const displayedIds = displayedCourses.map(c => c._id);
+    const allDisplayedSelected = displayedIds.every(id => selectedCourseIds.includes(id));
+
+    if (allDisplayedSelected) {
+      setSelectedCourseIds(prev => prev.filter(id => !displayedIds.includes(id)));
     } else {
-      setSelectedCourseIds(courses.map(c => c._id));
+      setSelectedCourseIds(prev => Array.from(new Set([...prev, ...displayedIds])));
     }
+    setFailedCourseIds([]);
   };
 
   const handleCompleteSetup = async (retryCourseIds?: string[]) => {
@@ -105,9 +135,10 @@ export const OnboardingForm: React.FC = () => {
     const toEnroll = retryCourseIds ?? selectedCourseIds;
 
     try {
-      // Save department, courses, and mark isOnboarded: true atomically in the backend
+      // Save department, level, courses, and mark isOnboarded: true atomically in the backend
       await completeOnboarding({
         departmentId: selectedDepartmentId,
+        level: selectedLevel,
         courseIds: toEnroll,
       });
 
@@ -119,6 +150,7 @@ export const OnboardingForm: React.FC = () => {
         return {
           ...old,
           departmentId: selectedDepartmentId,
+          level: selectedLevel,
           enrolledCourseIds: toEnroll,
           isOnboarded: true,
         };
@@ -147,6 +179,7 @@ export const OnboardingForm: React.FC = () => {
     try {
       await completeOnboarding({
         departmentId: selectedDepartmentId,
+        level: selectedLevel,
         courseIds: [],
       });
 
@@ -158,6 +191,7 @@ export const OnboardingForm: React.FC = () => {
         return {
           ...old,
           departmentId: selectedDepartmentId,
+          level: selectedLevel,
           isOnboarded: true,
         };
       });
@@ -287,8 +321,15 @@ export const OnboardingForm: React.FC = () => {
                 value={selectedDepartmentId}
                 onChange={(e) => setSelectedDepartmentId(e.target.value)}
               />
+              <Select
+                label="Academic Level"
+                id="academicLevel"
+                options={levelOptions}
+                value={selectedLevel}
+                onChange={(e) => setSelectedLevel(e.target.value as any)}
+              />
               <p className="caption" style={{ color: 'var(--color-text-secondary)', margin: 0, fontWeight: 500 }}>
-                This specifies your academic focus and selects the curriculum available to you.
+                This specifies your academic focus and tailors the course curriculum and difficulty to your year.
               </p>
             </div>
           </Card>
@@ -311,13 +352,13 @@ export const OnboardingForm: React.FC = () => {
         </div>
       )}
 
-      {/* ── STEP 2: COURSE SELECTION ── */}
+      {/* -- STEP 2: COURSE SELECTION -- */}
       {step === 2 && (
         <div className="flex flex-col gap-6">
           <div className="text-center">
             <h1 className="h2 mb-2" style={{ color: 'var(--color-text)' }}>Choose Your Courses</h1>
             <p className="body-base" style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-              Select courses in <strong>{selectedDepartmentName}</strong> to begin preparing for.
+              Select courses in <strong>{selectedDepartmentName}</strong> ({selectedLevel}) to begin preparing for.
             </p>
           </div>
 
@@ -347,18 +388,60 @@ export const OnboardingForm: React.FC = () => {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <div className="flex justify-between items-center px-1">
-                <span className="caption" style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>
-                  {selectedCourseIds.length} of {courses.length} selected
-                </span>
-                <button
-                  type="button"
-                  onClick={handleToggleAllCourses}
-                  className="text-xs font-semibold bg-transparent border-none cursor-pointer p-0"
-                  style={{ color: 'var(--color-primary)' }}
-                >
-                  {selectedCourseIds.length === courses.length ? 'Deselect All' : 'Select All'}
-                </button>
+              {/* Level Filter Switcher */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, padding: '4px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCourseFilter('MY_LEVEL')}
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: 16,
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      border: '1px solid',
+                      borderColor: courseFilter === 'MY_LEVEL' ? 'var(--color-primary)' : 'var(--color-border)',
+                      backgroundColor: courseFilter === 'MY_LEVEL' ? 'var(--color-primary-light)' : 'var(--color-surface-0)',
+                      color: courseFilter === 'MY_LEVEL' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    Recommended for {selectedLevel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCourseFilter('ALL')}
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: 16,
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      border: '1px solid',
+                      borderColor: courseFilter === 'ALL' ? 'var(--color-primary)' : 'var(--color-border)',
+                      backgroundColor: courseFilter === 'ALL' ? 'var(--color-primary-light)' : 'var(--color-surface-0)',
+                      color: courseFilter === 'ALL' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    All Courses ({courses.length})
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="caption" style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>
+                    {selectedCourseIds.length} of {courses.length} selected
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleToggleAllCourses}
+                    className="text-xs font-semibold bg-transparent border-none cursor-pointer p-0"
+                    style={{ color: 'var(--color-primary)' }}
+                  >
+                    {displayedCourses.every(c => selectedCourseIds.includes(c._id)) ? 'Deselect Visible' : 'Select Visible'}
+                  </button>
+                </div>
               </div>
 
               <div
@@ -367,9 +450,10 @@ export const OnboardingForm: React.FC = () => {
                 role="group"
                 aria-label="Available Courses"
               >
-                {courses.map(course => {
+                {displayedCourses.map(course => {
                   const isSelected = selectedCourseIds.includes(course._id);
                   const isFailed = failedCourseIds.includes(course._id);
+                  const isCurrentLevel = course.level === numericSelectedLevel;
                   return (
                     <label
                       key={course._id}
@@ -403,10 +487,23 @@ export const OnboardingForm: React.FC = () => {
                           <BookOpen size={18} />
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text)' }}>
                               {course.code}
                             </span>
+                            {course.level && (
+                              <span style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: 8,
+                                background: isCurrentLevel ? 'var(--color-primary-light)' : 'var(--color-surface-1)',
+                                color: isCurrentLevel ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                border: '1px solid var(--color-border)',
+                              }}>
+                                {course.level}L
+                              </span>
+                            )}
                             <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text)' }}>
                               {course.title}
                             </span>
@@ -498,7 +595,7 @@ export const OnboardingForm: React.FC = () => {
         </div>
       )}
 
-      {/* ── STEP 3: SETUP COMPLETE & CLEAR CALL TO ACTION ── */}
+      {/* -- STEP 3: SETUP COMPLETE & CLEAR CALL TO ACTION -- */}
       {step === 3 && (
         <div className="flex flex-col gap-6 text-center animate-fade-in">
           <div
@@ -520,7 +617,7 @@ export const OnboardingForm: React.FC = () => {
           <div>
             <h1 className="h2 mb-2" style={{ color: 'var(--color-text)' }}>You're all set!</h1>
             <p className="body-base" style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
-              Your workspace is ready in <strong>{selectedDepartmentName}</strong> with{' '}
+              Your workspace is ready in <strong>{selectedDepartmentName}</strong> ({selectedLevel}) with{' '}
               <strong>{selectedCourseIds.length} enrolled course{selectedCourseIds.length === 1 ? '' : 's'}</strong>.
             </p>
           </div>

@@ -6,7 +6,8 @@ export interface StudentUser {
     _id: string;
     name: string;
   } | string;
-  level?: '100L' | '200L' | '300L' | '400L';
+  level?: '100L' | '200L' | '300L' | '400L' | '500L';
+  nextExamDate?: string | null;
   enrolledCourseIds?: Array<{
     _id: string;
     title: string;

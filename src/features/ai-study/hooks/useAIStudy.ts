@@ -9,6 +9,10 @@ export const useAIChat = () =>
 
 export const useGenerateStudyPlan = () =>
   useMutation({
-    mutationFn: ({ studentStats, department }: { studentStats: string; department?: string }) =>
-      aiApi.generateStudyPlan(studentStats, department),
+    mutationFn: (payload: {
+      studentStats: string;
+      department?: string;
+      level?: string;
+      nextExamDate?: string | null;
+    }) => aiApi.generateStudyPlan(payload),
   });
