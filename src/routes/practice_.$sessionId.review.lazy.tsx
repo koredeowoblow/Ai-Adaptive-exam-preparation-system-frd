@@ -22,7 +22,8 @@ function SessionReviewRoute() {
   const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = React.useState(0);
-  const { data: responseData, isLoading, error, isFetching } = usePracticeSession(sessionId, currentPage, 1);
+  const questionCardRef = React.useRef<HTMLDivElement>(null);
+  const { data: responseData, isLoading, error, isFetching } = usePracticeSession(sessionId);
   const { mutate: requestExplanation } = useRequestMcqExplanation(sessionId);
   const [pendingExplanations, setPendingExplanations] = React.useState<Set<string>>(new Set());
 
@@ -41,7 +42,7 @@ function SessionReviewRoute() {
 
   const goToPage = (idx: number) => {
     setCurrentPage(idx);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    questionCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
   if (isLoading) {
@@ -99,8 +100,8 @@ function SessionReviewRoute() {
   void timeString;
 
   const questions: any[] = sessionData?.questionsServed ?? [];
-  const total = responseData.totalServed ?? questions.length;
-  const currentAns = questions[0]; // Array only contains 1 item because of limit=1
+  const total = questions.length || responseData.totalServed || 0;
+  const currentAns = questions[currentPage] || questions[0];
   const currentQ = currentAns?.questionId as unknown as Question;
 
   const getPerformanceTier = (score: number) => {
@@ -249,7 +250,7 @@ function SessionReviewRoute() {
               const isTheory = q.type === 'THEORY';
 
               return (
-                <div className={clsx("bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-gray-700", isFetching && "opacity-50")}>
+                <div ref={questionCardRef} className={clsx("bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-gray-700", isFetching && "opacity-50")}>
                   {/* Header */}
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -426,6 +427,7 @@ function SessionReviewRoute() {
             {total > 1 && (
               <div className="flex items-center justify-between gap-4 mt-2">
                 <button
+                  type="button"
                   onClick={() => goToPage(Math.max(0, currentPage - 1))}
                   disabled={currentPage === 0}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
@@ -442,6 +444,7 @@ function SessionReviewRoute() {
                     const isUnanswered2 = item?.answered === false;
                     return (
                       <button
+                        type="button"
                         key={i}
                         onClick={() => goToPage(i)}
                         title={`Question ${i + 1} - ${isCorrect2 ? 'Correct' : isUnanswered2 ? 'Unanswered' : 'Incorrect'}`}
@@ -463,6 +466,7 @@ function SessionReviewRoute() {
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => goToPage(Math.min(total - 1, currentPage + 1))}
                   disabled={currentPage === total - 1}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"

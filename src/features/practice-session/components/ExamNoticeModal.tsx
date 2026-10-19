@@ -4,8 +4,9 @@ import { Button } from '../../../shared/components/Button';
 
 interface ExamNoticeModalProps {
   isOpen: boolean;
-  onStartExam: () => void;
-  onRequestFullscreen: () => Promise<void>;
+  onStartExam: (fullscreenGranted?: boolean) => void;
+  onRequestFullscreen: () => Promise<boolean | void>;
+  onExitExam?: () => void;
   courseTitle?: string;
   questionCount?: number;
 }
@@ -14,6 +15,7 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
   isOpen,
   onStartExam,
   onRequestFullscreen,
+  onExitExam,
   courseTitle,
   questionCount,
 }) => {
@@ -24,13 +26,16 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
 
   const handleStart = async () => {
     setIsEntering(true);
+    let granted = false;
     try {
-      await onRequestFullscreen();
+      const res = await onRequestFullscreen();
+      granted = res !== false;
     } catch (e) {
       console.warn('Fullscreen request error:', e);
+      granted = false;
     } finally {
       setIsEntering(false);
-      onStartExam();
+      onStartExam(granted);
     }
   };
 
@@ -254,16 +259,30 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
             backgroundColor: 'var(--color-surface-0, #f8fafc)',
             borderTop: '1px solid var(--color-border)',
             display: 'flex',
-            justifyContent: 'flex-end',
+            alignItems: 'center',
+            justifyContent: onExitExam ? 'space-between' : 'flex-end',
+            gap: 'var(--space-12)',
           }}
         >
+          {onExitExam && (
+            <Button
+              variant="ghost"
+              size="md"
+              disabled={isEntering}
+              onClick={onExitExam}
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Cancel & Exit
+            </Button>
+          )}
+
           <Button
             variant="primary"
             size="lg"
             disabled={!agreed || isEntering}
             isLoading={isEntering}
             onClick={handleStart}
-            style={{ width: '100%', minHeight: 48, fontWeight: 700 }}
+            style={{ minHeight: 48, fontWeight: 700, flex: onExitExam ? undefined : 1 }}
           >
             <Maximize2 size={18} style={{ marginRight: 8 }} />
             Enter Full Screen & Begin Exam

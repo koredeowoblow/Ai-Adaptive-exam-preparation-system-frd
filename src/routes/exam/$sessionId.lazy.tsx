@@ -113,11 +113,16 @@ function ExamSessionRoute() {
     return false;
   });
 
-  const handleStartExam = React.useCallback(() => {
+  const [bypassFullscreenOverlay, setBypassFullscreenOverlay] = React.useState(false);
+
+  const handleStartExam = React.useCallback((fullscreenGranted?: boolean) => {
     try {
       sessionStorage.setItem(`exam_started_${sessionId}`, 'true');
     } catch {
       // ignore
+    }
+    if (fullscreenGranted === false) {
+      setBypassFullscreenOverlay(true);
     }
     setHasStartedExam(true);
   }, [sessionId]);
@@ -134,6 +139,12 @@ function ExamSessionRoute() {
     theoryTextareaRef,
     activeQuestionId
   );
+
+  React.useEffect(() => {
+    if (isFullscreen) {
+      setBypassFullscreenOverlay(false);
+    }
+  }, [isFullscreen]);
 
   // Extract full question object
   const activeQuestionObj = React.useMemo(() => questionsList[currentIndex]?.questionId as unknown as Question, [questionsList, currentIndex]);
@@ -434,6 +445,7 @@ function ExamSessionRoute() {
         isOpen={!hasStartedExam && isMonitoring}
         onStartExam={handleStartExam}
         onRequestFullscreen={requestFullscreen}
+        onExitExam={() => navigate({ to: '/exam-prep' })}
         courseTitle={
           typeof responseData?.session?.courseId === 'object'
             ? (responseData?.session?.courseId as any)?.title
@@ -444,8 +456,20 @@ function ExamSessionRoute() {
 
       {/* Strict Fullscreen Enforcer Overlay during Exam */}
       <FullscreenEnforcerOverlay
-        isVisible={hasStartedExam && isMonitoring && !isFullscreen}
-        onRequestFullscreen={requestFullscreen}
+        isVisible={hasStartedExam && isMonitoring && !isFullscreen && !bypassFullscreenOverlay}
+        onRequestFullscreen={async () => {
+          const success = await requestFullscreen();
+          if (success) {
+            setBypassFullscreenOverlay(false);
+          }
+          return success;
+        }}
+        onContinueWindowed={() => {
+          setBypassFullscreenOverlay(true);
+        }}
+        onExitExam={() => {
+          navigate({ to: '/exam-prep' });
+        }}
       />
 
     <header style={{

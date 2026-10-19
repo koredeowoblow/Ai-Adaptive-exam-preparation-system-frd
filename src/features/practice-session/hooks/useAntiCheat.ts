@@ -14,8 +14,24 @@ export const useAntiCheat = (
   const eventBufferRef = useRef<IAntiCheatEvent[]>([]);
   const blurTimeRef = useRef<number | null>(null);
 
+  const getIsFullscreenActive = useCallback(() => {
+    if (typeof document === 'undefined') return false;
+    return Boolean(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement
+    );
+  }, []);
+
   const [isFullscreen, setIsFullscreen] = useState<boolean>(() => {
-    return typeof document !== 'undefined' && Boolean(document.fullscreenElement);
+    if (typeof document === 'undefined') return false;
+    return Boolean(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement
+    );
   });
   const [lastViolationType, setLastViolationType] = useState<IntegrityViolationType | null>(null);
   const [isProtectionFlashing, setIsProtectionFlashing] = useState<boolean>(false);
@@ -25,17 +41,28 @@ export const useAntiCheat = (
     setLastViolationType(null);
   }, []);
 
-  const requestFullscreen = useCallback(async () => {
+  const requestFullscreen = useCallback(async (): Promise<boolean> => {
     try {
-      if (typeof document !== 'undefined' && !document.fullscreenElement) {
-        if (document.documentElement.requestFullscreen) {
-          await document.documentElement.requestFullscreen();
+      if (typeof document === 'undefined') return false;
+      const el = document.documentElement as any;
+      if (!getIsFullscreenActive()) {
+        if (el.requestFullscreen) {
+          await el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+          await el.webkitRequestFullscreen();
+        } else if (el.mozRequestFullScreen) {
+          await el.mozRequestFullScreen();
+        } else if (el.msRequestFullscreen) {
+          await el.msRequestFullscreen();
         }
       }
+      setIsFullscreen(true);
+      return true;
     } catch (err) {
       console.warn('Failed to enter fullscreen mode:', err);
+      return false;
     }
-  }, []);
+  }, [getIsFullscreenActive]);
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -85,7 +112,7 @@ export const useAntiCheat = (
 
     // 1. Fullscreen monitoring
     const handleFullscreenChange = () => {
-      const active = Boolean(document.fullscreenElement);
+      const active = getIsFullscreenActive();
       setIsFullscreen(active);
       if (!active) {
         pushEvent('TAB_SWITCH', { reason: 'fullscreen_exit' });
@@ -246,6 +273,9 @@ export const useAntiCheat = (
     }, 10000);
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleBlur);
     window.addEventListener('focus', handleFocus);
@@ -259,6 +289,9 @@ export const useAntiCheat = (
       clearInterval(checkDevTools);
       clearInterval(batchInterval);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('focus', handleFocus);
