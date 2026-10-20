@@ -31,7 +31,7 @@ export const Route = createLazyFileRoute('/ai-chat')({
 
 function TypingIndicator() {
   return (
-    <div className="flex gap-3 items-start my-2 max-w-[85%] mr-auto">
+    <div className="flex gap-3 items-start my-2 max-w-lg mr-auto">
       <div 
         className="w-8 h-8 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0 mt-0.5"
         aria-hidden="true"
@@ -297,7 +297,7 @@ function AIChatRoute() {
                   id="course-context-select"
                   value={selectedCourse?._id || ''}
                   onChange={(e) => handleCourseSelect(e.target.value)}
-                  className="h-8 px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-surface-0 text-text-primary hover:border-border-hover focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer max-w-[160px] sm:max-w-[220px] truncate"
+                  className="h-8 px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-surface-0 text-text-primary hover:border-border-hover focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer max-w-40 sm:max-w-56 truncate"
                 >
                   {courses.map((c) => (
                     <option key={c._id} value={c._id}>
@@ -366,7 +366,7 @@ function AIChatRoute() {
 
                   {/* Suggestion Chips */}
                   <div className="w-full space-y-2">
-                    <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block text-left px-1">
+                    <span className="text-xs font-bold text-text-muted uppercase tracking-wider block text-left px-1">
                       Suggested Prompts
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
@@ -393,7 +393,7 @@ function AIChatRoute() {
                       <div
                         key={i}
                         className={`flex gap-3 items-start ${
-                          isUser ? 'flex-row-reverse ml-auto max-w-[85%] sm:max-w-[75%]' : 'mr-auto max-w-[95%] sm:max-w-[88%]'
+                          isUser ? 'flex-row-reverse ml-auto max-w-md sm:max-w-lg' : 'mr-auto max-w-xl sm:max-w-2xl'
                         }`}
                       >
                         {/* Avatar */}
@@ -417,7 +417,7 @@ function AIChatRoute() {
                           }`}
                         >
                           {isUser ? (
-                            <p className="text-sm sm:text-[0.9375rem] whitespace-pre-wrap leading-relaxed break-words">
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">
                               {msg.content}
                             </p>
                           ) : (
@@ -435,7 +435,7 @@ function AIChatRoute() {
                   {errorMessage && (
                     <div 
                       role="alert"
-                      className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-danger/40 bg-danger-light text-danger text-xs sm:text-sm max-w-[85%] mr-auto"
+                      className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-danger/40 bg-danger-light text-danger text-xs sm:text-sm max-w-lg mr-auto"
                     >
                       <div className="flex items-center gap-2">
                         <AlertCircle size={16} className="shrink-0" />
@@ -468,7 +468,7 @@ function AIChatRoute() {
                   placeholder={selectedCourse ? `Ask about ${selectedCourse.code}... (Enter to send)` : 'Ask a question...'}
                   rows={1}
                   disabled={isPending}
-                  className="w-full px-2.5 py-1.5 bg-transparent text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none min-h-[40px] max-h-36 leading-relaxed scrollbar-none disabled:opacity-60"
+                  className="w-full px-2.5 py-1.5 bg-transparent text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none min-h-10 max-h-36 leading-relaxed scrollbar-none disabled:opacity-60"
                 />
 
                 <button
@@ -486,10 +486,10 @@ function AIChatRoute() {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-text-muted mt-1.5 px-1">
+              <div className="flex items-center justify-between text-xs text-text-muted mt-1.5 px-1">
                 <span>Shift+Enter for newline</span>
                 {selectedCourse && (
-                  <span className="truncate max-w-[200px]">Context: {selectedCourse.code}</span>
+                  <span className="truncate max-w-48">Context: {selectedCourse.code}</span>
                 )}
               </div>
             </div>

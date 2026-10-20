@@ -38,7 +38,7 @@ const CodeBlock: React.FC<CodeBlockProps> = React.memo(({ language, code }) => {
     <div className="my-3 rounded-xl border border-border bg-surface-1 overflow-hidden shadow-xs">
       {/* Code Header */}
       <div className="flex items-center justify-between px-3.5 py-1.5 border-b border-border bg-surface-2/60 text-xs text-text-secondary font-mono">
-        <span className="font-semibold uppercase tracking-wider text-[11px]">
+        <span className="font-semibold uppercase tracking-wider text-xs">
           {language || 'code'}
         </span>
         <button
@@ -108,7 +108,7 @@ export const ChatMessageRenderer: React.FC<ChatMessageRendererProps> = React.mem
   if (!content) return null;
 
   return (
-    <div className="space-y-2 text-sm sm:text-[0.9375rem] leading-relaxed break-words">
+    <div className="space-y-2 text-sm leading-relaxed break-words">
       {segments.map((seg, idx) => {
         if (seg.type === 'code') {
           return (

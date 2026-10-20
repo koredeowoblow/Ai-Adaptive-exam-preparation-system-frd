@@ -466,7 +466,6 @@ function HistoryRoute() {
                                       variant="primary"
                                       size="sm"
                                       onClick={() => handleResume(session)}
-                                      className="min-h-[36px]"
                                     >
                                       <Play size={14} className="mr-1.5" />
                                       Resume
@@ -475,7 +474,7 @@ function HistoryRoute() {
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => setDiscardSession(session)}
-                                      className="text-text-muted hover:text-danger min-h-[36px]"
+                                      className="text-text-muted hover:text-danger"
                                       aria-label={`Discard in-progress session for ${courseCode || courseTitle}`}
                                     >
                                       <Trash2 size={14} />
@@ -488,7 +487,6 @@ function HistoryRoute() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleReview(session._id)}
-                                    className="min-h-[36px]"
                                   >
                                     Review
                                     <ChevronRight size={14} className="ml-1" />
@@ -500,7 +498,6 @@ function HistoryRoute() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleReview(session._id)}
-                                    className="min-h-[36px]"
                                   >
                                     View Log
                                     <ChevronRight size={14} className="ml-1" />
