@@ -4,41 +4,60 @@ import { useDocumentTitle } from "../../../shared/hooks/useDocumentTitle";
 import { Skeleton } from "../../../shared/components/Skeleton";
 import { ErrorState } from "../../../shared/components/ErrorState";
 import { StatTile } from "../../../shared/components/StatTile";
+import { Button } from "../../../shared/components/Button";
 import { useNavigate } from "@tanstack/react-router";
+import { useAuth } from "../../auth/hooks/useAuth";
 import {
   Trophy, Star, Medal, Target, Zap, Award,
   Brain, Flame, ArrowRight, TrendingUp,
   Calendar, CheckCircle2, XCircle,
   Sparkles, Clock, Target as TargetIcon,
+  ChevronRight,
 } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, YAxis, Tooltip } from "recharts";
-
 
 export interface StudentDashboardProps {
   studentId: string;
 }
 
-
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId }) => {
   useDocumentTitle("Dashboard - EduAdapt");
+  const { user } = useAuth();
   const { data, isLoading, error } = useStudentDashboard(studentId);
   const navigate = useNavigate();
+
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Student';
 
   if (isLoading) {
     return (
       <div className="page-container page-wide">
-        <div className="flex flex-col gap-[var(--space-32)] pb-20">
-          <div className="stat-grid">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-[106px] rounded-xl" />)}
+        <div className="flex flex-col gap-8 pb-20">
+          {/* Header Skeleton */}
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-9 w-64 rounded-lg" />
+            <Skeleton className="h-5 w-96 rounded-md" />
           </div>
-          <Skeleton className="h-[132px] rounded-xl" />
+
+          {/* Stat Strip Skeleton */}
+          <div className="stat-grid">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-[106px] rounded-xl" />
+            ))}
+          </div>
+
+          {/* Hero Action Skeleton */}
+          <Skeleton className="h-[140px] rounded-xl" />
+
+          {/* 2-Column Grid Skeleton */}
           <div className="dashboard-grid">
-            <div className="flex flex-col gap-[var(--space-24)]">
-              <Skeleton className="h-[200px] rounded-xl" />
+            <div className="flex flex-col gap-6">
+              <Skeleton className="h-[220px] rounded-xl" />
               <Skeleton className="h-[260px] rounded-xl" />
             </div>
-            <div className="flex flex-col gap-[var(--space-24)]">
-              <Skeleton className="h-[320px] rounded-xl" />
+            <div className="flex flex-col gap-6">
+              <Skeleton className="h-[280px] rounded-xl" />
+              <Skeleton className="h-[180px] rounded-xl" />
+              <Skeleton className="h-[160px] rounded-xl" />
             </div>
           </div>
         </div>
@@ -46,25 +65,34 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId })
     );
   }
 
-  if (error || !data) return <ErrorState message="Failed to load your dashboard. Please try again." />;
+  if (error || !data) {
+    return (
+      <div className="page-container page-wide">
+        <ErrorState message="Failed to load your dashboard. Please check your connection and try again." />
+      </div>
+    );
+  }
 
   const { stats, streak, achievements } = data;
   const eloRating = Math.round(stats?.averageElo || 0);
   const eloLevel = stats?.averageEloLevel || "Beginner";
+  const topicsMastered = stats?.totalTopicsMastered ?? 0;
+  const currentStreak = streak?.currentStreak ?? 0;
+  const totalCourses = stats?.totalCourses ?? 0;
 
-  // Use server-authoritative focus areas (derived from topic mastery)
+  const allStatsZero = eloRating === 0 && topicsMastered === 0 && currentStreak === 0 && totalCourses === 0;
+
+  // Server-authoritative focus areas (derived from topic mastery)
   const focusAreas = stats?.focusAreas || [];
   const topicsToRevisit = focusAreas;
-
   const recentActivities = stats?.recentActivity || [];
-
   const focusTopic = topicsToRevisit.length > 0 ? topicsToRevisit[0] : null;
 
   // Chart and performance data
   const chartData = stats?.performanceSummary?.chartData || [];
   const recentAverage = stats?.performanceSummary?.averageScore != null ? Math.round(stats.performanceSummary.averageScore) : undefined;
 
-  const isFirstTime = (stats?.totalTopicsMastered ?? 0) === 0 && (!streak?.currentStreak || streak.currentStreak === 0) && recentActivities.length === 0;
+  const isFirstTime = topicsMastered === 0 && currentStreak === 0 && recentActivities.length === 0;
 
   const renderAchievementIcon = (icon: string) => {
     const icons: Record<string, React.ReactNode> = {
@@ -77,154 +105,201 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId })
 
   return (
     <main className="page-container page-wide">
-      <div className="flex flex-col gap-[var(--space-32)] pb-20">
+      <div className="flex flex-col gap-8 pb-20">
 
-        {/* ── TERTIARY: Key Progress ── */}
-        <div className="stat-grid">
-          <StatTile value={eloRating} label="Mastery Score" sub={eloLevel} />
-          <StatTile
-            value={stats?.totalTopicsMastered ?? 0}
-            label="Topics mastered"
-            sub={isFirstTime ? "Ready to begin" : (stats as any)?.totalTopicsCount ? `out of ${(stats as any).totalTopicsCount}` : "mastered"}
-          />
-          <StatTile
-            value={streak?.currentStreak && streak.currentStreak > 0 ? `${streak.currentStreak}d` : "0d"}
-            label="Study streak"
-            sub={streak?.longestStreak && streak.longestStreak > 0 ? `Best: ${streak.longestStreak}d` : "Start today"}
-          />
-          <StatTile value={stats?.totalCourses ?? 0} label="Courses" sub="enrolled" />
-        </div>
+        {/* ── Page H1 with Context Line ── */}
+        <header className="flex flex-col gap-1.5">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-text-primary m-0">
+            Welcome back, {firstName}
+          </h1>
+          <p className="text-sm sm:text-base text-text-secondary m-0">
+            Track your exam readiness, review weak topics, and continue your adaptive study session.
+          </p>
+        </header>
 
-        {/* ── PRIMARY: First-time state or Today's Focus ── */}
-        {isFirstTime ? (
-          <div className="bg-[var(--color-surface-0)] border-2 border-[var(--color-primary)] rounded-xl p-[var(--space-32)] flex items-center justify-between gap-[var(--space-24)] flex-wrap shadow-sm">
-            <div className="flex-1 w-full max-w-3xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-3" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
-                <Sparkles size={14} /> Welcome to EduAdapt
+        {/* ── Stat Strip: Collapses into Guidance When All Values are Zero ── */}
+        {allStatsZero ? (
+          <div className="bg-surface-0 border border-dashed border-border rounded-xl p-5 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center text-primary shrink-0">
+                <Sparkles size={20} />
               </div>
-              <h2 className="font-['Outfit',_sans-serif] text-[var(--font-size-24)] font-bold text-[var(--color-text-primary)] m-0 mb-2">
-                Start your first diagnostic practice session
-              </h2>
-              <p className="text-[var(--font-size-16)] text-[var(--color-text-secondary)] m-0 leading-relaxed">
-                Take an initial adaptive session to calibrate question difficulty to your skill level and begin earning your study streak.
-              </p>
+              <div>
+                <p className="text-sm font-semibold text-text-primary m-0">Your study journey starts here</p>
+                <p className="text-xs text-text-secondary m-0 mt-0.5">
+                  Complete your first practice session to establish your mastery rating, track study streaks, and unlock progress analytics.
+                </p>
+              </div>
             </div>
-            <button
-              onClick={() => navigate({ to: "/exam-prep" })}
-              className="btn-primary-cta shrink-0"
-              style={{ fontSize: '1rem', padding: '12px 24px' }}
-            >
-              Start First Practice Session →
-            </button>
+            <Button variant="primary" size="sm" onClick={() => navigate({ to: "/exam-prep" })}>
+              Start First Session
+            </Button>
           </div>
         ) : (
-          <div className="bg-[var(--color-surface-0)] border border-[var(--color-border)] rounded-xl p-[var(--space-32)] flex items-center justify-between gap-[var(--space-24)] flex-wrap">
-            <div className="flex-1 w-full max-w-4xl">
-              <p className="text-[var(--color-primary)] text-[var(--font-size-13)] font-medium m-0 mb-2 tracking-[0.02em] uppercase">
-                Today's Focus
-              </p>
-              <h2 className="font-['Outfit',_sans-serif] text-[var(--font-size-24)] font-medium text-[var(--color-text-primary)] m-0 mb-2">
-                {focusTopic ? "Continue your preparation" : "Ready for your next session?"}
-              </h2>
-              <p className="text-[var(--font-size-16)] text-[var(--color-text-secondary)] m-0 leading-relaxed">
-                {focusTopic
-                  ? <>You're making progress. Based on your recent activity, a topic to revisit is <strong>{focusTopic.topicName}</strong>.</>
-                  : "Start an adaptive practice session based on your current level."
-                }
-              </p>
-            </div>
-            <button
-              onClick={() => navigate({ to: "/exam-prep" })}
-              className="btn-primary-cta shrink-0"
-            >
-              {focusTopic ? "Practice Topic →" : "Start Practice →"}
-            </button>
+          <div className="stat-grid">
+            <StatTile value={eloRating} label="Mastery Score" sub={eloLevel} />
+            <StatTile
+              value={topicsMastered}
+              label="Topics mastered"
+              sub={(stats as any)?.totalTopicsCount ? `out of ${(stats as any).totalTopicsCount}` : "mastered"}
+            />
+            <StatTile
+              value={currentStreak > 0 ? `${currentStreak}d` : "0d"}
+              label="Study streak"
+              sub={streak?.longestStreak && streak.longestStreak > 0 ? `Best: ${streak.longestStreak}d` : "Active"}
+            />
+            <StatTile value={totalCourses} label="Courses" sub="enrolled" />
           </div>
         )}
 
-        {/* ── SECONDARY: Split Grid ── */}
+        {/* ── One Prominent Next-Step Panel ── */}
+        {isFirstTime ? (
+          <div className="bg-surface-0 border-2 border-primary rounded-xl p-6 sm:p-8 flex items-center justify-between gap-6 flex-wrap shadow-sm">
+            <div className="flex-1 min-w-[280px] max-w-3xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-3 bg-primary-light text-primary">
+                <Sparkles size={14} /> Diagnostic Calibration
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-text-primary m-0 mb-2">
+                Start your diagnostic practice session
+              </h2>
+              <p className="text-sm sm:text-base text-text-secondary m-0 leading-relaxed">
+                Take an initial adaptive session to calibrate question difficulty to your skill level and begin earning your study streak.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => navigate({ to: "/exam-prep" })}
+              className="shrink-0"
+            >
+              Start Diagnostic Session <ArrowRight size={16} className="ml-1.5" />
+            </Button>
+          </div>
+        ) : (
+          <div className="bg-surface-0 border border-border rounded-xl p-6 sm:p-8 flex items-center justify-between gap-6 flex-wrap">
+            <div className="flex-1 min-w-[280px] max-w-3xl">
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider block mb-2">
+                Continue where you left off
+              </span>
+              <h2 className="text-xl sm:text-2xl font-semibold text-text-primary m-0 mb-2">
+                {focusTopic ? `Review ${focusTopic.topicName}` : "Ready for your next adaptive session?"}
+              </h2>
+              <p className="text-sm sm:text-base text-text-secondary m-0 leading-relaxed">
+                {focusTopic ? (
+                  <>Based on your recent performance, your recommended focus area is <strong>{focusTopic.topicName}</strong> ({focusTopic.courseName}).</>
+                ) : (
+                  "Reinforce your understanding with personalized questions tailored to your current mastery level."
+                )}
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => navigate({ to: "/exam-prep" })}
+              className="shrink-0"
+            >
+              {focusTopic ? "Practice Topic" : "Start Practice"} <ArrowRight size={16} className="ml-1.5" />
+            </Button>
+          </div>
+        )}
+
+        {/* ── Two-Column Layout Below with Real Empty States ── */}
         <div className="dashboard-grid">
 
           {/* LEFT COLUMN */}
-          <div className="flex flex-col gap-[var(--space-24)]">
+          <div className="flex flex-col gap-6">
 
             {/* Topics to revisit */}
-            <section>
-              <h3 className="text-[var(--font-size-18)] font-medium text-[var(--color-text-primary)] m-0 mb-[var(--space-16)] flex items-center gap-2">
-                <TargetIcon size={16} color="var(--color-primary)" /> Topics to revisit
-              </h3>
+            <section className="bg-surface-0 border border-border rounded-xl p-5 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-text-primary m-0 flex items-center gap-2">
+                  <TargetIcon size={18} className="text-primary" /> Topics to revisit
+                </h3>
+                {topicsToRevisit.length > 0 && (
+                  <span className="text-xs text-text-muted font-medium">
+                    {topicsToRevisit.length} flagged
+                  </span>
+                )}
+              </div>
 
               {topicsToRevisit.length > 0 ? (
-                <div className="flex flex-col">
-                  {topicsToRevisit.map((topic: any, index: number) => (
-                    <div key={topic.topicName} className={`py-[var(--space-16)] flex items-center justify-between gap-[var(--space-12)] ${index < topicsToRevisit.length - 1 ? 'border-b border-[var(--color-border)]' : ''}`}>
+                <div className="flex flex-col divide-y divide-border">
+                  {topicsToRevisit.map((topic: any) => (
+                    <div key={topic.topicName} className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-[var(--font-size-14)] font-medium text-[var(--color-text-primary)] m-0 mb-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                        <p className="text-sm font-medium text-text-primary m-0 truncate">
                           {topic.topicName}
                         </p>
-                        <p className="text-[var(--font-size-12)] text-[var(--color-text-secondary)] m-0">
+                        <p className="text-xs text-text-secondary m-0 mt-0.5">
                           {topic.courseName}
                         </p>
                       </div>
-                      <div className="flex items-center gap-[var(--space-16)]">
+                      <div className="flex items-center gap-4 shrink-0">
                         <div className="text-right">
-                          <p className={`text-[var(--font-size-14)] font-bold m-0 mb-0.5 ${topic.elo < 1200 ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>
+                          <p className={`text-sm font-bold m-0 tabular-nums ${topic.elo < 1200 ? 'text-warning' : 'text-success'}`}>
                             {Math.round(topic.elo)}
                           </p>
-                          <p className="caption text-[var(--color-text-muted)] m-0 uppercase">Mastery Score</p>
+                          <p className="text-[10px] text-text-muted m-0 uppercase font-medium">Mastery</p>
                         </div>
-                        <button
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => navigate({ to: "/exam-prep" })}
-                          className="btn-outline"
                         >
                           Review
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="p-[var(--space-32)] px-[var(--space-16)] text-center bg-[var(--color-surface-0)] rounded-[10px] border border-dashed border-[var(--color-border)]">
-                  <p className="text-[var(--font-size-14)] text-[var(--color-text-secondary)] m-0">
-                    Complete a few practice sessions to discover topics you should revisit.
+                <div className="py-6 px-4 text-center border border-dashed border-border rounded-lg bg-surface-1">
+                  <p className="text-sm font-medium text-text-primary m-0">No topics flagged for review</p>
+                  <p className="text-xs text-text-secondary m-0 mt-1 mb-3">
+                    Complete practice sessions to identify areas that need reinforcement.
                   </p>
+                  <Button variant="outline" size="sm" onClick={() => navigate({ to: "/exam-prep" })}>
+                    Start Practice Session
+                  </Button>
                 </div>
               )}
             </section>
 
             {/* Recent Sessions */}
-            <section>
-              <div className="flex justify-between items-center mb-[var(--space-16)]">
-                <h3 className="text-[var(--font-size-18)] font-medium text-[var(--color-text-primary)] m-0 flex items-center gap-2">
-                  <Clock size={16} color="var(--color-primary)" /> Recent Sessions
+            <section className="bg-surface-0 border border-border rounded-xl p-5 sm:p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-text-primary m-0 flex items-center gap-2">
+                  <Clock size={18} className="text-primary" /> Recent Sessions
                 </h3>
-                <button
-                  onClick={() => navigate({ to: "/practice/history" })}
-                  aria-label="View all recent sessions"
-                  className="text-[var(--font-size-13)] text-[var(--color-primary)] font-medium bg-transparent border-none cursor-pointer flex items-center gap-[3px] font-inherit"
-                >
-                  All <ArrowRight size={12} />
-                </button>
+                {recentActivities.length > 0 && (
+                  <button
+                    onClick={() => navigate({ to: "/practice/history" })}
+                    aria-label="View all recent sessions"
+                    className="text-xs text-primary font-medium bg-transparent border-none cursor-pointer flex items-center gap-1 hover:underline"
+                  >
+                    All <ArrowRight size={12} />
+                  </button>
+                )}
               </div>
 
               {recentActivities.length > 0 ? (
-                <div className="flex flex-col">
-                  {recentActivities.slice(0, 4).map((a: any, index: number) => {
+                <div className="flex flex-col divide-y divide-border">
+                  {recentActivities.slice(0, 4).map((a: any) => {
                     const good = a.performanceLevel === "good";
                     const fair = a.performanceLevel === "fair";
-                    const scoreColor = good ? 'var(--color-success)' : fair ? 'var(--color-warning)' : 'var(--color-danger)';
+                    const scoreColor = good ? 'text-success' : fair ? 'text-warning' : 'text-danger';
                     return (
-                      <div key={a._id} className={`dashboard-session-item flex items-center gap-[var(--space-12)] py-[var(--space-16)] ${index < Math.min(recentActivities.length, 4) - 1 ? 'border-b border-[var(--color-border)]' : ''}`}>
-                        {good ? <CheckCircle2 size={16} color={scoreColor} /> : <XCircle size={16} color={scoreColor} />}
+                      <div key={a._id} className="py-3.5 first:pt-0 last:pb-0 flex items-center gap-3">
+                        {good ? <CheckCircle2 size={16} className="text-success shrink-0" /> : <XCircle size={16} className={scoreColor + " shrink-0"} />}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-[var(--font-size-14)] text-[var(--color-text-primary)] m-0 mb-0.5 whitespace-nowrap overflow-hidden text-ellipsis">{a.topicName}</p>
-                          <p className="text-[var(--font-size-12)] text-[var(--color-text-secondary)] m-0">{new Date(a.date).toLocaleDateString()}</p>
+                          <p className="font-medium text-sm text-text-primary m-0 truncate">{a.topicName}</p>
+                          <p className="text-xs text-text-secondary m-0 mt-0.5">{new Date(a.date).toLocaleDateString()}</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-[var(--font-size-13)] font-bold" style={{ color: scoreColor }}>{Math.round(a.score)}%</span>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className={`text-sm font-bold tabular-nums ${scoreColor}`}>{Math.round(a.score)}%</span>
                           <button
                             onClick={() => navigate({ to: "/practice/$sessionId/review", params: { sessionId: a._id } })}
-                            className="p-1 bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer"
+                            className="p-1 rounded bg-transparent border-none text-text-muted hover:text-text-primary cursor-pointer transition-colors"
                             aria-label="View Session Details"
                             title="View Details"
                           >
@@ -236,8 +311,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId })
                   })}
                 </div>
               ) : (
-                <div className="p-[var(--space-24)] text-center bg-[var(--color-surface-0)] rounded-[10px]">
-                  <p className="text-[var(--font-size-14)] text-[var(--color-text-muted)] m-0">No recent sessions found.</p>
+                <div className="py-6 px-4 text-center border border-dashed border-border rounded-lg bg-surface-1">
+                  <p className="text-sm font-medium text-text-primary m-0">No recent sessions</p>
+                  <p className="text-xs text-text-secondary m-0 mt-1 mb-3">
+                    Completed adaptive practice sessions will appear here with instant answer breakdowns.
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => navigate({ to: "/exam-prep" })}>
+                    Take First Session
+                  </Button>
                 </div>
               )}
             </section>
@@ -245,112 +326,133 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId })
           </div>
 
           {/* RIGHT COLUMN */}
-          <aside className="flex flex-col gap-[var(--space-24)]">
+          <aside className="flex flex-col gap-6">
 
             {/* Performance Chart */}
-            <section>
-              <h3 className="text-[var(--font-size-18)] font-medium text-[var(--color-text-primary)] m-0 mb-[var(--space-16)] flex items-center gap-2">
-                <TrendingUp size={16} color="var(--color-primary)" /> Recent Performance
+            <section className="bg-surface-0 border border-border rounded-xl p-5 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-text-primary m-0 mb-4 flex items-center gap-2">
+                <TrendingUp size={18} className="text-primary" /> Recent Performance
               </h3>
 
-              <div className="p-[var(--space-20)] bg-[var(--color-surface-0)] rounded-[10px] border-[0.5px] border-[var(--color-border)]">
-                {recentActivities.length > 0 ? (
-                  <>
-                    <div className="flex items-baseline gap-2 mb-[var(--space-16)]">
-                      <span className="text-[var(--font-size-24)] font-bold text-[var(--color-text-primary)]">{recentAverage}%</span>
-                      <span className="text-[var(--font-size-13)] text-[var(--color-text-secondary)]">Average score (last {chartData.length} sessions)</span>
-                    </div>
-
-                    <div className="h-[160px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData} margin={{ top: 5, right: 0, left: -24, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-                          <YAxis dataKey="score" domain={[0, 100]} ticks={[0, 50, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} />
-                          <Tooltip
-                            contentStyle={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface-raised)', boxShadow: 'var(--shadow-md)' }}
-                            labelStyle={{ color: 'var(--color-text-muted)', fontSize: 12, marginBottom: 4 }}
-                            itemStyle={{ color: 'var(--color-text-primary)', fontSize: 14, fontWeight: 600 }}
-                            formatter={(val: any) => [`${val}%`, 'Score']}
-                            labelFormatter={(_, payload) => payload?.[0]?.payload?.topic || 'Session'}
-                          />
-                          <Area type="monotone" dataKey="score" stroke="var(--color-primary)" strokeWidth={2} fillOpacity={0.15} fill="var(--color-primary)" dot={{ r: 3, fill: 'var(--color-surface-0)', stroke: 'var(--color-primary)', strokeWidth: 2 }} activeDot={{ r: 5 }} />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </>
-                ) : (
-                  <div className="py-[var(--space-24)] text-center">
-                    <p className="text-[var(--font-size-14)] text-[var(--color-text-muted)] m-0">Complete sessions to see your performance trend.</p>
+              {recentActivities.length > 0 ? (
+                <>
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <span className="text-2xl font-bold tabular-nums text-text-primary">{recentAverage}%</span>
+                    <span className="text-xs text-text-secondary">Average score (last {chartData.length} sessions)</span>
                   </div>
-                )}
-              </div>
+
+                  <div className="h-44">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData} margin={{ top: 5, right: 0, left: -24, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+                        <YAxis dataKey="score" domain={[0, 100]} ticks={[0, 50, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} />
+                        <Tooltip
+                          contentStyle={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface-raised)', boxShadow: 'var(--shadow-md)' }}
+                          labelStyle={{ color: 'var(--color-text-muted)', fontSize: 12, marginBottom: 4 }}
+                          itemStyle={{ color: 'var(--color-text-primary)', fontSize: 14, fontWeight: 600 }}
+                          formatter={(val: any) => [`${val}%`, 'Score']}
+                          labelFormatter={(_, payload) => payload?.[0]?.payload?.topic || 'Session'}
+                        />
+                        <Area type="monotone" dataKey="score" stroke="var(--color-primary)" strokeWidth={2} fillOpacity={0.12} fill="var(--color-primary)" dot={{ r: 3, fill: 'var(--color-surface-0)', stroke: 'var(--color-primary)', strokeWidth: 2 }} activeDot={{ r: 5 }} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              ) : (
+                <div className="py-6 px-4 text-center border border-dashed border-border rounded-lg bg-surface-1">
+                  <p className="text-sm font-medium text-text-primary m-0">No performance data yet</p>
+                  <p className="text-xs text-text-secondary m-0 mt-1 mb-3">
+                    Your score trajectory and calibration trends will appear after your first sessions.
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => navigate({ to: "/exam-prep" })}>
+                    Start Practicing
+                  </Button>
+                </div>
+              )}
             </section>
 
-            {/* Learning Tools */}
-            <section>
-              <h3 className="text-[var(--font-size-18)] font-medium text-[var(--color-text-primary)] m-0 mb-[var(--space-16)] flex items-center gap-2">
-                <Sparkles size={16} color="var(--color-primary)" /> Learning tools
+            {/* Learning Tools as Clearly Clickable Rows */}
+            <section className="bg-surface-0 border border-border rounded-xl p-5 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-text-primary m-0 mb-3 flex items-center gap-2">
+                <Sparkles size={18} className="text-primary" /> Learning tools
               </h3>
 
-              <div className="grid grid-cols-2 gap-[var(--space-12)]">
+              <div className="flex flex-col divide-y divide-border">
                 {[
-                  { label: "AI Tutor", desc: "Ask questions, get explanations", icon: <Brain size={16} />, to: "/ai-chat" },
-                  { label: "Study Planner", desc: "Build a weekly plan", icon: <Calendar size={16} />, to: "/study-planner" },
-                ].map(tool => (
+                  {
+                    label: "AI Tutor",
+                    desc: "Ask questions, get adaptive explanations & step-by-step guidance",
+                    icon: <Brain size={18} />,
+                    to: "/ai-chat",
+                  },
+                  {
+                    label: "Study Planner",
+                    desc: "Build a personalized weekly schedule and track daily goals",
+                    icon: <Calendar size={18} />,
+                    to: "/study-planner",
+                  },
+                ].map((tool) => (
                   <button
                     key={tool.label}
                     onClick={() => navigate({ to: tool.to as any })}
-                    className="dashboard-tool-card"
+                    className="w-full py-3.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3 text-left bg-transparent border-none cursor-pointer rounded-lg hover:bg-surface-1 transition-colors group p-2 -mx-2"
                   >
-                    <span className="w-[44px] h-[44px] rounded-lg flex items-center justify-center bg-[var(--color-primary-light)] text-[var(--color-primary)] shrink-0">
-                      {tool.icon}
-                    </span>
-                    <div>
-                      <p className="font-medium text-[var(--font-size-14)] text-[var(--color-text-primary)] m-0 mb-1">{tool.label}</p>
-                      <p className="text-[var(--font-size-12)] text-[var(--color-text-secondary)] m-0 leading-[1.4]">{tool.desc}</p>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary-light text-primary shrink-0 transition-transform group-hover:scale-105">
+                        {tool.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-text-primary m-0 group-hover:text-primary transition-colors">
+                          {tool.label}
+                        </p>
+                        <p className="text-xs text-text-secondary m-0 mt-0.5 truncate">
+                          {tool.desc}
+                        </p>
+                      </div>
                     </div>
+                    <ChevronRight size={16} className="text-text-muted group-hover:text-primary shrink-0 transition-transform group-hover:translate-x-0.5" />
                   </button>
                 ))}
               </div>
             </section>
 
             {/* Achievements */}
-            <section>
-              <div className="flex justify-between items-center mb-[var(--space-16)]">
-                <h3 className="text-[var(--font-size-18)] font-medium text-[var(--color-text-primary)] m-0 flex items-center gap-2">
-                  <Trophy size={16} color="var(--color-primary)" /> Achievements
+            <section className="bg-surface-0 border border-border rounded-xl p-5 sm:p-6">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-base sm:text-lg font-semibold text-text-primary m-0 flex items-center gap-2">
+                  <Trophy size={18} className="text-primary" /> Achievements
                 </h3>
-                <button
-                  onClick={() => navigate({ to: "/achievements" })}
-                  aria-label="View all achievements"
-                  className="text-[var(--font-size-13)] text-[var(--color-primary)] font-medium bg-transparent border-none cursor-pointer flex items-center gap-[3px] font-inherit"
-                >
-                  All <ArrowRight size={12} />
-                </button>
-              </div>
-
-              <div className="p-[var(--space-16)] bg-[var(--color-surface-0)] rounded-[10px] border-[0.5px] border-[var(--color-border)]">
-                {achievements && achievements.length > 0 ? (
-                  <div className="flex flex-wrap gap-[var(--space-12)]">
-                    {achievements.slice(0, 4).map((a: any) => (
-                      <div key={a._id} className="flex items-center gap-[10px] py-2 px-3 bg-[var(--color-surface-1)] rounded-lg">
-                        <div className="text-[var(--color-primary)]">
-                          {renderAchievementIcon(a.achievementId?.icon || "trophy")}
-                        </div>
-                        <p className="text-[var(--font-size-13)] font-medium text-[var(--color-text-primary)] m-0">
-                          {a.achievementId?.name}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-[var(--space-12)]">
-                    <p className="text-[var(--font-size-13)] text-[var(--color-text-secondary)] m-0">
-                      Complete your first adaptive session to unlock your first badge.
-                    </p>
-                  </div>
+                {achievements && achievements.length > 0 && (
+                  <button
+                    onClick={() => navigate({ to: "/achievements" })}
+                    aria-label="View all achievements"
+                    className="text-xs text-primary font-medium bg-transparent border-none cursor-pointer flex items-center gap-1 hover:underline"
+                  >
+                    All <ArrowRight size={12} />
+                  </button>
                 )}
               </div>
+
+              {achievements && achievements.length > 0 ? (
+                <div className="flex flex-wrap gap-2.5">
+                  {achievements.slice(0, 4).map((a: any) => (
+                    <div key={a._id} className="flex items-center gap-2 py-1.5 px-3 bg-surface-1 border border-border rounded-lg">
+                      <div className="text-primary">
+                        {renderAchievementIcon(a.achievementId?.icon || "trophy")}
+                      </div>
+                      <p className="text-xs font-medium text-text-primary m-0">
+                        {a.achievementId?.name}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-4 px-3 text-center border border-dashed border-border rounded-lg bg-surface-1">
+                  <p className="text-xs text-text-secondary m-0">
+                    Complete your first adaptive session to unlock your first achievement badge.
+                  </p>
+                </div>
+              )}
             </section>
 
           </aside>

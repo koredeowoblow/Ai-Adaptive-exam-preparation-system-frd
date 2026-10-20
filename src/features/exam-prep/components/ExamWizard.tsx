@@ -7,31 +7,48 @@ import type { QuestionTypeMix } from '../../../types/practice.types';
 import { Skeleton } from '../../../shared/components/Skeleton';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { ErrorState } from '../../../shared/components/ErrorState';
-import { ArrowLeft, ChevronRight, BookOpen, GraduationCap, Award, Briefcase, HelpCircle, AlertTriangle, BookCheck, ListChecks, Blend } from 'lucide-react';
+import { Stepper } from '../../../shared/components/Stepper';
+import { Badge } from '../../../shared/components/Badge';
+import { Button } from '../../../shared/components/Button';
+import { Popover } from '../../../shared/components/Popover';
+import {
+  ArrowLeft,
+  BookOpen,
+  GraduationCap,
+  Award,
+  Briefcase,
+  HelpCircle,
+  AlertTriangle,
+  BookCheck,
+  ListChecks,
+  Blend,
+  ArrowRight,
+} from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 
 type WizardStep = 'level' | 'course';
 
 const LEVELS = [
-  { value: 100, description: 'First year foundation' },
-  { value: 200, description: 'Second year core' },
-  { value: 300, description: 'Third year intermediate' },
-  { value: 400, description: 'Fourth year advanced' },
-  { value: 500, description: 'Fifth year professional' },
+  { value: 100, label: '100 Level', description: 'Year 1 Foundation', explanation: 'First-year foundational general and introductory department courses.' },
+  { value: 200, label: '200 Level', description: 'Year 2 Core', explanation: 'Second-year core departmental requirements and introductory theory.' },
+  { value: 300, label: '300 Level', description: 'Year 3 Intermediate', explanation: 'Third-year intermediate courses, algorithms, and practical applications.' },
+  { value: 400, label: '400 Level', description: 'Year 4 Advanced', explanation: 'Fourth-year advanced specializations, research, and project preparation.' },
+  { value: 500, label: '500 Level', description: 'Year 5 Professional', explanation: 'Fifth-year engineering and professional practice curriculum.' },
 ];
 
-/** Mirror of the backend ACADEMIC_LEVELS config for UI display only. */
+/** Mirror of backend ACADEMIC_LEVELS config for UI display only. */
 const LEVEL_CAPS: Record<string, { theoryCap: number; totalCap: number }> = {
   '100L': { theoryCap: 2,  totalCap: 40 },
   '200L': { theoryCap: 4,  totalCap: 40 },
   '300L': { theoryCap: 8,  totalCap: 40 },
   '400L': { theoryCap: 16, totalCap: 40 },
+  '500L': { theoryCap: 16, totalCap: 40 },
 };
 
 const QUESTION_TYPE_OPTIONS: { value: QuestionTypeMix; label: string; sub: string; icon: React.ReactNode }[] = [
-  { value: 'MIXED', label: 'Mixed', sub: 'MCQ + Theory (default)', icon: <Blend size={16} /> },
-  { value: 'OBJECTIVE_ONLY', label: 'Objective Only', sub: 'Multiple choice questions', icon: <ListChecks size={16} /> },
-  { value: 'THEORY_ONLY', label: 'Theory Only', sub: 'Free-response questions', icon: <BookCheck size={16} /> },
+  { value: 'MIXED', label: 'Mixed', sub: 'Objective + Theory questions', icon: <Blend size={16} /> },
+  { value: 'OBJECTIVE_ONLY', label: 'Objective Only', sub: 'Multiple-choice questions', icon: <ListChecks size={16} /> },
+  { value: 'THEORY_ONLY', label: 'Theory Only', sub: 'Structured free-response questions', icon: <BookCheck size={16} /> },
 ];
 
 function getCourseLevel(code: string): number {
@@ -40,25 +57,37 @@ function getCourseLevel(code: string): number {
   return Math.floor(parseInt(match[1], 10) / 100) * 100;
 }
 
-// ── Step Heading ───────────────────────────────────────────────────────────────
-const StepHeading: React.FC<{ step: number; title: string; sub: string }> = ({ step, title, sub }) => (
-  <div style={{ marginBottom: 'var(--space-16)' }}>
-    <p className="label" style={{ color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 var(--space-4)' }}>
-      Step {step} of 2
-    </p>
-    <h2 className="h2" style={{ margin: '0 0 var(--space-8)' }}>{title}</h2>
-    <p className="body-base" style={{ color: 'var(--color-text-secondary)', margin: 0 }}>{sub}</p>
+// ── Step Heading ─────────────────────────────────────────────────────────────
+const StepHeading: React.FC<{ step: number; title: string; sub: string }> = ({ title, sub }) => (
+  <div className="mb-6">
+    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary m-0 mb-1.5">{title}</h2>
+    <p className="text-sm sm:text-base text-text-secondary m-0">{sub}</p>
   </div>
 );
 
-
-
 // ── Level Step ───────────────────────────────────────────────────────────────
-interface LevelStepProps { onSelect: (level: number) => void; departmentId: string; }
-const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId }) => {
-  const [showHelp, setShowHelp] = React.useState(false);
-  const { data: allCoursesData, isError, refetch } = useDepartmentCourses(departmentId);
-  const courses = React.useMemo(() => allCoursesData?.pages.flatMap(p => p.items) || [], [allCoursesData]);
+interface LevelStepProps {
+  onSelect: (level: number) => void;
+  departmentId: string;
+  studentLevelNum: number;
+}
+
+const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId, studentLevelNum }) => {
+  const { data: allCoursesData, isLoading, isError, refetch } = useDepartmentCourses(departmentId);
+  const courses = React.useMemo(() => allCoursesData?.pages.flatMap((p) => p.items) || [], [allCoursesData]);
+
+  if (isLoading) {
+    return (
+      <div>
+        <StepHeading step={1} title="Select your academic level" sub="Filter courses by your academic curriculum year." />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-44 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (isError) {
     return (
@@ -70,64 +99,138 @@ const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId }) => {
   }
 
   const getLevelIcon = (level: number) => {
-    switch(level) {
-      case 100: return <BookOpen size={24} color="var(--color-text-muted)" />;
-      case 200: return <GraduationCap size={24} color="var(--color-text-muted)" />;
-      case 300: return <Award size={24} color="var(--color-text-muted)" />;
-      case 400: return <Briefcase size={24} color="var(--color-text-muted)" />;
-      default: return <Award size={24} color="var(--color-text-muted)" />;
+    switch (level) {
+      case 100: return <BookOpen size={22} className="text-text-muted" />;
+      case 200: return <GraduationCap size={22} className="text-text-muted" />;
+      case 300: return <Award size={22} className="text-text-muted" />;
+      case 400: return <Briefcase size={22} className="text-text-muted" />;
+      default: return <Award size={22} className="text-text-muted" />;
     }
   };
 
   return (
-    <>
-      <StepHeading step={1} title="Select your level" sub="Filter courses by your current academic year." />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 'var(--space-12)', alignItems: 'start' }}>
+    <div>
+      <StepHeading
+        step={1}
+        title="Select your academic level"
+        sub="Filter courses by your academic curriculum year to begin practice."
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
         {LEVELS.map((level) => {
-          const levelCourses = courses.filter(c => getCourseLevel(c.code) === level.value).slice(0, 2);
-          const sampleText = levelCourses.length > 0 ? `e.g. ${levelCourses.map(c => c.code).join(', ')}` : 'No courses found';
+          const levelCourses = courses.filter((c) => getCourseLevel(c.code) === level.value);
+          const hasCourses = levelCourses.length > 0;
+          const isStudentLevel = level.value === studentLevelNum;
+          const sampleText = hasCourses
+            ? `e.g. ${levelCourses.slice(0, 2).map((c) => c.code).join(', ')}`
+            : 'No courses yet';
+
+          if (!hasCourses) {
+            return (
+              <div
+                key={level.value}
+                aria-disabled="true"
+                className="bg-surface-0 border border-border/60 rounded-xl p-5 flex flex-col justify-between h-full opacity-60 cursor-not-allowed select-none"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-3xl font-bold tabular-nums text-text-muted">
+                      {level.value}
+                    </span>
+                    {getLevelIcon(level.value)}
+                  </div>
+                  <p className="text-sm font-semibold text-text-muted m-0 mb-1">
+                    {level.description}
+                  </p>
+                  <p className="text-xs text-text-muted m-0">
+                    Curriculum currently in development
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-border/40">
+                  <span className="inline-flex items-center text-xs font-medium text-text-muted">
+                    No courses yet
+                  </span>
+                </div>
+              </div>
+            );
+          }
 
           return (
-            <button key={level.value} onClick={() => onSelect(level.value)} className="exam-level-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: 'var(--space-12)' }}>
-                <span className="h3" style={{ lineHeight: 1 }}>
-                  {level.value}
-                </span>
-                {getLevelIcon(level.value)}
+            <button
+              key={level.value}
+              type="button"
+              onClick={() => onSelect(level.value)}
+              className={`bg-surface-0 border text-left rounded-xl p-5 flex flex-col justify-between h-full transition-all duration-150 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                isStudentLevel
+                  ? 'border-primary ring-1 ring-primary/30 hover:border-primary hover:shadow-md'
+                  : 'border-border hover:border-text-secondary hover:shadow-sm'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-3xl font-bold tabular-nums text-text-primary group-hover:text-primary transition-colors">
+                    {level.value}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {isStudentLevel && (
+                      <Badge variant="primary" size="sm">
+                        Your level
+                      </Badge>
+                    )}
+                    {getLevelIcon(level.value)}
+                  </div>
+                </div>
+                <p className="text-sm font-semibold text-text-primary m-0 mb-1">
+                  {level.description}
+                </p>
+                <p className="text-xs text-text-secondary m-0">
+                  {levelCourses.length} {levelCourses.length === 1 ? 'course' : 'courses'} available
+                </p>
               </div>
-              <span className="body-sm" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.4, fontWeight: 500, marginBottom: 'var(--space-8)' }}>
-                {level.description}
-              </span>
-              <span className="badge" style={{ fontSize: 'var(--font-size-12)' }}>
-                {sampleText}
-              </span>
+
+              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                <span className="text-xs text-text-muted font-mono truncate mr-2">
+                  {sampleText}
+                </span>
+                <span className="text-xs font-semibold text-primary inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform shrink-0">
+                  Select <ArrowRight size={13} />
+                </span>
+              </div>
             </button>
           );
         })}
       </div>
 
-      <div style={{ marginTop: 'var(--space-16)' }}>
-        <button
-          onClick={() => setShowHelp(!showHelp)}
-          className="btn-link"
-          aria-expanded={showHelp}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--color-primary)', fontSize: 'var(--font-size-13)', fontWeight: 600 }}
+      {/* Popover for "Not sure which level to pick?" */}
+      <div className="mt-6 flex items-center">
+        <Popover
+          align="left"
+          width="360px"
+          trigger={
+            <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary hover:underline cursor-pointer">
+              <HelpCircle size={15} /> Not sure which level to pick?
+            </span>
+          }
         >
-          <HelpCircle size={16} /> Not sure which level to pick?
-        </button>
-        {showHelp && (
-          <div style={{ marginTop: 'var(--space-12)', padding: 'var(--space-16)', background: 'var(--color-info-light)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-primary-border)' }}>
-            <p className="body-sm" style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-              <strong>Level 100</strong> usually corresponds to Year 1 (Freshman) introductory courses.<br/>
-              <strong>Level 200</strong> corresponds to Year 2 (Sophomore).<br/>
-              <strong>Level 300 &amp; 400</strong> are for Year 3/4 (Junior/Senior) advanced topics.<br/>
-              Check your course syllabus if you are unsure!
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-text-primary m-0 pb-1 border-b border-border">
+              Academic Level Guide
+            </h4>
+            <div className="space-y-2 text-xs text-text-secondary">
+              {LEVELS.map((lvl) => (
+                <div key={lvl.value} className="flex gap-2 items-start">
+                  <span className="font-bold text-text-primary shrink-0 w-12">{lvl.value}L:</span>
+                  <span>{lvl.explanation}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-text-muted m-0 pt-2 border-t border-border">
+              Choose the level matching your current semester course load.
             </p>
           </div>
-        )}
+        </Popover>
       </div>
-
-    </>
+    </div>
   );
 };
 
@@ -140,99 +243,156 @@ interface CourseStepProps {
   onBack: () => void;
   isStarting: boolean;
 }
-const CourseStep: React.FC<CourseStepProps> = ({ departmentId, level, studentLevel, onSelect, onBack, isStarting }) => {
+
+const CourseStep: React.FC<CourseStepProps> = ({
+  departmentId,
+  level,
+  studentLevel,
+  onSelect,
+  onBack,
+  isStarting,
+}) => {
   const [questionType, setQuestionType] = React.useState<QuestionTypeMix>('MIXED');
   const levelCaps = LEVEL_CAPS[studentLevel] ?? LEVEL_CAPS['100L'];
-  const { 
-    data: allCoursesData, 
+  const {
+    data: allCoursesData,
     isLoading,
     isError,
     refetch,
     hasNextPage,
     fetchNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
   } = useDepartmentCourses(departmentId);
-  
+
   const allCoursesItems = React.useMemo(() => {
-    return allCoursesData?.pages.flatMap(page => page.items) || [];
+    return allCoursesData?.pages.flatMap((page) => page.items) || [];
   }, [allCoursesData]);
 
   const filteredCourses = allCoursesItems.filter((c: Course) => getCourseLevel(c.code) === level) ?? [];
 
-  if (isError) return (
-    <ErrorState
-      message="Unable to load courses for your department. Please check your connection."
-      onRetry={() => refetch()}
-    />
-  );
+  if (isError) {
+    return (
+      <ErrorState
+        message="Unable to load courses for your department. Please check your connection."
+        onRetry={() => refetch()}
+      />
+    );
+  }
 
-  if (isLoading) return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {[1, 2, 3].map(i => <Skeleton key={i} style={{ height: 84, borderRadius: 8 }} />)}
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-3">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-28 rounded-xl" />
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div>
       <StepHeading
         step={2}
         title="Select a course to practice"
-        sub={filteredCourses.length > 0
-          ? `${filteredCourses.length} course${filteredCourses.length > 1 ? 's' : ''} available.`
-          : `No ${level}-level courses found.`}
+        sub={
+          filteredCourses.length > 0
+            ? `${filteredCourses.length} ${filteredCourses.length === 1 ? 'course' : 'courses'} available for Level ${level}.`
+            : `No ${level}-level courses found.`
+        }
       />
 
-      {/* Level Info Banner */}
-      <div className="card-secondary" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-10)', padding: 'var(--space-12) var(--space-16)', marginBottom: 'var(--space-16)', fontSize: 'var(--font-size-13)' }}>
-        <span className="label">{studentLevel}</span>
-        <span aria-hidden="true">·</span>
-        <span style={{ color: 'var(--color-text-secondary)' }}>Max total: <strong>{levelCaps.totalCap} questions</strong></span>
-        <span aria-hidden="true">·</span>
-        <span style={{ color: 'var(--color-text-secondary)' }}>Max theory: <strong>{levelCaps.theoryCap} questions</strong></span>
+      {/* Level Policy Cap Banner */}
+      <div className="bg-surface-0 border border-border rounded-xl p-3.5 sm:p-4 mb-5 flex items-center justify-between gap-3 flex-wrap text-xs sm:text-sm">
+        <div className="flex items-center gap-2">
+          <Badge variant="primary" size="sm">{studentLevel}</Badge>
+          <span className="text-text-secondary">Academic Session Policies:</span>
+        </div>
+        <div className="flex items-center gap-3 text-text-secondary">
+          <span>Max total: <strong className="text-text-primary tabular-nums">{levelCaps.totalCap} Qs</strong></span>
+          <span aria-hidden="true" className="text-border">·</span>
+          <span>Max theory: <strong className="text-text-primary tabular-nums">{levelCaps.theoryCap} Qs</strong></span>
+        </div>
       </div>
 
       {/* Question Type Selector */}
-      <div style={{ marginBottom: 'var(--space-20)' }}>
-        <p className="label" style={{ textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-muted)', marginBottom: 'var(--space-8)' }}>Question Type</p>
-        <div role="group" aria-label="Question type" style={{ display: 'flex', gap: 'var(--space-8)', flexWrap: 'wrap' }}>
-          {QUESTION_TYPE_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setQuestionType(opt.value)}
-              aria-pressed={questionType === opt.value}
-              className={questionType === opt.value ? 'exam-type-btn exam-type-btn--active' : 'exam-type-btn'}
-            >
-              {opt.icon} {opt.label}
-            </button>
-          ))}
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-wider text-text-muted m-0 mb-2">
+          Question Format
+        </p>
+        <div role="group" aria-label="Question type" className="flex gap-2 sm:gap-3 flex-wrap">
+          {QUESTION_TYPE_OPTIONS.map((opt) => {
+            const isSelected = questionType === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setQuestionType(opt.value)}
+                aria-pressed={isSelected}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-colors cursor-pointer ${
+                  isSelected
+                    ? 'bg-primary-light text-primary border-primary shadow-xs font-semibold'
+                    : 'bg-surface-0 text-text-secondary border-border hover:border-text-secondary'
+                }`}
+              >
+                {opt.icon}
+                <span>{opt.label}</span>
+              </button>
+            );
+          })}
         </div>
-        <p className="body-xs" style={{ margin: 'var(--space-6) 0 0', color: 'var(--color-text-muted)' }}>
-          {QUESTION_TYPE_OPTIONS.find(o => o.value === questionType)?.sub}
+        <p className="text-xs text-text-muted m-0 mt-2">
+          {QUESTION_TYPE_OPTIONS.find((o) => o.value === questionType)?.sub}
         </p>
       </div>
 
+      {/* Course List or Empty State */}
       {filteredCourses.length === 0 ? (
-        <div style={{ padding: 'var(--space-40) var(--space-24)', textAlign: 'center', background: 'var(--color-surface-0)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
-          <p className="body-base" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-16)' }}>We don't have any active courses for this level yet.</p>
-          <button onClick={onBack} className="btn-outline">
-            Try a different level
-          </button>
+        <div className="bg-surface-0 border border-border rounded-xl p-8 text-center">
+          <p className="text-sm text-text-secondary m-0 mb-4">
+            We don't have any active courses configured for Level {level} yet.
+          </p>
+          <Button variant="outline" size="sm" onClick={onBack}>
+            <ArrowLeft size={14} className="mr-1.5" /> Select a different level
+          </Button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+        <div className="flex flex-col gap-3">
           {filteredCourses.map((course: Course) => (
-            <div key={course._id} className="exam-selection-row" style={{ flexDirection: 'column', padding: 'var(--space-16) var(--space-20)', gap: 'var(--space-16)', alignItems: 'stretch' }}>
-              <div style={{ display: 'flex', gap: 'var(--space-12)', alignItems: 'center' }}>
-                <span className="badge">{course.code}</span>
-                <p className="body-base" style={{ fontWeight: 600, margin: 0 }}>{course.title}</p>
+            <div
+              key={course._id}
+              className="bg-surface-0 border border-border rounded-xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-text-secondary transition-colors"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2.5 mb-1">
+                  <Badge variant="neutral" size="sm">{course.code}</Badge>
+                  <h3 className="text-base font-semibold text-text-primary m-0 truncate">
+                    {course.title}
+                  </h3>
+                </div>
+                {course.description && (
+                  <p className="text-xs text-text-secondary m-0 line-clamp-1">
+                    {course.description}
+                  </p>
+                )}
               </div>
-              <div style={{ display: 'flex', gap: 'var(--space-8)' }}>
-                <button onClick={() => onSelect(course, 10, questionType)} disabled={isStarting} className="btn-outline" style={{ flex: 1, padding: 'var(--space-8)', fontSize: 'var(--font-size-14)' }}>
+
+              <div className="flex items-center gap-2.5 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onSelect(course, 10, questionType)}
+                  disabled={isStarting}
+                >
                   {isStarting ? 'Starting...' : 'Quick Practice (10 Qs)'}
-                </button>
-                <button onClick={() => onSelect(course, 40, questionType)} disabled={isStarting} className="btn-primary" style={{ flex: 1, padding: 'var(--space-8)', fontSize: 'var(--font-size-14)' }}>
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => onSelect(course, 40, questionType)}
+                  disabled={isStarting}
+                >
                   {isStarting ? 'Starting...' : 'Full Mock Exam (40 Qs)'}
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -240,23 +400,26 @@ const CourseStep: React.FC<CourseStepProps> = ({ departmentId, level, studentLev
       )}
 
       {hasNextPage && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--space-16)' }}>
-          <button
+        <div className="flex justify-center mt-6">
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => fetchNextPage()}
             disabled={isFetchingNextPage}
-            className="btn-outline"
-            style={{ borderRadius: 999, padding: 'var(--space-6) var(--space-16)', fontSize: 'var(--font-size-13)' }}
+            isLoading={isFetchingNextPage}
           >
-            {isFetchingNextPage ? 'Loading...' : 'Load More Courses'}
-          </button>
+            Load More Courses
+          </Button>
         </div>
       )}
 
-      {/* Back link - CSS hover, no JS handlers */}
-      <button onClick={onBack} className="wizard-back-btn">
-        <ArrowLeft size={16} /> Back to levels
-      </button>
-    </>
+      {/* Back button */}
+      <div className="mt-6 pt-4 border-t border-border">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          <ArrowLeft size={14} className="mr-1.5" /> Back to Level Selection
+        </Button>
+      </div>
+    </div>
   );
 };
 
@@ -267,42 +430,48 @@ export const ExamWizard: React.FC = () => {
   const { mutate: startSession, isPending: isStarting } = useStartSession();
   const isStartingRef = React.useRef(false);
   const [isImmediateStarting, setIsImmediateStarting] = React.useState(false);
-  const [clampWarning, setClampWarning] = React.useState<string | null>(null);
-
-  const [step, setStep] = React.useState<WizardStep>('level');
-  const [selectedLevel, setSelectedLevel] = React.useState<number | null>(null);
 
   const studentLevel = user?.level ?? '100L';
+  const studentLevelNum = parseInt(studentLevel.replace(/\D/g, ''), 10) || 100;
 
-  const handleLevelSelect = (level: number) => { setSelectedLevel(level); setStep('course'); };
+  const [step, setStep] = React.useState<WizardStep>('level');
+  const [selectedLevel, setSelectedLevel] = React.useState<number>(studentLevelNum);
+
+  const handleLevelSelect = (level: number) => {
+    setSelectedLevel(level);
+    setStep('course');
+  };
+
   const handleCourseSelect = (course: Course, totalQuestions: number, questionType: QuestionTypeMix) => {
     if (isStartingRef.current || isStarting) return;
     isStartingRef.current = true;
     setIsImmediateStarting(true);
-    setClampWarning(null);
 
-    startSession({ courseId: course._id, totalQuestions, questionType }, {
-      onSuccess: (response) => {
-        if (response.data.clampedMessage) {
-          try {
-            sessionStorage.setItem(`exam_clamped_message_${response.data.session._id}`, response.data.clampedMessage);
-          } catch {
-            // Ignore storage failure
+    startSession(
+      { courseId: course._id, totalQuestions, questionType },
+      {
+        onSuccess: (response) => {
+          if (response.data.clampedMessage) {
+            try {
+              sessionStorage.setItem(`exam_clamped_message_${response.data.session._id}`, response.data.clampedMessage);
+            } catch {
+              // Ignore storage failure
+            }
           }
-        }
-        navigate({ to: '/exam/$sessionId', params: { sessionId: response.data.session._id } });
-      },
-      onError: () => {
-        isStartingRef.current = false;
-        setIsImmediateStarting(false);
-      },
-    });
+          navigate({ to: '/exam/$sessionId', params: { sessionId: response.data.session._id } });
+        },
+        onError: () => {
+          isStartingRef.current = false;
+          setIsImmediateStarting(false);
+        },
+      }
+    );
   };
 
   if (!user?.departmentId) {
     return (
       <EmptyState
-        icon={<AlertTriangle size={32} />}
+        icon={<AlertTriangle size={32} className="text-warning" />}
         title="Department Required"
         description="Please select your academic department to view available exam prep courses."
         actionLabel="Complete Onboarding"
@@ -311,34 +480,34 @@ export const ExamWizard: React.FC = () => {
     );
   }
 
+  const currentStepIndex = step === 'level' ? 0 : 1;
+
   return (
-    <div style={{ width: '100%' }}>
-      
-      {/* Clamped warning banner */}
-      {clampWarning && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', marginBottom: 16, borderRadius: 8, background: 'var(--color-warning-light)', border: '1px solid var(--color-warning)', color: 'var(--color-text-primary)', fontSize: '0.9rem' }}>
-          <AlertTriangle size={18} style={{ flexShrink: 0, color: 'var(--color-warning)', marginTop: 1 }} />
-          <span>{clampWarning}</span>
-        </div>
-      )}
-      
-      {/* Breadcrumb Stepper */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontSize: '0.85rem', fontWeight: 600 }}>
-        <button 
-          onClick={() => setStep('level')}
-          style={{ all: 'unset', cursor: 'pointer', color: step === 'level' ? 'var(--color-primary)' : 'var(--color-text-muted)' }}
-        >
-          Level
-        </button>
-        <ChevronRight size={14} color="var(--color-text-muted)" />
-        <span style={{ color: step === 'course' ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
-          Course
-        </span>
+    <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
+      {/* Real Stepper Header */}
+      <div className="bg-surface-0 border border-border rounded-xl p-4 sm:p-5">
+        <Stepper
+          steps={[
+            { id: 'level', label: '1. Academic Level', sublabel: `Level ${selectedLevel}` },
+            { id: 'course', label: '2. Course & Format', sublabel: 'Practice or mock' },
+          ]}
+          currentStepIndex={currentStepIndex}
+          onStepClick={(index) => {
+            if (index === 0) setStep('level');
+          }}
+        />
       </div>
 
-      <div style={{ position: 'relative' }}>
-        {step === 'level' && <LevelStep onSelect={handleLevelSelect} departmentId={user.departmentId} />}
-        {step === 'course' && selectedLevel && (
+      {/* Step Content */}
+      <div className="relative">
+        {step === 'level' && (
+          <LevelStep
+            onSelect={handleLevelSelect}
+            departmentId={user.departmentId}
+            studentLevelNum={studentLevelNum}
+          />
+        )}
+        {step === 'course' && (
           <CourseStep
             departmentId={user.departmentId}
             level={selectedLevel}
