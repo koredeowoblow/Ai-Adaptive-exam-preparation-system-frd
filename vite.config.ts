@@ -1,10 +1,20 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [TanStackRouterVite(), react()],
+  plugins: [
+    TanStackRouterVite(),
+    react(),
+    visualizer({
+      filename: 'dist/stats.json',
+      template: 'raw-data',
+      gzipSize: true,
+      brotliSize: true,
+    }),
+  ],
   server: {
     port: 5173,
     strictPort: false,
@@ -40,7 +50,10 @@ export default defineConfig({
           ) {
             return 'vendor-react';
           }
-          if (id.includes('node_modules/@tanstack/')) {
+          if (
+            id.includes('node_modules/@tanstack/') ||
+            id.includes('node_modules/tiny-invariant/')
+          ) {
             return 'vendor-tanstack';
           }
           if (id.includes('node_modules/lucide-react/')) {

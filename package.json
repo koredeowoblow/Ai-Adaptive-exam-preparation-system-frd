@@ -51,6 +51,7 @@
     "oxlint": "^1.79.0",
     "playwright-lighthouse": "^4.0.0",
     "postcss": "^8.5.28",
+    "rollup-plugin-visualizer": "^7.1.1",
     "tailwindcss": "^3.4.19",
     "typescript": "~6.0.2",
     "vite": "^5.4.21"

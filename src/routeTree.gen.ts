@@ -22,7 +22,6 @@ import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as StudyPlannerRouteImport } from './routes/study-planner'
-import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
 import { Route as AdminDepartmentsRouteImport } from './routes/admin/departments'
@@ -36,16 +35,25 @@ import { Route as CoursesCourseIdRouteImport } from './routes/courses/$courseId'
 import { Route as DevComponentsRouteImport } from './routes/dev.components'
 import { Route as ExamSessionIdRouteImport } from './routes/exam/$sessionId'
 import { Route as PracticeHistoryRouteImport } from './routes/practice/history'
-import { Route as AdminCoursesCourseIdRouteImport } from './routes/admin/courses_.$courseId'
-import { Route as AdminDepartmentsDeptIdRouteImport } from './routes/admin/departments_.$deptId'
-import { Route as AdminTopicsTopicIdRouteImport } from './routes/admin/topics_.$topicId'
-import { Route as AdminUsersUserIdRouteImport } from './routes/admin/users_.$userId'
 import { Route as PracticeSessionIdReviewRouteImport } from './routes/practice_.$sessionId.review'
 
 const ForgotPasswordLazyRouteImport = createFileRoute('/forgot-password')()
 const LoginLazyRouteImport = createFileRoute('/login')()
 const RegisterLazyRouteImport = createFileRoute('/register')()
 const ResetPasswordLazyRouteImport = createFileRoute('/reset-password')()
+const AdminIndexLazyRouteImport = createFileRoute('/admin/')()
+const AdminCoursesCourseIdLazyRouteImport = createFileRoute(
+  '/admin/courses_/$courseId',
+)()
+const AdminDepartmentsDeptIdLazyRouteImport = createFileRoute(
+  '/admin/departments_/$deptId',
+)()
+const AdminTopicsTopicIdLazyRouteImport = createFileRoute(
+  '/admin/topics_/$topicId',
+)()
+const AdminUsersUserIdLazyRouteImport = createFileRoute(
+  '/admin/users_/$userId',
+)()
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -126,51 +134,61 @@ const StudyPlannerRoute = StudyPlannerRouteImport.update({
   path: '/study-planner',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/study-planner.lazy').then((d) => d.Route))
-const AdminIndexRoute = AdminIndexRouteImport.update({
+const AdminIndexLazyRoute = AdminIndexLazyRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
-} as any)
+} as any).lazy(() => import('./routes/admin/index.lazy').then((d) => d.Route))
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
   getParentRoute: () => AdminRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/admin/analytics.lazy').then((d) => d.Route),
+)
 const AdminCoursesRoute = AdminCoursesRouteImport.update({
   id: '/courses',
   path: '/courses',
   getParentRoute: () => AdminRoute,
-} as any)
+} as any).lazy(() => import('./routes/admin/courses.lazy').then((d) => d.Route))
 const AdminDepartmentsRoute = AdminDepartmentsRouteImport.update({
   id: '/departments',
   path: '/departments',
   getParentRoute: () => AdminRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/admin/departments.lazy').then((d) => d.Route),
+)
 const AdminIntegrityRoute = AdminIntegrityRouteImport.update({
   id: '/integrity',
   path: '/integrity',
   getParentRoute: () => AdminRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/admin/integrity.lazy').then((d) => d.Route),
+)
 const AdminQuestionsRoute = AdminQuestionsRouteImport.update({
   id: '/questions',
   path: '/questions',
   getParentRoute: () => AdminRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/admin/questions.lazy').then((d) => d.Route),
+)
 const AdminSessionsRoute = AdminSessionsRouteImport.update({
   id: '/sessions',
   path: '/sessions',
   getParentRoute: () => AdminRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/admin/sessions.lazy').then((d) => d.Route),
+)
 const AdminTopicsRoute = AdminTopicsRouteImport.update({
   id: '/topics',
   path: '/topics',
   getParentRoute: () => AdminRoute,
-} as any)
+} as any).lazy(() => import('./routes/admin/topics.lazy').then((d) => d.Route))
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AdminRoute,
-} as any)
+} as any).lazy(() => import('./routes/admin/users.lazy').then((d) => d.Route))
 const CoursesIndexRoute = CoursesIndexRouteImport.update({
   id: '/courses/',
   path: '/courses/',
@@ -200,26 +218,36 @@ const PracticeHistoryRoute = PracticeHistoryRouteImport.update({
 } as any).lazy(() =>
   import('./routes/practice/history.lazy').then((d) => d.Route),
 )
-const AdminCoursesCourseIdRoute = AdminCoursesCourseIdRouteImport.update({
-  id: '/courses_/$courseId',
-  path: '/courses/$courseId',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminDepartmentsDeptIdRoute = AdminDepartmentsDeptIdRouteImport.update({
-  id: '/departments_/$deptId',
-  path: '/departments/$deptId',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminTopicsTopicIdRoute = AdminTopicsTopicIdRouteImport.update({
+const AdminCoursesCourseIdLazyRoute =
+  AdminCoursesCourseIdLazyRouteImport.update({
+    id: '/courses_/$courseId',
+    path: '/courses/$courseId',
+    getParentRoute: () => AdminRoute,
+  } as any).lazy(() =>
+    import('./routes/admin/courses_.$courseId.lazy').then((d) => d.Route),
+  )
+const AdminDepartmentsDeptIdLazyRoute =
+  AdminDepartmentsDeptIdLazyRouteImport.update({
+    id: '/departments_/$deptId',
+    path: '/departments/$deptId',
+    getParentRoute: () => AdminRoute,
+  } as any).lazy(() =>
+    import('./routes/admin/departments_.$deptId.lazy').then((d) => d.Route),
+  )
+const AdminTopicsTopicIdLazyRoute = AdminTopicsTopicIdLazyRouteImport.update({
   id: '/topics_/$topicId',
   path: '/topics/$topicId',
   getParentRoute: () => AdminRoute,
-} as any)
-const AdminUsersUserIdRoute = AdminUsersUserIdRouteImport.update({
+} as any).lazy(() =>
+  import('./routes/admin/topics_.$topicId.lazy').then((d) => d.Route),
+)
+const AdminUsersUserIdLazyRoute = AdminUsersUserIdLazyRouteImport.update({
   id: '/users_/$userId',
   path: '/users/$userId',
   getParentRoute: () => AdminRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/admin/users_.$userId.lazy').then((d) => d.Route),
+)
 const PracticeSessionIdReviewRoute = PracticeSessionIdReviewRouteImport.update({
   id: '/practice_/$sessionId/review',
   path: '/practice/$sessionId/review',
@@ -256,13 +284,13 @@ export interface FileRoutesByFullPath {
   '/dev/components': typeof DevComponentsRoute
   '/exam/$sessionId': typeof ExamSessionIdRoute
   '/practice/history': typeof PracticeHistoryRoute
-  '/admin/': typeof AdminIndexRoute
   '/courses/': typeof CoursesIndexRoute
-  '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
-  '/admin/departments/$deptId': typeof AdminDepartmentsDeptIdRoute
-  '/admin/topics/$topicId': typeof AdminTopicsTopicIdRoute
-  '/admin/users/$userId': typeof AdminUsersUserIdRoute
+  '/admin/': typeof AdminIndexLazyRoute
   '/practice/$sessionId/review': typeof PracticeSessionIdReviewRoute
+  '/admin/courses/$courseId': typeof AdminCoursesCourseIdLazyRoute
+  '/admin/departments/$deptId': typeof AdminDepartmentsDeptIdLazyRoute
+  '/admin/topics/$topicId': typeof AdminTopicsTopicIdLazyRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdLazyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -291,13 +319,13 @@ export interface FileRoutesByTo {
   '/dev/components': typeof DevComponentsRoute
   '/exam/$sessionId': typeof ExamSessionIdRoute
   '/practice/history': typeof PracticeHistoryRoute
-  '/admin': typeof AdminIndexRoute
   '/courses': typeof CoursesIndexRoute
-  '/admin/courses/$courseId': typeof AdminCoursesCourseIdRoute
-  '/admin/departments/$deptId': typeof AdminDepartmentsDeptIdRoute
-  '/admin/topics/$topicId': typeof AdminTopicsTopicIdRoute
-  '/admin/users/$userId': typeof AdminUsersUserIdRoute
+  '/admin': typeof AdminIndexLazyRoute
   '/practice/$sessionId/review': typeof PracticeSessionIdReviewRoute
+  '/admin/courses/$courseId': typeof AdminCoursesCourseIdLazyRoute
+  '/admin/departments/$deptId': typeof AdminDepartmentsDeptIdLazyRoute
+  '/admin/topics/$topicId': typeof AdminTopicsTopicIdLazyRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdLazyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -328,13 +356,13 @@ export interface FileRoutesById {
   '/dev/components': typeof DevComponentsRoute
   '/exam/$sessionId': typeof ExamSessionIdRoute
   '/practice/history': typeof PracticeHistoryRoute
-  '/admin/': typeof AdminIndexRoute
   '/courses/': typeof CoursesIndexRoute
-  '/admin/courses_/$courseId': typeof AdminCoursesCourseIdRoute
-  '/admin/departments_/$deptId': typeof AdminDepartmentsDeptIdRoute
-  '/admin/topics_/$topicId': typeof AdminTopicsTopicIdRoute
-  '/admin/users_/$userId': typeof AdminUsersUserIdRoute
+  '/admin/': typeof AdminIndexLazyRoute
   '/practice_/$sessionId/review': typeof PracticeSessionIdReviewRoute
+  '/admin/courses_/$courseId': typeof AdminCoursesCourseIdLazyRoute
+  '/admin/departments_/$deptId': typeof AdminDepartmentsDeptIdLazyRoute
+  '/admin/topics_/$topicId': typeof AdminTopicsTopicIdLazyRoute
+  '/admin/users_/$userId': typeof AdminUsersUserIdLazyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -366,13 +394,13 @@ export interface FileRouteTypes {
     | '/dev/components'
     | '/exam/$sessionId'
     | '/practice/history'
-    | '/admin/'
     | '/courses/'
+    | '/admin/'
+    | '/practice/$sessionId/review'
     | '/admin/courses/$courseId'
     | '/admin/departments/$deptId'
     | '/admin/topics/$topicId'
     | '/admin/users/$userId'
-    | '/practice/$sessionId/review'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -401,13 +429,13 @@ export interface FileRouteTypes {
     | '/dev/components'
     | '/exam/$sessionId'
     | '/practice/history'
-    | '/admin'
     | '/courses'
+    | '/admin'
+    | '/practice/$sessionId/review'
     | '/admin/courses/$courseId'
     | '/admin/departments/$deptId'
     | '/admin/topics/$topicId'
     | '/admin/users/$userId'
-    | '/practice/$sessionId/review'
   id:
     | '__root__'
     | '/'
@@ -437,13 +465,13 @@ export interface FileRouteTypes {
     | '/dev/components'
     | '/exam/$sessionId'
     | '/practice/history'
-    | '/admin/'
     | '/courses/'
+    | '/admin/'
+    | '/practice_/$sessionId/review'
     | '/admin/courses_/$courseId'
     | '/admin/departments_/$deptId'
     | '/admin/topics_/$topicId'
     | '/admin/users_/$userId'
-    | '/practice_/$sessionId/review'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -581,7 +609,7 @@ declare module '@tanstack/react-router' {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
+      preLoaderRoute: typeof AdminIndexLazyRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/analytics': {
@@ -679,28 +707,28 @@ declare module '@tanstack/react-router' {
       id: '/admin/courses_/$courseId'
       path: '/courses/$courseId'
       fullPath: '/admin/courses/$courseId'
-      preLoaderRoute: typeof AdminCoursesCourseIdRouteImport
+      preLoaderRoute: typeof AdminCoursesCourseIdLazyRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/departments_/$deptId': {
       id: '/admin/departments_/$deptId'
       path: '/departments/$deptId'
       fullPath: '/admin/departments/$deptId'
-      preLoaderRoute: typeof AdminDepartmentsDeptIdRouteImport
+      preLoaderRoute: typeof AdminDepartmentsDeptIdLazyRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/topics_/$topicId': {
       id: '/admin/topics_/$topicId'
       path: '/topics/$topicId'
       fullPath: '/admin/topics/$topicId'
-      preLoaderRoute: typeof AdminTopicsTopicIdRouteImport
+      preLoaderRoute: typeof AdminTopicsTopicIdLazyRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/users_/$userId': {
       id: '/admin/users_/$userId'
       path: '/users/$userId'
       fullPath: '/admin/users/$userId'
-      preLoaderRoute: typeof AdminUsersUserIdRouteImport
+      preLoaderRoute: typeof AdminUsersUserIdLazyRouteImport
       parentRoute: typeof AdminRoute
     }
     '/practice_/$sessionId/review': {
@@ -722,11 +750,11 @@ interface AdminRouteChildren {
   AdminSessionsRoute: typeof AdminSessionsRoute
   AdminTopicsRoute: typeof AdminTopicsRoute
   AdminUsersRoute: typeof AdminUsersRoute
-  AdminIndexRoute: typeof AdminIndexRoute
-  AdminCoursesCourseIdRoute: typeof AdminCoursesCourseIdRoute
-  AdminDepartmentsDeptIdRoute: typeof AdminDepartmentsDeptIdRoute
-  AdminTopicsTopicIdRoute: typeof AdminTopicsTopicIdRoute
-  AdminUsersUserIdRoute: typeof AdminUsersUserIdRoute
+  AdminIndexLazyRoute: typeof AdminIndexLazyRoute
+  AdminCoursesCourseIdLazyRoute: typeof AdminCoursesCourseIdLazyRoute
+  AdminDepartmentsDeptIdLazyRoute: typeof AdminDepartmentsDeptIdLazyRoute
+  AdminTopicsTopicIdLazyRoute: typeof AdminTopicsTopicIdLazyRoute
+  AdminUsersUserIdLazyRoute: typeof AdminUsersUserIdLazyRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -738,11 +766,11 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSessionsRoute: AdminSessionsRoute,
   AdminTopicsRoute: AdminTopicsRoute,
   AdminUsersRoute: AdminUsersRoute,
-  AdminIndexRoute: AdminIndexRoute,
-  AdminCoursesCourseIdRoute: AdminCoursesCourseIdRoute,
-  AdminDepartmentsDeptIdRoute: AdminDepartmentsDeptIdRoute,
-  AdminTopicsTopicIdRoute: AdminTopicsTopicIdRoute,
-  AdminUsersUserIdRoute: AdminUsersUserIdRoute,
+  AdminIndexLazyRoute: AdminIndexLazyRoute,
+  AdminCoursesCourseIdLazyRoute: AdminCoursesCourseIdLazyRoute,
+  AdminDepartmentsDeptIdLazyRoute: AdminDepartmentsDeptIdLazyRoute,
+  AdminTopicsTopicIdLazyRoute: AdminTopicsTopicIdLazyRoute,
+  AdminUsersUserIdLazyRoute: AdminUsersUserIdLazyRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

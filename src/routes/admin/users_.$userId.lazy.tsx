@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createLazyFileRoute, useNavigate } from '@tanstack/react-router';
 import { useStudentDetailedAnalytics } from '../../features/admin/hooks/useAdmin';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { Skeleton } from '../../shared/components/Skeleton';
@@ -41,7 +41,7 @@ import {
   Copy,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/admin/users_/$userId')({
+export const Route = createLazyFileRoute('/admin/users_/$userId')({
   component: AdminStudentAnalyticsPage,
 });
 

@@ -1,6 +1,4 @@
 import * as React from 'react';
-import katex from 'katex';
-import 'katex/contrib/mhchem';
 
 export interface FormattedMathTextProps {
   text: string;
@@ -9,55 +7,7 @@ export interface FormattedMathTextProps {
   as?: 'span' | 'div' | 'p' | 'h2' | 'h3';
 }
 
-/**
- * Normalizes non-LaTeX shorthand keystrokes (outside \ce{}) into KaTeX macros.
- * Note: Replacement order ensures <=> and <-> are never partially matched by => or <=.
- */
-function normalizeShorthand(input: string): string {
-  return input
-    .replace(/<==>|<=>/g, '\\iff')
-    .replace(/<-->|<->/g, '\\leftrightarrow')
-    .replace(/-->|->/g, '\\to')
-    .replace(/==>|=>/g, '\\implies')
-    .replace(/<=/g, '\\le')
-    .replace(/>=/g, '\\ge')
-    .replace(/\+\/-/g, '\\pm')
-    .replace(/!=/g, '\\ne')
-    .replace(/~=/g, '\\approx');
-}
-
-// Captures \ce{...} segments (with optional 1-level nested braces)
-const CE_SPLIT_REGEX = /(\\ce\{(?:[^{}]|\{[^{}]*\})*\})/g;
-
-/**
- * Normalizes common non-LaTeX shorthand keystrokes into KaTeX-compatible macros,
- * while leaving the contents of \ce{...} untouched so mhchem can process its own
- * chemical reaction arrows (->, <=>, etc.).
- */
-function normalizeMathAliases(input: string): string {
-  const parts = input.split(CE_SPLIT_REGEX);
-  return parts
-    .map((part) => {
-      if (part.startsWith('\\ce{') && part.endsWith('}')) {
-        return part;
-      }
-      return normalizeShorthand(part);
-    })
-    .join('');
-}
-
-
-/**
- * Escapes sensitive HTML characters to prevent raw HTML/script injection
- */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+const MathRenderer = React.lazy(() => import('./MathRenderer'));
 
 /**
  * Normalizes alternative standard LaTeX delimiters \(...\) and \[...\] to $...$ and $$...$$
@@ -88,37 +38,15 @@ export function stripMathDelimiters(text: string): string {
     .trim();
 }
 
-/**
- * Safely renders LaTeX into HTML using KaTeX with mhchem extension
- */
-function renderKatexHtml(rawMath: string, displayMode: boolean): string {
-  try {
-    const math = normalizeMathAliases(rawMath.trim());
-    return katex.renderToString(math, {
-      displayMode,
-      throwOnError: false,
-      trust: false,
-      maxSize: 25,
-      maxExpand: 500,
-    });
-  } catch {
-    // Fallback: return escaped string so thrown errors never inject raw HTML
-    return escapeHtml(rawMath);
-  }
-}
-
 // Regex to capture explicit display math $$...$$ and inline math $...$
 const DELIMITER_REGEX = /(\$\$[\s\S]+?\$\$|\$[^\$]+?\$)/g;
 
-// Regex to detect bare LaTeX commands in text without $ delimiters:
-// - Explicit LaTeX commands starting with \ (e.g. \ce{...}, \frac{...}{...}, \sqrt{...}, \alpha, \int, etc.)
-// - Single-letter or single-digit base with ^ or _ (e.g. x^2, x^{n}, a_1, a_{ij})
-// - Explicitly avoids matching multi-letter words (e.g. user_1, snake_case, Fe^{3+})
+// Regex to detect bare LaTeX commands in text without $ delimiters
 const BARE_MATH_REGEX = /(\\ce\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}|\\(?:frac|sqrt)\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}|\\(?:sqrt)\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}|\\[a-zA-Z]+(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})*|\b[a-zA-Z0-9]\^\{[^{}]+\}|\b[a-zA-Z0-9]\^[0-9a-zA-Z\-+]+\b|\b[a-zA-Z0-9]_\{[^{}]+\}|\b[a-zA-Z0-9]_[0-9a-zA-Z]\b)/g;
 
 /**
  * Main FormattedMathText component:
- * Typesets mathematical, physical, and chemical notations using KaTeX with mhchem.
+ * Typesets mathematical, physical, and chemical notations using KaTeX with mhchem via lazy loading.
  * Supports $...$ (inline), $$...$$ (display), bare LaTeX formulas, and plain text.
  */
 export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
@@ -150,31 +78,21 @@ export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
       const raw = match[0];
       const isDisplay = raw.startsWith('$$');
       const formula = isDisplay ? raw.slice(2, -2) : raw.slice(1, -1);
-      const html = renderKatexHtml(formula, isDisplay);
 
-      if (isDisplay) {
-        parts.push(
-          <div
-            key={`math-${match.index}`}
-            className="my-3 text-center overflow-x-auto py-1 select-text"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
-        );
-      } else {
-        parts.push(
-          <span
-            key={`math-${match.index}`}
-            className="inline-block px-0.5 select-text"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
-        );
-      }
+      parts.push(
+        <React.Suspense
+          key={`math-${match.index}`}
+          fallback={<span className="whitespace-pre-wrap select-text">{formula}</span>}
+        >
+          <MathRenderer formula={formula} isDisplay={isDisplay} />
+        </React.Suspense>
+      );
       lastIndex = DELIMITER_REGEX.lastIndex;
     }
 
     if (lastIndex < normalizedText.length) {
       parts.push(
-        <span key={`txt-end`} className="whitespace-pre-wrap">
+        <span key="txt-end" className="whitespace-pre-wrap">
           {normalizedText.slice(lastIndex)}
         </span>
       );
@@ -191,13 +109,11 @@ export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
 
   // 2. If entire string starts with backslash, treat the entire string as LaTeX math
   if (trimmed.startsWith('\\')) {
-    const html = renderKatexHtml(trimmed, false);
     return (
       <Component className={className} style={style}>
-        <span
-          className="inline-block px-0.5 select-text"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <React.Suspense fallback={<span className="whitespace-pre-wrap select-text">{trimmed}</span>}>
+          <MathRenderer formula={trimmed} isDisplay={false} />
+        </React.Suspense>
       </Component>
     );
   }
@@ -218,20 +134,20 @@ export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
         );
       }
       const formula = match[0];
-      const html = renderKatexHtml(formula, false);
       parts.push(
-        <span
+        <React.Suspense
           key={`math-${match.index}`}
-          className="inline-block px-0.5 select-text"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+          fallback={<span className="whitespace-pre-wrap select-text">{formula}</span>}
+        >
+          <MathRenderer formula={formula} isDisplay={false} />
+        </React.Suspense>
       );
       lastIndex = BARE_MATH_REGEX.lastIndex;
     }
 
     if (lastIndex < normalizedText.length) {
       parts.push(
-        <span key={`txt-end`} className="whitespace-pre-wrap">
+        <span key="txt-end" className="whitespace-pre-wrap">
           {normalizedText.slice(lastIndex)}
         </span>
       );

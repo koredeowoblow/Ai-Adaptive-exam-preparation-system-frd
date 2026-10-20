@@ -278,7 +278,12 @@
     --shadow-glow: 0 0 0 3px rgba(14, 165, 233, 0.25);
     --shadow-blue: 0 4px 12px rgba(14, 165, 233, 0.3);
     --shadow-green: 0 4px 12px rgba(52, 211, 153, 0.3);
-    --shadow-gold: 0 4px 12px rgba(245, 158, 11, 0.3);
+    --sidebar-bg: #0b1726;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-text: #cbd5e1;
+    --sidebar-text-muted: #94a3b8;
+    --sidebar-active-bg: rgba(56, 189, 248, 0.2);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
     --app-nav-fg-muted: var(--color-text-muted);
   }
 }

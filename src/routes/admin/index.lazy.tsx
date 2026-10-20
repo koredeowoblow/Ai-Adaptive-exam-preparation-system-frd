@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createLazyFileRoute, Link } from '@tanstack/react-router';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import {
@@ -34,7 +34,7 @@ import {
   Search,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/admin/')({
+export const Route = createLazyFileRoute('/admin/')({
   component: AdminOverviewRoute,
 });
 
