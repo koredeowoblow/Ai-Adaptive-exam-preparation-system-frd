@@ -11,17 +11,16 @@ import { Badge } from '../../shared/components/Badge';
 import { Button } from '../../shared/components/Button';
 import { ProgressBar } from '../../shared/components/ProgressBar';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
+import { PageHeader } from '../../shared/components/PageHeader';
 import { useTopbar } from '../../shared/context/TopbarContext';
 import { 
-  Trophy, 
-  Target, 
   ChevronRight, 
   Play, 
   Trash2, 
   TrendingUp, 
-  TrendingDown,
-  Clock,
-  BookOpen
+  TrendingDown, 
+  Clock, 
+  BookOpen 
 } from 'lucide-react';
 import type { PracticeSession } from '../../types/practice.types';
 
@@ -72,9 +71,8 @@ function HistoryRoute() {
   const navigate = useNavigate();
 
   useTopbar({
-    title: 'Session History',
+    title: 'History',
     breadcrumbs: [
-      { label: 'Dashboard', to: '/dashboard' },
       { label: 'Practice', to: '/exam-prep' },
       { label: 'History' },
     ],
@@ -171,32 +169,23 @@ function HistoryRoute() {
 
   return (
     <AppLayout>
-      <PageContainer className="py-6 sm:py-8 pb-32 sm:pb-20">
+      <PageContainer className="py-5 sm:py-6 pb-32 sm:pb-20">
         
-        {/* Page Header */}
-        <header className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-3 mb-1.5">
-            <div className="w-9 h-9 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0">
-              <Trophy size={18} />
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight">
-              Session History
-            </h1>
-          </div>
-          <p className="text-sm text-text-secondary pl-12 max-w-xl">
-            Track past mock exams, quick practice runs, and analyze learning pacing over time.
-          </p>
-        </header>
+        {/* Page Header without tinted circle */}
+        <PageHeader
+          title="Session History"
+          description="Track past mock exams, quick practice runs, and analyze learning pacing over time."
+          className="mb-4 sm:mb-6"
+        />
 
         {isLoading ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Stat Strip Skeleton */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="card p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="card p-5 space-y-3">
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-3 w-36" />
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-3 w-28" />
+                  <Skeleton className="h-7 w-20" />
                 </div>
               ))}
             </div>
@@ -208,7 +197,7 @@ function HistoryRoute() {
                 <Skeleton className="h-8 w-48" />
               </div>
               {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                <Skeleton key={i} className="h-16 w-full rounded-xl" />
               ))}
             </div>
           </div>
@@ -230,78 +219,66 @@ function HistoryRoute() {
             />
           </div>
         ) : (
-          <div className="space-y-6 sm:space-y-8">
+          <div className="space-y-5 sm:space-y-6">
             
-            {/* Stat Strip with Honest States */}
-            <section aria-label="Session summary metrics" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Compact Stat Strip */}
+            <section aria-label="Session summary metrics" className="card p-3.5 sm:p-4 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border gap-3 sm:gap-0">
               
               {/* Metric 1: Average Score */}
-              <div className="card p-5 flex flex-col justify-between">
+              <div className="sm:px-4 first:sm:pl-0 flex items-center justify-between sm:flex-col sm:items-start sm:justify-center">
                 <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                   Average Score
                 </span>
-                <div className="flex items-baseline gap-2 my-2">
+                <div className="flex items-baseline gap-2 mt-0.5">
                   {avgScore !== null ? (
                     <>
-                      <span className="text-2xl sm:text-3xl font-bold text-text-primary tabular-nums">
+                      <span className="text-xl sm:text-2xl font-bold text-text-primary tabular-nums">
                         {avgScore}%
                       </span>
                       {scoreTrend === 'up' && (
                         <span className="inline-flex items-center text-xs font-semibold text-success gap-0.5">
-                          <TrendingUp size={13} />
+                          <TrendingUp size={12} />
                           <span>Improving</span>
                         </span>
                       )}
                       {scoreTrend === 'down' && (
                         <span className="inline-flex items-center text-xs font-semibold text-danger gap-0.5">
-                          <TrendingDown size={13} />
+                          <TrendingDown size={12} />
                           <span>Declining</span>
                         </span>
                       )}
                     </>
                   ) : (
-                    <span className="text-base font-semibold text-text-muted">
-                      No scores yet
-                    </span>
+                    <span className="text-sm font-semibold text-text-muted">No scores yet</span>
                   )}
                 </div>
-                <span className="text-xs text-text-secondary">
-                  {completedSessions.length > 0
-                    ? `Based on ${completedSessions.length} completed session${completedSessions.length === 1 ? '' : 's'}`
-                    : 'Complete a session to evaluate score'}
-                </span>
               </div>
 
               {/* Metric 2: Questions Answered */}
-              <div className="card p-5 flex flex-col justify-between">
+              <div className="pt-2 sm:pt-0 sm:px-4 flex items-center justify-between sm:flex-col sm:items-start sm:justify-center">
                 <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                   Questions Answered
                 </span>
-                <div className="my-2">
-                  <span className="text-2xl sm:text-3xl font-bold text-text-primary tabular-nums">
+                <div className="mt-0.5">
+                  <span className="text-xl sm:text-2xl font-bold text-text-primary tabular-nums">
                     {totalAnswered}
                   </span>
                 </div>
-                <span className="text-xs text-text-secondary">
-                  Across all attempted questions
-                </span>
               </div>
 
               {/* Metric 3: Total Sessions */}
-              <div className="card p-5 flex flex-col justify-between">
+              <div className="pt-2 sm:pt-0 sm:px-4 last:sm:pr-0 flex items-center justify-between sm:flex-col sm:items-start sm:justify-center">
                 <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                   Total Sessions
                 </span>
-                <div className="my-2">
-                  <span className="text-2xl sm:text-3xl font-bold text-text-primary tabular-nums">
+                <div className="mt-0.5 flex items-baseline gap-2">
+                  <span className="text-xl sm:text-2xl font-bold text-text-primary tabular-nums">
                     {totalSessions}
                   </span>
+                  <span className="text-xs text-text-secondary">
+                    ({completedSessions.length} completed, {inProgressSessions.length} active)
+                  </span>
                 </div>
-                <span className="text-xs text-text-secondary">
-                  {inProgressSessions.length > 0 
-                    ? `${inProgressSessions.length} in progress, ${completedSessions.length} completed`
-                    : `${completedSessions.length} completed sessions`}
-                </span>
               </div>
             </section>
 
@@ -315,18 +292,22 @@ function HistoryRoute() {
                 </h2>
 
                 <div 
-                  role="radiogroup" 
+                  role="tablist" 
                   aria-label="Filter sessions by mode"
                   className="inline-flex p-1 rounded-lg bg-surface-1 border border-border"
                 >
                   <button
                     type="button"
-                    role="radio"
-                    aria-checked={modeFilter === 'all'}
+                    role="tab"
+                    aria-selected={modeFilter === 'all'}
+                    tabIndex={0}
                     onClick={() => setModeFilter('all')}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowRight') setModeFilter('quick');
+                    }}
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer ${
                       modeFilter === 'all'
-                        ? 'bg-surface-0 text-text-primary shadow-xs'
+                        ? 'bg-surface-0 text-text-primary shadow-xs font-bold'
                         : 'text-text-secondary hover:text-text-primary'
                     }`}
                   >
@@ -334,12 +315,17 @@ function HistoryRoute() {
                   </button>
                   <button
                     type="button"
-                    role="radio"
-                    aria-checked={modeFilter === 'quick'}
+                    role="tab"
+                    aria-selected={modeFilter === 'quick'}
+                    tabIndex={0}
                     onClick={() => setModeFilter('quick')}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowRight') setModeFilter('mock');
+                      if (e.key === 'ArrowLeft') setModeFilter('all');
+                    }}
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer ${
                       modeFilter === 'quick'
-                        ? 'bg-surface-0 text-text-primary shadow-xs'
+                        ? 'bg-surface-0 text-text-primary shadow-xs font-bold'
                         : 'text-text-secondary hover:text-text-primary'
                     }`}
                   >
@@ -347,12 +333,16 @@ function HistoryRoute() {
                   </button>
                   <button
                     type="button"
-                    role="radio"
-                    aria-checked={modeFilter === 'mock'}
+                    role="tab"
+                    aria-selected={modeFilter === 'mock'}
+                    tabIndex={0}
                     onClick={() => setModeFilter('mock')}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowLeft') setModeFilter('quick');
+                    }}
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer ${
                       modeFilter === 'mock'
-                        ? 'bg-surface-0 text-text-primary shadow-xs'
+                        ? 'bg-surface-0 text-text-primary shadow-xs font-bold'
                         : 'text-text-secondary hover:text-text-primary'
                     }`}
                   >
@@ -391,7 +381,7 @@ function HistoryRoute() {
                           const courseTitle = courseObj?.title || courseObj?.name || (courseCode ? 'Course Assessment' : 'General Practice');
 
                           const totalQ = session.totalQuestions || 1;
-                          const answeredQ = session.questionsAnswered || (isCompleted ? totalQ : 0);
+                          const answeredQ = session.questionsAnswered ?? 0;
                           const progressPercent = Math.min(100, Math.round((answeredQ / totalQ) * 100));
 
                           return (
@@ -399,64 +389,79 @@ function HistoryRoute() {
                               key={session._id}
                               className="group relative flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-border bg-surface-0 hover:border-border-hover transition-colors gap-3 sm:gap-4"
                             >
-                              {/* Left: Icon & Details */}
-                              <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                                  isMock
-                                    ? 'bg-warning-light text-warning'
-                                    : 'bg-primary-light text-primary'
-                                }`}>
-                                  {isMock ? <Trophy size={18} /> : <Target size={18} />}
-                                </div>
-
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-sm font-bold text-text-primary truncate">
-                                      {courseCode ? `${courseCode}: ` : ''}{courseTitle}
-                                    </span>
-                                    <Badge variant={isMock ? 'warning' : 'neutral'} size="sm">
-                                      {isMock ? 'Mock Exam' : 'Quick Practice'}
+                              {/* Left: Title First, Mode as Plain Muted Text, Status as ONLY Badge */}
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-sm font-bold text-text-primary truncate">
+                                    {courseCode ? `${courseCode}: ` : ''}{courseTitle}
+                                  </span>
+                                  {isCompleted && (
+                                    <Badge variant="success" size="sm">
+                                      Completed
                                     </Badge>
-                                    {isCompleted && (
-                                      <Badge variant="success" size="sm">
-                                        Completed
-                                      </Badge>
-                                    )}
-                                    {isInProgress && (
-                                      <Badge variant="warning" size="sm">
-                                        In Progress
-                                      </Badge>
-                                    )}
-                                    {isFailed && (
-                                      <Badge variant="danger" size="sm">
-                                        Failed
-                                      </Badge>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-center gap-3 text-xs text-text-secondary mt-1">
-                                    <span className="inline-flex items-center gap-1">
-                                      <Clock size={12} className="text-text-muted" />
-                                      {formatDate(session.startedAt)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Middle: Progress Bar */}
-                              <div className="w-full sm:w-44 shrink-0 flex flex-col justify-center">
-                                <div className="flex items-center justify-between text-xs text-text-secondary mb-1 tabular-nums font-medium">
-                                  <span>{answeredQ} of {totalQ} answered</span>
-                                  {isCompleted && session.score !== undefined && (
-                                    <span className="font-bold text-text-primary">{session.score}%</span>
+                                  )}
+                                  {isInProgress && (
+                                    <Badge variant="warning" size="sm">
+                                      In Progress
+                                    </Badge>
+                                  )}
+                                  {isFailed && (
+                                    <Badge variant="danger" size="sm">
+                                      Failed
+                                    </Badge>
                                   )}
                                 </div>
-                                <ProgressBar
-                                  progress={progressPercent}
-                                  variant={isCompleted ? 'success' : 'primary'}
-                                  size="sm"
-                                />
+
+                                <div className="flex items-center gap-2 text-xs text-text-secondary mt-1 flex-wrap">
+                                  <span className="font-medium text-text-muted">
+                                    {isMock ? 'Mock Exam' : 'Quick Practice'}
+                                  </span>
+                                  <span>·</span>
+                                  <span className="inline-flex items-center gap-1 text-text-muted">
+                                    <Clock size={12} />
+                                    {formatDate(session.startedAt)}
+                                  </span>
+                                </div>
                               </div>
+
+                              {/* Middle: Progress Bar appears ONLY for in-progress sessions */}
+                              {isInProgress && (
+                                <div className="w-full sm:w-44 shrink-0 flex flex-col justify-center">
+                                  <div className="flex items-center justify-between text-xs text-text-secondary mb-1 tabular-nums font-medium">
+                                    <span>{answeredQ} of {totalQ} answered</span>
+                                    <span>{progressPercent}%</span>
+                                  </div>
+                                  <ProgressBar
+                                    progress={progressPercent}
+                                    variant="primary"
+                                    size="sm"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Completed Session: Score shown as its own number */}
+                              {isCompleted && (
+                                <div className="flex flex-col items-start sm:items-end justify-center shrink-0">
+                                  <span className="text-base sm:text-lg font-bold text-text-primary tabular-nums">
+                                    {session.score !== undefined ? `${session.score}%` : '0%'}
+                                  </span>
+                                  <span className="text-xs text-text-muted tabular-nums">
+                                    {answeredQ} of {totalQ} answered
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Failed Session: Outcome */}
+                              {isFailed && (
+                                <div className="flex flex-col items-start sm:items-end justify-center shrink-0">
+                                  <span className="text-xs text-danger font-medium">
+                                    Terminated
+                                  </span>
+                                  <span className="text-xs text-text-muted tabular-nums">
+                                    {answeredQ} of {totalQ} answered
+                                  </span>
+                                </div>
+                              )}
 
                               {/* Right: Actions */}
                               <div className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50">
@@ -467,17 +472,18 @@ function HistoryRoute() {
                                       size="sm"
                                       onClick={() => handleResume(session)}
                                     >
-                                      <Play size={14} className="mr-1.5" />
+                                      <Play size={13} className="mr-1.5" />
                                       Resume
                                     </Button>
                                     <Button
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => setDiscardSession(session)}
-                                      className="text-text-muted hover:text-danger"
+                                      className="text-text-muted hover:text-danger text-xs font-medium"
                                       aria-label={`Discard in-progress session for ${courseCode || courseTitle}`}
                                     >
-                                      <Trash2 size={14} />
+                                      <Trash2 size={13} className="mr-1" />
+                                      Discard
                                     </Button>
                                   </>
                                 )}

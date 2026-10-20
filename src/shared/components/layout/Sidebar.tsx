@@ -74,7 +74,7 @@ interface NavSectionProps {
 
 const NavSection: React.FC<NavSectionProps> = ({ label, children }) => (
   <div className="mb-3">
-    <span className="text-[12px] font-semibold tracking-wider text-[var(--sidebar-text-muted)] uppercase px-3 mb-1 mt-3 block select-none">
+    <span className="text-xs font-semibold text-[var(--sidebar-text-muted)] px-3 mb-1 mt-3 block select-none">
       {label}
     </span>
     <div className="space-y-0.5">{children}</div>

@@ -86,7 +86,9 @@ export const Topbar: React.FC<TopbarProps> = ({
                   ) : (
                     <span className="truncate max-w-[120px]">{crumb.label}</span>
                   )}
-                  <span className="text-text-muted/50 select-none" aria-hidden="true">/</span>
+                  {idx < breadcrumbs.length - 1 && (
+                    <span className="text-text-muted/50 select-none" aria-hidden="true">/</span>
+                  )}
                 </React.Fragment>
               ))}
             </nav>
