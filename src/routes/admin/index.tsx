@@ -39,7 +39,7 @@ export const Route = createFileRoute('/admin/')({
 });
 
 function AdminOverviewRoute() {
-  useDocumentTitle('Admin Control Center — EduAdapt');
+  useDocumentTitle('Admin Control Center - EduAdapt');
   const { user } = useAuth();
 
   const { data: deptData, isLoading: loadingDepts } = useDepartments();

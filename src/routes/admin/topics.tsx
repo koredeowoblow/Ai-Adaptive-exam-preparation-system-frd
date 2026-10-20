@@ -76,7 +76,7 @@ interface TopicWithMeta extends Topic {
 }
 
 function TopicsAdminRoute() {
-  useDocumentTitle('Topics — Admin Control Center');
+  useDocumentTitle('Topics - Admin Control Center');
   const searchParams = Route.useSearch();
   const navigate = Route.useNavigate();
 
@@ -415,7 +415,7 @@ function TopicsAdminRoute() {
               minWidth: '22px',
             }}
           >
-            #{topic.order ?? '—'}
+            #{topic.order ?? '-'}
           </span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <button
@@ -562,7 +562,7 @@ function TopicsAdminRoute() {
                 month: 'short',
                 day: 'numeric',
               })
-            : '—'}
+            : '-'}
         </span>
       ),
     },

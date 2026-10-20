@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 /**
  * Tracks elapsed time in seconds since the stopwatch was started/reset.
- * Designed for practice session question timing — reset by changing the
+ * Designed for practice session question timing - reset by changing the
  * component's `key` prop or by calling the returned `reset()` function.
  */
 export const useStopwatch = () => {

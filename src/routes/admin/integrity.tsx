@@ -51,7 +51,7 @@ export const Route = createFileRoute('/admin/integrity')({
 });
 
 function formatDate(dateStr?: string): string {
-  if (!dateStr) return '—';
+  if (!dateStr) return '-';
   try {
     const d = new Date(dateStr);
     return d.toLocaleString(undefined, {
@@ -62,7 +62,7 @@ function formatDate(dateStr?: string): string {
       second: '2-digit',
     });
   } catch {
-    return '—';
+    return '-';
   }
 }
 
@@ -205,7 +205,7 @@ function IntegrityAdminRoute() {
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                {student?.email || '—'}
+                {student?.email || '-'}
               </span>
               {student?.level && (
                 <span
@@ -771,7 +771,7 @@ function SessionProctoringInspection({
           <div>
             <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Course</span>
             <span style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', color: 'var(--color-text-primary)' }}>
-              {course?.code || course?.title || '—'}
+              {course?.code || course?.title || '-'}
             </span>
           </div>
 

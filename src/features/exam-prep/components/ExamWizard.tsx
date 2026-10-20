@@ -252,7 +252,7 @@ const CourseStep: React.FC<CourseStepProps> = ({ departmentId, level, studentLev
         </div>
       )}
 
-      {/* Back link — CSS hover, no JS handlers */}
+      {/* Back link - CSS hover, no JS handlers */}
       <button onClick={onBack} className="wizard-back-btn">
         <ArrowLeft size={16} /> Back to levels
       </button>

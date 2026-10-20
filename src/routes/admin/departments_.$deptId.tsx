@@ -77,8 +77,8 @@ export function AdminDepartmentAnalyticsPage() {
 
   useDocumentTitle(
     analytics?.department?.name
-      ? `${analytics.department.name} — Department Analytics — EduAdapt`
-      : 'Department In-Depth Analytics — EduAdapt'
+      ? `${analytics.department.name} - Department Analytics - EduAdapt`
+      : 'Department In-Depth Analytics - EduAdapt'
   );
 
   const [activeTab, setActiveTab] = React.useState<'levels' | 'courses' | 'students'>('levels');

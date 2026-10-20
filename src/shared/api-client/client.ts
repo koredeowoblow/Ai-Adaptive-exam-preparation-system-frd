@@ -26,7 +26,7 @@ apiClient.interceptors.request.use((config) => {
 });
 
 // TODO: backend must set token as HttpOnly, SameSite=Strict cookie on login/refresh.
-// The browser will automatically send the cookie on every request — no manual token attachment needed.
+// The browser will automatically send the cookie on every request - no manual token attachment needed.
 // Backend must also set: Access-Control-Allow-Credentials: true and Access-Control-Allow-Origin to the exact frontend origin.
 
 let isRedirectingToLogin = false;

@@ -20,7 +20,7 @@ export interface StudentDashboardProps {
 
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId }) => {
-  useDocumentTitle("Dashboard — EduAdapt");
+  useDocumentTitle("Dashboard - EduAdapt");
   const { data, isLoading, error } = useStudentDashboard(studentId);
   const navigate = useNavigate();
 

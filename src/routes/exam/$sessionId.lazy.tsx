@@ -61,7 +61,7 @@ const QuestionNavigator = React.memo(({ questionsList, currentIndex, answersMap,
 });
 
 function ExamSessionRoute() {
-  useDocumentTitle("Mock Exam — EduAdapt");
+  useDocumentTitle("Mock Exam - EduAdapt");
   const { sessionId } = Route.useParams();
   const navigate = useNavigate();
 

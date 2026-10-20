@@ -7,9 +7,9 @@ interface StatTileProps {
 }
 
 /**
- * StatTile — compact tertiary metric display.
+ * StatTile - compact tertiary metric display.
  * Used in Dashboard and Analytics.
- * No border, no background — relies on surrounding whitespace for hierarchy.
+ * No border, no background - relies on surrounding whitespace for hierarchy.
  */
 export const StatTile: React.FC<StatTileProps> = React.memo(({ value, label, sub }) => (
   <div className="stat-card">

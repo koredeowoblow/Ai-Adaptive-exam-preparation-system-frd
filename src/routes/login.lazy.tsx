@@ -14,7 +14,7 @@ function LoginRouteComponent() {
       data-app="auth"
       className="min-h-screen w-full flex flex-col lg:flex-row lg:h-screen lg:overflow-hidden font-body bg-white dark:bg-[#0B1726] text-[#0B2239] dark:text-[#F8FAFC]"
     >
-      <h1 className="sr-only">Sign In to EduAdapt — AI Adaptive Exam Preparation</h1>
+      <h1 className="sr-only">Sign In to EduAdapt - AI Adaptive Exam Preparation</h1>
 
       {/* ── Left Column (Desktop 1024px+ / ~50%): Dark Brand Panel ── */}
       <aside

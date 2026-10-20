@@ -25,7 +25,7 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const RegisterForm: React.FC = () => {
-  useDocumentTitle('Create Account — EduAdapt');
+  useDocumentTitle('Create Account - EduAdapt');
   const navigate = useNavigate();
   const { mutate: registerMutation, isPending, error: mutationError, reset: resetMutation } = useRegister();
   const [serverErrorMessage, setServerErrorMessage] = React.useState<string | null>(null);

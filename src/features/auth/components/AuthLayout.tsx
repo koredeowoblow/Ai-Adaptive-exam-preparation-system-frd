@@ -51,10 +51,10 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
 
       {/* Main Content Area */}
       <main id="main-content" className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 lg:py-14">
-        <h1 className="sr-only">EduAdapt — Adaptive Exam Preparation for University Students</h1>
+        <h1 className="sr-only">EduAdapt - Adaptive Exam Preparation for University Students</h1>
         <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-10 xl:gap-14 items-start">
           
-          {/* Form Column — DOM Order #1 (Accessible keyboard & screen readers hit form first) */}
+          {/* Form Column - DOM Order #1 (Accessible keyboard & screen readers hit form first) */}
           <div className="w-full lg:col-span-5 lg:order-2 max-w-[420px] mx-auto lg:mx-0">
             <div className="bg-[var(--auth-card-bg)] border border-[var(--auth-card-border)] rounded-2xl p-6 sm:p-8 shadow-sm">
               <div className="mb-6">
@@ -97,7 +97,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
             )}
           </div>
 
-          {/* Side Column — Desktop Order #1 (Visual Centerpiece on Desktop >= 1024px) */}
+          {/* Side Column - Desktop Order #1 (Visual Centerpiece on Desktop >= 1024px) */}
           {sideContent && (
             <div className="w-full lg:col-span-7 lg:order-1 hidden lg:block">
               {sideContent}

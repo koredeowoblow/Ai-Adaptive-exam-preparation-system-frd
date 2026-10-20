@@ -23,7 +23,7 @@ function formatDate(dateStr: string) {
 }
 
 function HistoryRoute() {
-  useDocumentTitle("Session History — EduAdapt");
+  useDocumentTitle("Session History - EduAdapt");
   const { data: responseData, isLoading, error } = useSessions({ limit: 50 });
 
   const sessions = responseData?.sessions || [];

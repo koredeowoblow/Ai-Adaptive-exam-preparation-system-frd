@@ -583,7 +583,7 @@ function UsersAdminRoute() {
               day: 'numeric',
               year: 'numeric',
             })
-          : '—';
+          : '-';
 
         return (
           <span

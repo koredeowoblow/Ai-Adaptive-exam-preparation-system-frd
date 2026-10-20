@@ -78,8 +78,8 @@ export function AdminCourseAnalyticsPage() {
 
   useDocumentTitle(
     analytics?.course?.code
-      ? `${analytics.course.code}: ${analytics.course.title} — Course Analytics — EduAdapt`
-      : 'Course In-Depth Analytics — EduAdapt'
+      ? `${analytics.course.code}: ${analytics.course.title} - Course Analytics - EduAdapt`
+      : 'Course In-Depth Analytics - EduAdapt'
   );
 
   const [activeTab, setActiveTab] = React.useState<'levels' | 'topics' | 'students' | 'sessions'>('levels');

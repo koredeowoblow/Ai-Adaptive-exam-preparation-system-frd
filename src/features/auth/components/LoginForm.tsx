@@ -56,7 +56,7 @@ function parseServerErrorMessage(error: any): { message: string; isNetworkError:
 }
 
 export const LoginForm: React.FC = () => {
-  useDocumentTitle('Sign In — EduAdapt');
+  useDocumentTitle('Sign In - EduAdapt');
   const navigate = useNavigate();
   const { mutate: login, isPending, error: mutationError, reset: resetMutation } = useLogin();
   const [serverErrorState, setServerErrorState] = React.useState<{ message: string; isNetworkError: boolean } | null>(null);

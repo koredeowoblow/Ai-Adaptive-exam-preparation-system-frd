@@ -26,7 +26,7 @@ export const Route = createFileRoute('/leaderboard')({
 });
 
 function LeaderboardRoute() {
-  useDocumentTitle('Leaderboard — EduAdapt');
+  useDocumentTitle('Leaderboard - EduAdapt');
   const [activeTab, setActiveTab] = React.useState<'global' | 'course'>('global');
   const [selectedCourseId, setSelectedCourseId] = React.useState<string>('');
   const [viewingStudent, setViewingStudent] = React.useState<LeaderboardEntryData | null>(null);
@@ -147,7 +147,7 @@ function LeaderboardRoute() {
               >
                 {courses.map((c: Course) => (
                   <option key={c._id} value={c._id}>
-                    {c.code} — {c.title}
+                    {c.code} - {c.title}
                   </option>
                 ))}
               </select>
@@ -303,7 +303,7 @@ function LeaderboardRoute() {
                       </p>
                       {entry.courseId && (
                         <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                          {entry.courseId.code} — {entry.courseId.title}
+                          {entry.courseId.code} - {entry.courseId.title}
                         </p>
                       )}
                     </div>

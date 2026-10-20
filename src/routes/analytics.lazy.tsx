@@ -79,7 +79,7 @@ const deriveSubjectData = (apiData: any) => {
 };
 
 function AnalyticsRoute() {
-  useDocumentTitle('Analytics — EduAdapt');
+  useDocumentTitle('Analytics - EduAdapt');
 
   const displayCourses: string[] = ['Foundation Core', 'Syllabus Review', 'Exam Simulations'];
 
@@ -99,7 +99,7 @@ function AnalyticsRoute() {
     trend
   } = data || {};
 
-  // Derive real data from API — no mocks
+  // Derive real data from API - no mocks
   const subjectData = deriveSubjectData(data);
   const topicsToRevisit: any[] = data?.topicsToRevisit || [];
 
@@ -268,7 +268,7 @@ function AnalyticsRoute() {
                     <span style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1 }}>{summary?.averageScore != null ? Math.round(summary.averageScore) : 0}%</span>
                   </div>
                   <span style={{ fontSize: '0.8rem', fontWeight: 600, color: trend?.isPositive ? 'var(--color-success)' : trend?.value ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
-                    {trend?.isPositive ? '↑' : trend?.value ? '→' : '—'} {trend?.value != null ? `${trend.isPositive ? '+' : ''}${trend.value}% vs last week` : 'No comparison yet'}
+                    {trend?.isPositive ? '↑' : trend?.value ? '→' : '-'} {trend?.value != null ? `${trend.isPositive ? '+' : ''}${trend.value}% vs last week` : 'No comparison yet'}
                   </span>
                 </div>
                 <div style={{ position: 'relative', width: 48, height: 48 }}>
@@ -280,7 +280,7 @@ function AnalyticsRoute() {
                 <div>
                   <p style={{ margin: '0 0 4px', fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>Mastery Score</p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1 }}>{summary?.averageElo ? Math.round(summary.averageElo).toLocaleString() : '—'}</span>
+                    <span style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1 }}>{summary?.averageElo ? Math.round(summary.averageElo).toLocaleString() : '-'}</span>
                   </div>
                   <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-success)' }}>
                     ↑ +15 pts this week
@@ -398,7 +398,7 @@ function AnalyticsRoute() {
               </div>
               ) : (
                 <div style={{ padding: '32px 24px', textAlign: 'center', background: 'var(--color-surface-0)', border: '1px solid var(--color-border)', borderRadius: 12 }}>
-                  <p style={{ fontSize: '0.95rem', color: 'var(--color-text-muted)', margin: 0 }}>No topics currently require review — great job! Complete more sessions to get personalized recommendations.</p>
+                  <p style={{ fontSize: '0.95rem', color: 'var(--color-text-muted)', margin: 0 }}>No topics currently require review - great job! Complete more sessions to get personalized recommendations.</p>
                 </div>
               )}
             </section>
@@ -492,11 +492,11 @@ function AnalyticsRoute() {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                               <div>
                                 <p style={{ margin: '0 0 4px', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Questions Attempted</p>
-                                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{subject.attempts ?? '—'}</p>
+                                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{subject.attempts ?? '-'}</p>
                               </div>
                               <div>
                                 <p style={{ margin: '0 0 4px', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Mastery</p>
-                                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{subject.masteryPercentage != null ? `${subject.masteryPercentage}%` : '—'}</p>
+                                <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{subject.masteryPercentage != null ? `${subject.masteryPercentage}%` : '-'}</p>
                               </div>
                             </div>
                             <div>

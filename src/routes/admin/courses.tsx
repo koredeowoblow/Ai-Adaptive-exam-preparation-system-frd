@@ -76,7 +76,7 @@ interface CourseWithMeta extends Course {
 }
 
 function CoursesAdminRoute() {
-  useDocumentTitle('Courses — Admin Control Center');
+  useDocumentTitle('Courses - Admin Control Center');
   const searchParams = Route.useSearch();
   const navigate = Route.useNavigate();
 
@@ -464,7 +464,7 @@ function CoursesAdminRoute() {
                 month: 'short',
                 day: 'numeric',
               })
-            : '—'}
+            : '-'}
         </span>
       ),
     },

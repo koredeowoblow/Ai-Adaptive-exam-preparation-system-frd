@@ -371,7 +371,7 @@ function ProfileRoute() {
                     <div style={{ color: 'var(--color-primary)', marginBottom: 12, padding: 12, background: 'var(--color-primary-light)', borderRadius: '50%' }}><Target size={28} /></div>
                     <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>Mastery Score</p>
                     <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: '2rem', fontWeight: 800, margin: 0, color: 'var(--color-text-primary)', lineHeight: 1 }}>
-                      {isLoading ? <Skeleton style={{ width: 80, height: 36 }} /> : (dashData?.stats?.averageElo != null ? Math.round(dashData.stats.averageElo) : '—')}
+                      {isLoading ? <Skeleton style={{ width: 80, height: 36 }} /> : (dashData?.stats?.averageElo != null ? Math.round(dashData.stats.averageElo) : '-')}
                     </p>
                   </div>
                   <div className="card-interactive" style={{ padding: 24, background: 'var(--color-surface-0)', border: '1px solid var(--color-border)', borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>

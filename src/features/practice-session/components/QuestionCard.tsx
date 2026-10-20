@@ -203,7 +203,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
           </div>
         </div>
       ) : (
-        /* Options — fieldset/legend gives native radio grouping without ARIA hacks */
+        /* Options - fieldset/legend gives native radio grouping without ARIA hacks */
         <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
           <legend className="sr-only">Select your answer</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-16)' }}>

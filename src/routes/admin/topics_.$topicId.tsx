@@ -80,8 +80,8 @@ export function AdminTopicAnalyticsPage() {
 
   useDocumentTitle(
     analytics?.topic?.name
-      ? `${analytics.topic.name} — Topic In-Depth Analytics — EduAdapt`
-      : 'Topic In-Depth Analytics — EduAdapt'
+      ? `${analytics.topic.name} - Topic In-Depth Analytics - EduAdapt`
+      : 'Topic In-Depth Analytics - EduAdapt'
   );
 
   const [activeTab, setActiveTab] = React.useState<'mastery' | 'questions' | 'struggling'>('mastery');

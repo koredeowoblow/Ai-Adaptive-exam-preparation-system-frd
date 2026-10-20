@@ -17,7 +17,7 @@ export const Route = createLazyFileRoute("/practice_/$sessionId/review")({
 });
 
 function SessionReviewRoute() {
-  useDocumentTitle("Session Review — EduAdapt");
+  useDocumentTitle("Session Review - EduAdapt");
   const { sessionId } = Route.useParams();
   const navigate = useNavigate();
 

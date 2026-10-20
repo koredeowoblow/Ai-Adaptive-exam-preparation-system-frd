@@ -30,7 +30,7 @@ export const Route = createFileRoute('/')({
     } catch (error: any) {
       // Re-throw router redirects unchanged
       if (isRedirect(error)) throw error;
-      // Not authenticated or API unreachable — go to login
+      // Not authenticated or API unreachable - go to login
     }
 
     // Unauthenticated: redirect to login

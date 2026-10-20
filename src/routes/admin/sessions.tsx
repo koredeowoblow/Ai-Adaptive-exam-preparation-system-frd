@@ -64,11 +64,11 @@ export const Route = createFileRoute('/admin/sessions')({
 });
 
 function formatDuration(startedAt?: string, endedAt?: string): string {
-  if (!startedAt) return '—';
+  if (!startedAt) return '-';
   const start = new Date(startedAt).getTime();
   const end = endedAt ? new Date(endedAt).getTime() : Date.now();
   const diffSec = Math.floor((end - start) / 1000);
-  if (diffSec < 0) return '—';
+  if (diffSec < 0) return '-';
   const mins = Math.floor(diffSec / 60);
   const secs = diffSec % 60;
   if (mins < 60) return `${mins}m ${secs}s`;
@@ -78,7 +78,7 @@ function formatDuration(startedAt?: string, endedAt?: string): string {
 }
 
 function formatDate(dateStr?: string): string {
-  if (!dateStr) return '—';
+  if (!dateStr) return '-';
   try {
     const d = new Date(dateStr);
     return d.toLocaleString(undefined, {
@@ -88,7 +88,7 @@ function formatDate(dateStr?: string): string {
       minute: '2-digit',
     });
   } catch {
-    return '—';
+    return '-';
   }
 }
 
@@ -243,7 +243,7 @@ function ExamSessionsAdminRoute() {
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                {student?.email || '—'}
+                {student?.email || '-'}
               </span>
               {student?.level && (
                 <span
@@ -639,7 +639,7 @@ function ExamSessionsAdminRoute() {
             <TrendingUp size={16} style={{ color: 'var(--color-success, #10b981)' }} />
           </div>
           <span style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-            {metrics.avgScore !== null ? `${metrics.avgScore}%` : '—'}
+            {metrics.avgScore !== null ? `${metrics.avgScore}%` : '-'}
           </span>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
             Across completed attempts
@@ -937,7 +937,7 @@ function SessionInspector({
               Final Score
             </span>
             <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-              {session.score !== undefined ? `${Math.round(session.score)}%` : '—'}
+              {session.score !== undefined ? `${Math.round(session.score)}%` : '-'}
             </span>
           </div>
 
@@ -961,7 +961,7 @@ function SessionInspector({
               Course
             </span>
             <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-              {course?.code || course?.title || '—'}
+              {course?.code || course?.title || '-'}
             </span>
           </div>
 

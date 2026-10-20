@@ -119,9 +119,9 @@ export default function DevComponentsGallery() {
             value={selectValue}
             onChange={(e) => setSelectValue(e.target.value)}
             options={[
-              { value: 'csc401', label: 'CSC 401 — Artificial Intelligence' },
-              { value: 'csc411', label: 'CSC 411 — Distributed Systems' },
-              { value: 'mat201', label: 'MAT 201 — Mathematical Methods' },
+              { value: 'csc401', label: 'CSC 401 - Artificial Intelligence' },
+              { value: 'csc411', label: 'CSC 411 - Distributed Systems' },
+              { value: 'mat201', label: 'MAT 201 - Mathematical Methods' },
             ]}
           />
         </div>

@@ -65,7 +65,7 @@ interface DepartmentWithCount extends Department {
 }
 
 function DepartmentsAdminRoute() {
-  useDocumentTitle('Departments — Admin Control Center');
+  useDocumentTitle('Departments - Admin Control Center');
   const searchParams = Route.useSearch();
   const navigate = Route.useNavigate();
 
@@ -367,7 +367,7 @@ function DepartmentsAdminRoute() {
             fontSize: '0.8125rem',
           }}
         >
-          {dept.description || '—'}
+          {dept.description || '-'}
         </div>
       ),
     },
@@ -409,7 +409,7 @@ function DepartmentsAdminRoute() {
                 month: 'short',
                 day: 'numeric',
               })
-            : '—'}
+            : '-'}
         </span>
       ),
     },

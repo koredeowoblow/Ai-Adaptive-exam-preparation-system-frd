@@ -85,8 +85,8 @@ export function AdminStudentAnalyticsPage() {
 
   useDocumentTitle(
     analytics?.student?.name
-      ? `${analytics.student.name} — Student In-Depth Analytics — EduAdapt`
-      : 'Student In-Depth Analytics — EduAdapt'
+      ? `${analytics.student.name} - Student In-Depth Analytics - EduAdapt`
+      : 'Student In-Depth Analytics - EduAdapt'
   );
 
   const [activeTab, setActiveTab] = React.useState<'overview' | 'topics' | 'sessions' | 'integrity'>('overview');
@@ -1135,7 +1135,7 @@ export function AdminStudentAnalyticsPage() {
                           </span>
                         </td>
                         <td style={{ padding: '0.75rem 0.5rem', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
-                          {topic.lastAttemptedAt ? new Date(topic.lastAttemptedAt).toLocaleDateString() : '—'}
+                          {topic.lastAttemptedAt ? new Date(topic.lastAttemptedAt).toLocaleDateString() : '-'}
                         </td>
                       </tr>
                     ))}
@@ -1198,7 +1198,7 @@ export function AdminStudentAnalyticsPage() {
                         {s.startedAt ? new Date(s.startedAt).toLocaleString() : 'Recent'}
                       </td>
                       <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600, color: 'var(--color-text)' }}>
-                        {s.courseCode ? `${s.courseCode} — ${s.courseTitle}` : s.courseTitle}
+                        {s.courseCode ? `${s.courseCode} - ${s.courseTitle}` : s.courseTitle}
                       </td>
                       <td style={{ padding: '0.75rem 0.5rem' }}>
                         <span
@@ -1214,7 +1214,7 @@ export function AdminStudentAnalyticsPage() {
                         {s.correctAnswers}/{s.questionsAnswered}
                       </td>
                       <td style={{ padding: '0.75rem 0.5rem', color: 'var(--color-text-muted)' }}>
-                        {s.durationMinutes ? `${s.durationMinutes} mins` : '—'}
+                        {s.durationMinutes ? `${s.durationMinutes} mins` : '-'}
                       </td>
                       <td style={{ padding: '0.75rem 0.5rem' }}>
                         <span

@@ -225,7 +225,7 @@
   --shadow-green: 0 4px 12px rgba(52, 211, 153, 0.3);
   --shadow-gold: 0 4px 12px rgba(245, 158, 11, 0.3);
 
-  /* Sidebar nav fg — dark theme sidebar uses surface bg so muted is slate */
+  /* Sidebar nav fg - dark theme sidebar uses surface bg so muted is slate */
   --app-nav-fg-muted: var(--color-text-muted);
 }
 
@@ -399,7 +399,7 @@ h4,
   line-height: 1.4;
 }
 
-/* Badge — inline pill for codes, tags, and metadata */
+/* Badge - inline pill for codes, tags, and metadata */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -414,7 +414,7 @@ h4,
   flex-shrink: 0;
 }
 
-/* Inline link-style button — no all:unset needed */
+/* Inline link-style button - no all:unset needed */
 .btn-link {
   background: none;
   border: none;
@@ -1116,7 +1116,7 @@ select:-webkit-autofill {
   align-items: start;
 }
 
-/* 5. Exam Wizard Cards — canonical definitions live in utility section below (~line 1918) */
+/* 5. Exam Wizard Cards - canonical definitions live in utility section below (~line 1918) */
 
 /* 5b. Exam Wizard: Question Type Toggle */
 .exam-type-btn {
@@ -2225,7 +2225,7 @@ select:-webkit-autofill {
 /* ── Native <dialog> backdrop (used with showModal()) ── */
 dialog::backdrop {
   background-color: rgba(2, 6, 23, 0.45);
-  /* No backdropFilter — consistent with design system anti-glassmorphism rule */
+  /* No backdropFilter - consistent with design system anti-glassmorphism rule */
 }
 
 /* â”€â”€ Sidebar upgrade button â€” CSS hover instead of JS â”€â”€ */
@@ -2315,7 +2315,7 @@ dialog::backdrop {
   color: var(--color-text-secondary);
 }
 
-/* Duplicate prefers-reduced-motion removed — canonical definition is at end of file */
+/* Duplicate prefers-reduced-motion removed - canonical definition is at end of file */
 
 /* â”€â”€ Primary CTA button (Dashboard Today's Focus) â”€â”€ */
 .btn-primary-cta {
@@ -2652,7 +2652,7 @@ dialog::backdrop {
 }
 
 .animate-pop-in {
-  /* Refined ease-out — no overshoot, natural deceleration */
+  /* Refined ease-out - no overshoot, natural deceleration */
   animation: pop-in 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
