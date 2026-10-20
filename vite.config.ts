@@ -32,8 +32,30 @@ export default defineConfig({
           ) {
             return 'vendor-charts';
           }
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/react-is/') ||
+            id.includes('node_modules/scheduler/')
+          ) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@tanstack/')) {
+            return 'vendor-tanstack';
+          }
+          if (id.includes('node_modules/lucide-react/')) {
+            return 'vendor-icons';
+          }
+          if (
+            id.includes('node_modules/react-hook-form/') ||
+            id.includes('node_modules/@hookform/') ||
+            id.includes('node_modules/zod/')
+          ) {
+            return 'vendor-forms';
+          }
         },
       },
     },
+    chunkSizeWarningLimit: 700,
   },
 })

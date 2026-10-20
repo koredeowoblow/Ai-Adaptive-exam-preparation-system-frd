@@ -7,10 +7,21 @@ import { useEffect } from 'react';
 export const useDocumentTitle = (title: string) => {
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = `${title} - EduAdapt`;
     
+    // Normalize any em dashes to standard hyphens
+    let sanitized = (title || '').replace(/\u2014/g, '-').trim();
+
+    // Remove any redundant trailing "- EduAdapt" or "EduAdapt"
+    sanitized = sanitized
+      .replace(/\s*-\s*EduAdapt$/i, '')
+      .replace(/\s+EduAdapt$/i, '')
+      .trim();
+
+    document.title = sanitized ? `${sanitized} - EduAdapt` : 'EduAdapt';
+
     return () => {
       document.title = previousTitle;
     };
   }, [title]);
 };
+
