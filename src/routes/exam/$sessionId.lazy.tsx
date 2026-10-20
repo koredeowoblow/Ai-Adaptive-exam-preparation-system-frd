@@ -30,7 +30,15 @@ type AnswerState = {
 
 const QuestionNavigator = React.memo(({ questionsList, currentIndex, answersMap, onJumpToQuestion }: any) => {
   return (
-    <div style={{ display: 'flex', gap: 'var(--space-8)', flexWrap: 'wrap', maxWidth: '60%' }}>
+    <div
+      role="tablist"
+      aria-label="Questions list"
+      className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none"
+      style={{
+        maxWidth: '100%',
+        WebkitOverflowScrolling: 'touch',
+      }}
+    >
       {questionsList.map((q: any, i: number) => {
         const qId = q.questionId?._id || q.questionId;
         const isAnswered = !!answersMap[qId]?.selectedAnswer || !!answersMap[qId]?.writtenAnswer;
@@ -38,18 +46,35 @@ const QuestionNavigator = React.memo(({ questionsList, currentIndex, answersMap,
         return (
           <button
             key={i}
+            type="button"
             onClick={() => onJumpToQuestion(i)}
             aria-label={`Question ${i + 1}, ${isCurrent ? 'current, ' : ''}${isAnswered ? 'answered' : 'unanswered'}`}
             aria-current={isCurrent ? 'step' : undefined}
             style={{
-              width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.85rem', fontWeight: 600,
+              width: 44,
+              height: 44,
+              minWidth: 44,
+              minHeight: 44,
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.875rem',
+              fontWeight: isCurrent || isAnswered ? 700 : 500,
               cursor: 'pointer',
-              border: isCurrent ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
-              background: isAnswered ? 'var(--color-primary-light)' : 'var(--color-surface-0)',
-              color: isAnswered ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-              transition: 'all 0.2s'
+              border: isCurrent
+                ? '2px solid var(--color-primary)'
+                : isAnswered
+                  ? '1px solid var(--color-primary)'
+                  : '1px solid var(--color-border)',
+              background: isCurrent
+                ? (isAnswered ? 'var(--color-primary)' : 'var(--color-surface-0)')
+                : (isAnswered ? 'var(--color-primary-light)' : 'var(--color-surface-0)'),
+              color: isCurrent
+                ? (isAnswered ? '#ffffff' : 'var(--color-primary)')
+                : (isAnswered ? 'var(--color-primary)' : 'var(--color-text-secondary)'),
+              boxShadow: isCurrent ? 'var(--shadow-sm)' : 'none',
+              transition: 'all 0.15s ease',
             }}
           >
             {i + 1}
@@ -100,6 +125,21 @@ function ExamSessionRoute() {
     ? (questionsList[currentIndex]?.questionId as any)?._id 
     : questionsList[currentIndex]?.questionId;
 
+  const courseTitle = React.useMemo(() => {
+    const c = responseData?.session?.courseId;
+    if (typeof c === 'object' && c !== null) {
+      return (c as any).title || (c as any).name || 'Mock Examination';
+    }
+    return 'Mock Examination';
+  }, [responseData?.session?.courseId]);
+
+  const answeredCount = React.useMemo(() => {
+    return questionsList.filter((q: any) => {
+      const qId = typeof q.questionId === 'object' ? q.questionId?._id : q.questionId;
+      return !!answersMap[qId]?.selectedAnswer || !!answersMap[qId]?.writtenAnswer;
+    }).length;
+  }, [questionsList, answersMap]);
+
   const [hasStartedExam, setHasStartedExam] = React.useState<boolean>(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -148,6 +188,21 @@ function ExamSessionRoute() {
 
   // Extract full question object
   const activeQuestionObj = React.useMemo(() => questionsList[currentIndex]?.questionId as unknown as Question, [questionsList, currentIndex]);
+
+  const difficultyLabel = React.useMemo<'EASY' | 'MEDIUM' | 'HARD' | undefined>(() => {
+    if (!activeQuestionObj) return undefined;
+    if (typeof activeQuestionObj.difficulty === 'number') {
+      if (activeQuestionObj.difficulty <= 2) return 'EASY';
+      if (activeQuestionObj.difficulty <= 4) return 'MEDIUM';
+      return 'HARD';
+    }
+    if (typeof activeQuestionObj.eloRating === 'number') {
+      if (activeQuestionObj.eloRating < 1200) return 'EASY';
+      if (activeQuestionObj.eloRating <= 1600) return 'MEDIUM';
+      return 'HARD';
+    }
+    return undefined;
+  }, [activeQuestionObj]);
 
   const currentAnswer = answersMap[activeQuestionId] || { timeTaken: 0 };
   const questionStartTimeRef = React.useRef<number>(Date.now());
@@ -472,39 +527,52 @@ function ExamSessionRoute() {
         }}
       />
 
-    <header style={{
-      background: 'var(--color-surface-0)',
-      borderBottom: '1px solid var(--color-border)',
-      padding: 'var(--space-16) var(--space-32)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      position: 'sticky',
-      top: 0,
-      zIndex: 10
-    }}>
-      <QuestionNavigator 
-        questionsList={questionsList} 
-        currentIndex={currentIndex} 
-        answersMap={answersMap} 
-        onJumpToQuestion={handleJumpToQuestion} 
-      />
+    <header className="sticky top-0 z-30 bg-[var(--color-surface-0)] border-b border-[var(--color-border)] shadow-xs">
+      {/* Top Tier: Course title + Proctoring badge + Timer + Actions */}
+      <div className="px-4 sm:px-8 py-3 flex items-center justify-between gap-4 border-b border-[var(--color-border)]">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <h1 className="text-sm sm:text-base font-bold text-[var(--color-text)] tracking-tight truncate max-w-[180px] sm:max-w-md">
+            {courseTitle}
+          </h1>
+          {isMonitoring && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              Proctored
+            </span>
+          )}
+        </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-24)' }}>
-        {isMonitoring && !isFullscreen && (
-          <Button variant="outline" size="sm" onClick={requestFullscreen}>
-            <Maximize2 size={14} style={{ marginRight: 6 }} /> Enter Full Screen
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          {isMonitoring && !isFullscreen && (
+            <Button variant="outline" size="sm" onClick={requestFullscreen}>
+              <Maximize2 size={14} style={{ marginRight: 6 }} /> Full Screen
+            </Button>
+          )}
+          <ExamTimer ref={timerRef} />
+          <Button variant="accent" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+            Submit Exam
           </Button>
-        )}
-        <ExamTimer ref={timerRef} />
-        <Button variant="accent" onClick={handleSubmit} isLoading={isSubmitting}>
-          Submit Exam
-        </Button>
+        </div>
+      </div>
+
+      {/* Secondary Tier: Horizontal question pill strip + answer count */}
+      <div className="px-4 sm:px-8 py-2 flex items-center justify-between gap-3 bg-[var(--color-surface-1)]">
+        <div className="flex-1 min-w-0">
+          <QuestionNavigator
+            questionsList={questionsList}
+            currentIndex={currentIndex}
+            answersMap={answersMap}
+            onJumpToQuestion={handleJumpToQuestion}
+          />
+        </div>
+        <div className="shrink-0 text-xs font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface-0)] border border-[var(--color-border)] px-2.5 py-1 rounded-md">
+          {answeredCount} / {questionsList.length} answered
+        </div>
       </div>
     </header>
 
-    <main style={{ flex: 1, padding: 'var(--space-48) var(--space-24)', display: 'flex', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: 760 }}>
+    <main className="flex-1 px-4 sm:px-6 py-6 sm:py-8 pb-32 sm:pb-20 flex justify-center">
+      <div className="w-full max-w-3xl">
         {/* Anti-Cheat Fullscreen Requirement Banner */}
         {isMonitoring && !isFullscreen && (
           <div
@@ -516,10 +584,10 @@ function ExamSessionRoute() {
               gap: 12,
               padding: '12px 16px',
               marginBottom: 20,
-              borderRadius: 12,
-              backgroundColor: 'rgba(239, 68, 68, 0.08)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: 'var(--color-danger, #ef4444)',
+              borderRadius: 'var(--radius-lg)',
+              backgroundColor: 'var(--color-danger-light)',
+              border: '1px solid var(--color-danger)',
+              color: 'var(--color-danger)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -554,10 +622,10 @@ function ExamSessionRoute() {
               gap: 10,
               padding: '12px 16px',
               marginBottom: 20,
-              borderRadius: 8,
+              borderRadius: 'var(--radius-md)',
               background: 'var(--color-warning-light)',
               border: '1px solid var(--color-warning)',
-              color: 'var(--color-text-primary)',
+              color: 'var(--color-text)',
               fontSize: '0.9rem',
             }}
           >
@@ -565,9 +633,11 @@ function ExamSessionRoute() {
             <span>{clampedMessage}</span>
           </div>
         )}
+
         {activeQuestionObj && (
           <QuestionCard
             question={activeQuestionObj}
+            difficulty={difficultyLabel}
             selectedOptionId={currentAnswer.selectedAnswer || null}
             onOptionSelect={handleOptionSelect}
             writtenAnswer={currentAnswer.writtenAnswer || ""}
@@ -580,12 +650,22 @@ function ExamSessionRoute() {
           />
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--space-32)' }}>
+        {/* Bottom Question Controls */}
+        <div className="flex items-center justify-between pt-6 border-t border-[var(--color-border)] mt-8">
           <Button variant="outline" disabled={currentIndex === 0} onClick={handlePrev}>
-            <ChevronLeft size={16} style={{ marginRight: 8 }} /> Previous
+            <ChevronLeft size={16} style={{ marginRight: 6 }} /> Previous
           </Button>
-          <Button variant="primary" disabled={currentIndex === questionsList.length - 1} onClick={handleNext}>
-            Next <ChevronRight size={16} style={{ marginLeft: 8 }} />
+
+          <span className="text-sm font-semibold text-[var(--color-text-secondary)]">
+            Question {currentIndex + 1} of {questionsList.length}
+          </span>
+
+          <Button
+            variant="primary"
+            disabled={currentIndex === questionsList.length - 1}
+            onClick={handleNext}
+          >
+            Next <ChevronRight size={16} style={{ marginLeft: 6 }} />
           </Button>
         </div>
 

@@ -32,6 +32,8 @@ export interface PracticeSession {
   _id: string;
   studentId: string;
   courseId: string | any;
+  courseCode?: string;
+  mode?: 'quick' | 'exam' | 'mock' | 'adaptive' | string;
   startedAt: string;
   endedAt?: string;
   status: 'active' | 'completed' | 'PENDING_GRADING' | 'FAILED';

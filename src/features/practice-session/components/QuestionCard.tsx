@@ -212,24 +212,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
               return (
                 <label
                   key={option.id}
-                  className={!disabled && !isSelected ? 'hover:bg-white/5 hover:border-[var(--color-border-hover)]' : ''}
+                  className={`group relative flex items-center p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-200 ${
+                    disabled ? 'cursor-not-allowed opacity-60' : ''
+                  }`}
                   style={{
-                    display: 'flex', alignItems: 'center', padding: 'var(--space-24)',
-                    borderRadius: 'var(--radius-xl)', cursor: disabled ? 'default' : 'pointer',
-                    background: isSelected ? 'var(--color-surface)' : 'var(--color-surface-0)',
+                    backgroundColor: isSelected ? 'var(--color-surface-1)' : 'var(--color-surface-0)',
                     border: isSelected ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
-                    transition: 'all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                    opacity: disabled && !isSelected ? 0.6 : 1,
+                    boxShadow: isSelected ? 'var(--shadow-sm)' : 'none',
+                    minHeight: 56,
                   }}
                 >
-                  {/* Radio Button */}
-                  <div style={{
-                    width: 24, height: 24, borderRadius: '50%', flexShrink: 0, marginRight: 'var(--space-16)',
-                    border: isSelected ? '7px solid var(--color-primary)' : '2px solid var(--color-text-muted)',
-                    background: isSelected ? 'var(--color-surface)' : 'transparent',
-                    transition: 'all 0.2s ease',
-                  }} />
-
                   <input
                     type="radio"
                     name="question-option"
@@ -240,17 +232,38 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
                     className="sr-only"
                   />
 
-                  {/* Option Letter */}
-                  <span style={{
-                    marginRight: 'var(--space-12)', fontWeight: 800, color: isSelected ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                    background: isSelected ? 'var(--color-primary-light)' : 'var(--color-surface-2)',
-                    width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-md)'
-                  }}>
+                  {/* Option Letter Indicator */}
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 'var(--radius-lg)',
+                      flexShrink: 0,
+                      marginRight: 'var(--space-16)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 700,
+                      fontSize: '0.9375rem',
+                      backgroundColor: isSelected ? 'var(--color-primary)' : 'var(--color-surface-2)',
+                      color: isSelected ? '#ffffff' : 'var(--color-text-secondary)',
+                      border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
                     {option.id}
-                  </span>
+                  </div>
 
                   {/* Option Text with Mathematical Formatting */}
-                  <span style={{ fontSize: '1.1rem', fontWeight: isSelected ? 600 : 500, color: 'var(--color-text)', lineHeight: 1.5 }}>
+                  <span
+                    style={{
+                      flex: 1,
+                      fontSize: '1.05rem',
+                      fontWeight: isSelected ? 600 : 400,
+                      color: 'var(--color-text)',
+                      lineHeight: 1.55,
+                    }}
+                  >
                     <FormattedMathText text={option.text} />
                   </span>
                 </label>

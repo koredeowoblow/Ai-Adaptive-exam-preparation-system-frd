@@ -48,7 +48,7 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        backgroundColor: 'rgba(15, 23, 42, 0.82)',
+        backgroundColor: 'rgba(11, 23, 38, 0.82)',
         backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
@@ -61,10 +61,10 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
         style={{
           width: '100%',
           maxWidth: 620,
-          backgroundColor: 'var(--color-surface, #ffffff)',
+          backgroundColor: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-xl, 16px)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          borderRadius: 'var(--radius-xl)',
+          boxShadow: 'var(--shadow-xl)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -74,7 +74,7 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
         <div
           style={{
             padding: 'var(--space-24) var(--space-32)',
-            background: 'linear-gradient(135deg, rgba(3, 105, 161, 0.12) 0%, rgba(3, 105, 161, 0.04) 100%)',
+            background: 'var(--color-surface-1)',
             borderBottom: '1px solid var(--color-border)',
             display: 'flex',
             alignItems: 'center',
@@ -85,9 +85,9 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
             style={{
               width: 52,
               height: 52,
-              borderRadius: 'var(--radius-lg, 12px)',
-              backgroundColor: 'var(--color-primary-light, rgba(3, 105, 161, 0.15))',
-              color: 'var(--color-primary, #0369a1)',
+              borderRadius: 'var(--radius-lg)',
+              backgroundColor: 'var(--color-primary-light)',
+              color: 'var(--color-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -104,8 +104,8 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
                 gap: 6,
                 padding: '3px 8px',
                 borderRadius: '999px',
-                backgroundColor: 'rgba(3, 105, 161, 0.12)',
-                color: 'var(--color-primary, #0369a1)',
+                backgroundColor: 'var(--color-primary-light)',
+                color: 'var(--color-primary)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 textTransform: 'uppercase',
@@ -142,8 +142,8 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
                 alignItems: 'flex-start',
                 gap: 'var(--space-12)',
                 padding: 'var(--space-12) var(--space-16)',
-                borderRadius: 'var(--radius-md, 8px)',
-                backgroundColor: 'var(--color-surface-1, #f8fafc)',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-surface-1)',
                 border: '1px solid var(--color-border)',
               }}
             >
@@ -164,12 +164,12 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
                 alignItems: 'flex-start',
                 gap: 'var(--space-12)',
                 padding: 'var(--space-12) var(--space-16)',
-                borderRadius: 'var(--radius-md, 8px)',
-                backgroundColor: 'var(--color-surface-1, #f8fafc)',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-surface-1)',
                 border: '1px solid var(--color-border)',
               }}
             >
-              <Eye size={20} style={{ color: 'var(--color-warning, #f59e0b)', marginTop: 2, flexShrink: 0 }} />
+              <Eye size={20} style={{ color: 'var(--color-warning)', marginTop: 2, flexShrink: 0 }} />
               <div>
                 <strong style={{ display: 'block', fontSize: '0.875rem', color: 'var(--color-text)' }}>
                   Tab & Window Switching Monitored
@@ -186,18 +186,18 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
                 alignItems: 'flex-start',
                 gap: 'var(--space-12)',
                 padding: 'var(--space-12) var(--space-16)',
-                borderRadius: 'var(--radius-md, 8px)',
-                backgroundColor: 'var(--color-surface-1, #f8fafc)',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-surface-1)',
                 border: '1px solid var(--color-border)',
               }}
             >
-              <MonitorOff size={20} style={{ color: 'var(--color-danger, #ef4444)', marginTop: 2, flexShrink: 0 }} />
+              <MonitorOff size={20} style={{ color: 'var(--color-danger)', marginTop: 2, flexShrink: 0 }} />
               <div>
                 <strong style={{ display: 'block', fontSize: '0.875rem', color: 'var(--color-text)' }}>
-                  Screenshots & Screen Captures Blocked
+                  Screenshots & Screen Captures Monitored
                 </strong>
                 <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', lineHeight: 1.45 }}>
-                  Keyboard shortcuts for screenshots (PrintScreen, Snipping tool, etc.) are blocked and will trigger a security violation.
+                  Keyboard shortcuts for screenshots (PrintScreen, Snipping Tool, etc.) are detected, blacked out, and logged. Please note that external OS-level capture utilities outside the browser cannot be technically blocked by web applications, but all detected activity is audited.
                 </span>
               </div>
             </div>
@@ -208,8 +208,8 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
                 alignItems: 'flex-start',
                 gap: 'var(--space-12)',
                 padding: 'var(--space-12) var(--space-16)',
-                borderRadius: 'var(--radius-md, 8px)',
-                backgroundColor: 'var(--color-surface-1, #f8fafc)',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-surface-1)',
                 border: '1px solid var(--color-border)',
               }}
             >
@@ -234,8 +234,8 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
               cursor: 'pointer',
               userSelect: 'none',
               padding: 'var(--space-12)',
-              borderRadius: 'var(--radius-md, 8px)',
-              backgroundColor: agreed ? 'var(--color-primary-light, rgba(3, 105, 161, 0.08))' : 'transparent',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: agreed ? 'var(--color-primary-light)' : 'transparent',
               border: `1px solid ${agreed ? 'var(--color-primary)' : 'var(--color-border)'}`,
               transition: 'all 0.15s ease',
             }}
@@ -256,7 +256,7 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
         <div
           style={{
             padding: 'var(--space-16) var(--space-32)',
-            backgroundColor: 'var(--color-surface-0, #f8fafc)',
+            backgroundColor: 'var(--color-surface-0)',
             borderTop: '1px solid var(--color-border)',
             display: 'flex',
             alignItems: 'center',

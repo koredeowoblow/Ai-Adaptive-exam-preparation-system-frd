@@ -1,16 +1,34 @@
-import React from 'react';
+import * as React from 'react';
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
-import { usePracticeSession } from "../features/practice-session/hooks/usePractice";
+import { usePracticeSession, useRequestMcqExplanation } from "../features/practice-session/hooks/usePractice";
 import { useDocumentTitle } from "../shared/hooks/useDocumentTitle";
 import { AppLayout } from "../shared/components/layout/AppLayout";
 import { Skeleton } from "../shared/components/Skeleton";
 import { ErrorState } from "../shared/components/ErrorState";
 import { EmptyState } from "../shared/components/EmptyState";
-import { Trophy, ArrowRight, Sparkles, Loader2, ClockAlert, Timer, Target, TrendingUp, ShieldCheck, HelpCircle, AlertCircle, Award } from "lucide-react";
-import type { Question } from "../types/question.types";
-import { useRequestMcqExplanation } from "../features/practice-session/hooks/usePractice";
-import { clsx } from "clsx";
+import { Badge } from "../shared/components/Badge";
+import { Button } from "../shared/components/Button";
+import { useTopbar } from "../shared/context/TopbarContext";
 import { FormattedMathText } from "../shared/components/FormattedMathText";
+import { 
+  Trophy, 
+  ArrowRight, 
+  Sparkles, 
+  Loader2, 
+  ClockAlert, 
+  Timer, 
+  Target, 
+  TrendingUp, 
+  ShieldCheck, 
+  HelpCircle, 
+  AlertCircle, 
+  Award,
+  CheckCircle2,
+  XCircle,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
+import type { Question } from "../types/question.types";
 
 export const Route = createLazyFileRoute("/practice_/$sessionId/review")({
   component: SessionReviewRoute,
@@ -20,6 +38,15 @@ function SessionReviewRoute() {
   useDocumentTitle("Session Review - EduAdapt");
   const { sessionId } = Route.useParams();
   const navigate = useNavigate();
+
+  useTopbar({
+    title: "Session Review",
+    breadcrumbs: [
+      { label: "Dashboard", to: "/dashboard" },
+      { label: "History", to: "/practice/history" },
+      { label: "Review" },
+    ],
+  });
 
   const [currentPage, setCurrentPage] = React.useState(0);
   const questionCardRef = React.useRef<HTMLDivElement>(null);
@@ -47,17 +74,33 @@ function SessionReviewRoute() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <Skeleton style={{ width: 400, height: 400, borderRadius: '1.5rem' }} />
-      </div>
+      <AppLayout>
+        <div className="page-container" style={{ padding: 'var(--space-32) var(--space-16)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-20)', marginBottom: 'var(--space-24)' }}>
+            <Skeleton style={{ height: 200, borderRadius: 'var(--radius-xl)' }} />
+            <Skeleton style={{ height: 200, borderRadius: 'var(--radius-xl)' }} />
+          </div>
+          <Skeleton style={{ height: 400, borderRadius: 'var(--radius-xl)' }} />
+        </div>
+      </AppLayout>
     );
   }
 
   if (error || !responseData) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <ErrorState message="We couldn't load your session review. Please check your connection." />
-      </div>
+      <AppLayout>
+        <div className="page-container" style={{ padding: 'var(--space-48) var(--space-16)', textAlign: 'center' }}>
+          <div className="card" style={{ maxWidth: 480, margin: '0 auto', padding: 'var(--space-32)' }}>
+            <ErrorState 
+              message="We could not load your session review. Please verify your connection." 
+              onRetry={() => window.location.reload()} 
+            />
+            <Button variant="outline" onClick={() => navigate({ to: '/dashboard' })} style={{ marginTop: 'var(--space-16)' }}>
+              Return to Dashboard
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
     );
   }
 
@@ -66,14 +109,28 @@ function SessionReviewRoute() {
   if (sessionData?.status === 'PENDING_GRADING') {
     return (
       <AppLayout>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-3xl p-8 border border-gray-100 dark:border-gray-700 shadow-xl text-center space-y-4">
-            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-              <Loader2 className="w-8 h-8 animate-spin" />
+        <div className="page-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-32) var(--space-16)' }}>
+          <div className="card" style={{ maxWidth: 460, width: '100%', padding: 'var(--space-32)', textAlign: 'center' }}>
+            <div 
+              style={{ 
+                width: 56, 
+                height: 56, 
+                margin: '0 auto var(--space-16)', 
+                borderRadius: 'var(--radius-xl)', 
+                background: 'var(--color-primary-light, rgba(14, 107, 168, 0.1))', 
+                color: 'var(--color-primary)',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+              }}
+            >
+              <Loader2 className="animate-spin" size={28} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Grading in Progress</h2>
-            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
-              Your exam has been submitted and is currently being evaluated. Your results and detailed feedback will appear here in just a moment.
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 var(--space-8)', color: 'var(--color-text-primary)' }}>
+              Grading in Progress
+            </h2>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', lineHeight: 1.6, margin: 0 }}>
+              Your exam has been submitted and is currently being evaluated by the AI grader. Your results and detailed feedback will appear here shortly.
             </p>
           </div>
         </div>
@@ -82,9 +139,6 @@ function SessionReviewRoute() {
   }
 
   const finalScore = sessionData?.score ?? 0;
-  const isFullExam = sessionData.totalQuestions >= 40;
-  void isFullExam;
-
   const questionsSummary = responseData.questionsSummary ?? [];
   const correctCount = sessionData.correctAnswers ?? (questionsSummary.filter((q: any) => q.correct).length);
   const answeredCount = sessionData.questionsAnswered ?? 0;
@@ -94,10 +148,6 @@ function SessionReviewRoute() {
   const durationMs = sessionData.endedAt 
     ? new Date(sessionData.endedAt).getTime() - new Date(sessionData.startedAt).getTime()
     : 0;
-  const minutes = Math.floor(durationMs / 60000);
-  const seconds = Math.floor((durationMs % 60000) / 1000);
-  const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  void timeString;
 
   const questions: any[] = sessionData?.questionsServed ?? [];
   const total = questions.length || responseData.totalServed || 0;
@@ -109,27 +159,27 @@ function SessionReviewRoute() {
       return {
         label: "Excellent Performance",
         icon: TrendingUp,
-        badgeClass: "bg-white/20 text-white",
+        variant: "success" as const,
       };
     }
     if (score >= 70) {
       return {
         label: "Good Performance",
         icon: TrendingUp,
-        badgeClass: "bg-white/20 text-white",
+        variant: "primary" as const,
       };
     }
     if (score >= 50) {
       return {
-        label: "Passing / Fair",
+        label: "Passing Score",
         icon: Award,
-        badgeClass: "bg-white/20 text-white",
+        variant: "warning" as const,
       };
     }
     return {
       label: "Needs Improvement",
       icon: AlertCircle,
-      badgeClass: "bg-rose-500/30 text-rose-100 border border-rose-300/30",
+      variant: "danger" as const,
     };
   };
 
@@ -138,359 +188,431 @@ function SessionReviewRoute() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-32">
-        <main className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
+      <div className="page-container" style={{ paddingBottom: 'calc(var(--space-48) + 80px)' }}>
+        
+        {/* Results Hero (Bento Layout) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-20)', marginBottom: 'var(--space-24)' }}>
 
-          {/* Results Hero (Bento Grid) */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
-
-            {/* Main Score Card */}
-            <div className="md:col-span-4 bg-primary text-white p-8 rounded-3xl flex flex-col justify-between relative overflow-hidden shadow-[0_8px_30px_rgba(14,165,233,0.3)]">
-              <div className="relative z-10">
-                <p className="text-sm font-bold opacity-80 mb-2 uppercase tracking-widest">Final Score</p>
-                <h2 className="text-7xl font-black leading-none mb-6">{Math.round(finalScore)}<span className="text-4xl opacity-80">%</span></h2>
-                <div className={clsx("mt-4 inline-flex items-center gap-2 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold shadow-sm", tier.badgeClass)}>
-                  <TierIcon size={18} />
-                  <span>{tier.label}</span>
-                </div>
+          {/* Main Score Card */}
+          <div 
+            className="card" 
+            style={{ 
+              background: 'linear-gradient(135deg, var(--color-primary) 0%, #094770 100%)', 
+              color: '#ffffff', 
+              padding: 'var(--space-24) var(--space-28)',
+              position: 'relative',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: 180
+            }}
+          >
+            <div style={{ position: 'relative', zIndex: 2 }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.85 }}>
+                Final Score
+              </span>
+              <div style={{ fontSize: '3.5rem', fontWeight: 900, lineHeight: 1.1, margin: 'var(--space-8) 0' }}>
+                {Math.round(finalScore)}<span style={{ fontSize: '2rem', opacity: 0.8 }}>%</span>
               </div>
-              <div className="absolute -right-12 -bottom-12 opacity-10">
-                <Trophy size={200} />
+              <div 
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: 6, 
+                  background: 'rgba(255, 255, 255, 0.18)', 
+                  padding: '4px 12px', 
+                  borderRadius: 'var(--radius-full)', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 600,
+                  backdropFilter: 'blur(4px)'
+                }}
+              >
+                <TierIcon size={16} />
+                <span>{tier.label}</span>
               </div>
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
             </div>
-
-            {/* Performance Summary Card */}
-            <div className="md:col-span-8 bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-gray-700">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Session Completed!</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1 text-lg">Here's a breakdown of how you performed.</p>
-                </div>
-                {sessionData.lateSubmission && (
-                  <div className="inline-flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 px-4 py-2 rounded-full text-sm font-bold border border-orange-100 dark:border-orange-800/30">
-                    <ClockAlert size={18} />
-                    Late Submission
-                  </div>
-                )}
-              </div>
-
-              {/* Performance Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-2">
-                    <Target size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Accuracy</span>
-                  </div>
-                  <p className="text-2xl font-black text-gray-900 dark:text-white">{accuracy}%</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-2">
-                    <HelpCircle size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Answered</span>
-                  </div>
-                  <p className="text-2xl font-black text-gray-900 dark:text-white">{answeredCount} <span className="text-sm font-medium text-gray-400">/ {sessionData.totalQuestions}</span></p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-2">
-                    <Timer size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Avg Speed</span>
-                  </div>
-                  <p className="text-2xl font-black text-gray-900 dark:text-white">{Math.max(1, Math.round(durationMs / 1000 / (answeredCount || 1)))}s <span className="text-sm font-medium text-gray-400">/ q</span></p>
-                </div>
-
-                <div className={clsx(
-                  "p-4 rounded-2xl border",
-                  integrityScore >= 80 ? "bg-green-50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30" :
-                  integrityScore >= 50 ? "bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30" :
-                  "bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30"
-                )}>
-                  <div className={clsx(
-                    "flex items-center gap-2 mb-2",
-                    integrityScore >= 80 ? "text-green-600 dark:text-green-400" :
-                    integrityScore >= 50 ? "text-amber-600 dark:text-amber-400" :
-                    "text-red-600 dark:text-red-400"
-                  )}>
-                    <ShieldCheck size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Integrity</span>
-                  </div>
-                  <p className={clsx(
-                    "text-2xl font-black",
-                    integrityScore >= 80 ? "text-green-700 dark:text-green-400" :
-                    integrityScore >= 50 ? "text-amber-700 dark:text-amber-400" :
-                    "text-red-700 dark:text-red-400"
-                  )}>{integrityScore}</p>
-                </div>
-              </div>
+            <div style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.12, pointerEvents: 'none' }}>
+              <Trophy size={160} />
             </div>
           </div>
 
-          {/* Review Area */}
-          <div className="space-y-4 relative">
-            {isFetching && !isLoading && (
-              <div className="absolute inset-0 z-10 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm flex items-center justify-center rounded-3xl">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          {/* Performance Summary Metrics Card */}
+          <div className="card" style={{ padding: 'var(--space-24)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-12)', marginBottom: 'var(--space-16)' }}>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
+                  Session Performance
+                </h2>
+                <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
+                  Summary of your responses and integrity status.
+                </p>
               </div>
-            )}
-            {total === 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 border border-gray-100 dark:border-gray-700">
-                <EmptyState
-                  title="No Review Data Available"
-                  description="There are no answered questions recorded for this session."
-                  actionLabel="Back to Dashboard"
-                  onAction={() => navigate({ to: '/dashboard' })}
-                />
-              </div>
-            )}
-            {currentAns && currentQ && (() => {
-              const ans = currentAns;
-              const q = currentQ;
-              const isTheory = q.type === 'THEORY';
+              {sessionData.lateSubmission && (
+                <Badge variant="warning">
+                  <ClockAlert size={14} style={{ marginRight: 4 }} /> Late Submission
+                </Badge>
+              )}
+            </div>
 
-              return (
-                <div ref={questionCardRef} className={clsx("bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-gray-700", isFetching && "opacity-50")}>
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold rounded-full tracking-wider uppercase">
-                        Question {currentPage + 1} <span className="font-normal opacity-60">of {total}</span>
-                      </span>
-                      {isTheory && (
-                        <span className="px-3 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-xs font-bold rounded-full tracking-wider uppercase flex items-center gap-1">
-                          <Sparkles size={12} /> AI Graded
-                        </span>
-                      )}
-                    </div>
-                    {!isTheory && (
-                      <span className={clsx(
-                        "text-xs font-bold px-3 py-1 rounded-full",
-                        ans.correct
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : !ans.selectedAnswer
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40"
-                          : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                      )}>
-                        {ans.correct ? '✓ Correct' : !ans.selectedAnswer ? '○ Unanswered' : '✗ Incorrect'}
-                      </span>
+            {/* Performance Mini Tiles */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 'var(--space-12)' }}>
+              
+              <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+                  <Target size={14} /> Accuracy
+                </div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
+                  {accuracy}%
+                </div>
+              </div>
+
+              <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+                  <HelpCircle size={14} /> Answered
+                </div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
+                  {answeredCount} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>/ {sessionData.totalQuestions || total}</span>
+                </div>
+              </div>
+
+              <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+                  <Timer size={14} /> Avg Speed
+                </div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
+                  {Math.max(1, Math.round(durationMs / 1000 / (answeredCount || 1)))}s <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>/ q</span>
+                </div>
+              </div>
+
+              <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: integrityScore >= 80 ? 'var(--color-success, #10b981)' : 'var(--color-danger)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+                  <ShieldCheck size={14} /> Integrity
+                </div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: integrityScore >= 80 ? 'var(--color-success, #10b981)' : 'var(--color-danger)' }}>
+                  {integrityScore}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Question Review Area */}
+        <div style={{ position: 'relative' }}>
+          {isFetching && !isLoading && (
+            <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-xl)' }}>
+              <Loader2 className="animate-spin" size={32} color="var(--color-primary)" />
+            </div>
+          )}
+
+          {total === 0 && (
+            <div className="card" style={{ padding: 'var(--space-32)', textAlign: 'center' }}>
+              <EmptyState
+                title="No Review Data Available"
+                description="There are no answered questions recorded for this session."
+                actionLabel="Back to Dashboard"
+                onAction={() => navigate({ to: '/dashboard' })}
+              />
+            </div>
+          )}
+
+          {currentAns && currentQ && (() => {
+            const ans = currentAns;
+            const q = currentQ;
+            const isTheory = q.type === 'THEORY';
+
+            return (
+              <div 
+                ref={questionCardRef} 
+                className="card" 
+                style={{ 
+                  padding: 'var(--space-24)', 
+                  marginBottom: 'var(--space-20)',
+                  opacity: isFetching ? 0.6 : 1,
+                  transition: 'opacity 0.2s'
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-16)', flexWrap: 'wrap', gap: 'var(--space-8)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-8)' }}>
+                    <Badge variant="neutral">
+                      Question {currentPage + 1} of {total}
+                    </Badge>
+                    {isTheory && (
+                      <Badge variant="primary">
+                        <Sparkles size={12} style={{ marginRight: 4 }} /> AI Graded
+                      </Badge>
                     )}
                   </div>
 
-                  {!isTheory && !ans.selectedAnswer && (
-                    <div className="mb-6 px-4 py-3 rounded-2xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-800/40 text-xs font-medium text-amber-800 dark:text-amber-300 flex items-center gap-2.5">
-                      <HelpCircle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
-                      <span>This question was left unanswered. The correct answer is highlighted in green below.</span>
-                    </div>
-                  )}
-
-                  {/* Question text */}
-                  <div className="text-lg font-medium text-gray-900 dark:text-white mb-6 leading-relaxed">
-                    <FormattedMathText text={q.questionText ? q.questionText.replace(/\s*\[Variant\s+\d+\]\s*$/i, '').trim() : ''} />
-                  </div>
-
-                  {/* MCQ options */}
-                  {!isTheory && q.options && (
-                    <div className="space-y-2 mb-6">
-                      {q.options.map((option: any) => {
-                        const isChosen = option.id === ans.selectedAnswer;
-                        const isCorrectOpt = option.id === q.correctAnswer;
-                        return (
-                          <div
-                            key={option.id}
-                            className={clsx(
-                              "flex items-center gap-3 p-3 rounded-xl border text-sm font-medium transition-all",
-                              isCorrectOpt
-                                ? "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300"
-                                : isChosen && !isCorrectOpt
-                                ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 text-red-800 dark:text-red-300"
-                                : "bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
-                            )}
-                          >
-                            <div className={clsx(
-                              "w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center",
-                              isCorrectOpt ? "border-green-500 bg-green-500"
-                                : isChosen && !isCorrectOpt ? "border-red-500 bg-red-500"
-                                : "border-gray-300 dark:border-gray-600"
-                            )}>
-                              {isCorrectOpt && (
-                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                              {isChosen && !isCorrectOpt && (
-                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              )}
-                            </div>
-                            <span className="flex-1">
-                              <FormattedMathText text={option.text} />
-                            </span>
-                            {isChosen && (
-                              <span className={clsx(
-                                "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                                isCorrectOpt ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                              )}>Your answer</span>
-                            )}
-                            {isCorrectOpt && !isChosen && (
-                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                Correct
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Theory answer */}
-                  {isTheory && (
-                    <div className="mb-6 space-y-3">
-                      {ans.writtenAnswer ? (
-                        <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Your Answer</p>
-                          <div className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
-                            <FormattedMathText text={ans.writtenAnswer} />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30">
-                          <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">No answer was submitted for this question.</p>
-                        </div>
-                      )}
-                      {ans.gradingStatus === 'GRADED' && (
-                        <div className={clsx(
-                          "p-4 rounded-xl border",
-                          (ans.score ?? 0) >= 0.7
-                            ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800/30"
-                            : "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/30"
-                        )}>
-                          <p className={clsx(
-                            "text-xs font-bold uppercase tracking-wider mb-1",
-                            (ans.score ?? 0) >= 0.7 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                          )}>
-                            AI Grade: {Math.round((ans.score ?? 0) * 100)}%
-                          </p>
-                          {ans.theoryFeedback && (
-                            <div className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                              <FormattedMathText text={ans.theoryFeedback} />
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* AI Explanation (MCQ only) */}
                   {!isTheory && (
-                    <div className="pt-6 border-t border-gray-100 dark:border-gray-700">
-                      {ans.explanationStatus === 'READY' && ans.aiExplanation ? (
-                        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-2xl border border-blue-100 dark:border-blue-900/30 relative overflow-hidden">
-                          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                            <Sparkles size={80} />
-                          </div>
-                          <div className="flex items-center gap-2 mb-3 text-primary font-bold relative z-10">
-                            <Sparkles size={18} className="animate-pulse" />
-                            <span>AI Tutor Explanation</span>
-                          </div>
-                          <div className="text-sm md:text-base leading-relaxed text-gray-700 dark:text-gray-300 relative z-10">
-                            <FormattedMathText text={ans.aiExplanation} />
-                          </div>
-                        </div>
-                      ) : ans.explanationStatus === 'PENDING' || pendingExplanations.has((ans as any)._id) ? (
-                        <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-sm p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
-                          <Loader2 className="animate-spin text-primary" size={20} />
-                          Generating personalized AI explanation...
-                        </div>
-                      ) : (
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                          <button
-                            onClick={() => handleRequestExplanation((ans as any)._id)}
-                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
-                          >
-                            <Sparkles size={16} className="text-primary" />
-                            {ans.explanationStatus === 'FAILED' ? 'Retry AI Explanation' : 'Ask AI Tutor for Explanation'}
-                          </button>
-                          {ans.explanationStatus === 'FAILED' && (
-                            <span className="text-sm text-red-500 font-medium">Failed to generate. Please try again.</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <Badge variant={ans.correct ? "success" : !ans.selectedAnswer ? "warning" : "danger"}>
+                      {ans.correct ? "Correct" : !ans.selectedAnswer ? "Unanswered" : "Incorrect"}
+                    </Badge>
                   )}
                 </div>
-              );
-            })()}
 
-            {/* Pagination Controls */}
-            {total > 1 && (
-              <div className="flex items-center justify-between gap-4 mt-2">
-                <button
-                  type="button"
-                  onClick={() => goToPage(Math.max(0, currentPage - 1))}
-                  disabled={currentPage === 0}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                  Previous
-                </button>
+                {!isTheory && !ans.selectedAnswer && (
+                  <div 
+                    style={{ 
+                      padding: 'var(--space-12) var(--space-16)', 
+                      borderRadius: 'var(--radius-md)', 
+                      background: 'rgba(245, 158, 11, 0.1)', 
+                      border: '1px solid rgba(245, 158, 11, 0.3)', 
+                      color: 'var(--color-warning)',
+                      fontSize: '0.8rem', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 'var(--space-8)',
+                      marginBottom: 'var(--space-16)'
+                    }}
+                  >
+                    <HelpCircle size={16} style={{ flexShrink: 0 }} />
+                    <span>This question was left unanswered. The correct answer is highlighted below.</span>
+                  </div>
+                )}
 
-                {/* Dot indicators */}
-                <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                  {questionsSummary.map((item: any, i: number) => {
-                    const isTheory2 = item?.type === 'THEORY';
-                    const isCorrect2 = item?.correct;
-                    const isUnanswered2 = item?.answered === false;
-                    return (
-                      <button
-                        type="button"
-                        key={i}
-                        onClick={() => goToPage(i)}
-                        title={`Question ${i + 1} - ${isCorrect2 ? 'Correct' : isUnanswered2 ? 'Unanswered' : 'Incorrect'}`}
-                        className={clsx(
-                          "transition-all rounded-full",
-                          i === currentPage
-                            ? "w-6 h-2.5 bg-primary"
-                            : isTheory2
-                            ? "w-2.5 h-2.5 bg-purple-400 hover:bg-purple-500"
-                            : isCorrect2
-                            ? "w-2.5 h-2.5 bg-green-400 hover:bg-green-500"
-                            : isUnanswered2
-                            ? "w-2.5 h-2.5 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
-                            : "w-2.5 h-2.5 bg-red-400 hover:bg-red-500"
-                        )}
-                      />
-                    );
-                  })}
+                {/* Question Prompt */}
+                <div style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--color-text-primary)', lineHeight: 1.6, marginBottom: 'var(--space-20)' }}>
+                  <FormattedMathText text={q.questionText ? q.questionText.replace(/\s*\[Variant\s+\d+\]\s*$/i, '').trim() : ''} />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => goToPage(Math.min(total - 1, currentPage + 1))}
-                  disabled={currentPage === total - 1}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Next
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                </button>
-              </div>
-            )}
-          </div>
-        </main>
+                {/* MCQ Options */}
+                {!isTheory && q.options && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-10)', marginBottom: 'var(--space-20)' }}>
+                    {q.options.map((option: any) => {
+                      const isChosen = option.id === ans.selectedAnswer;
+                      const isCorrectOpt = option.id === q.correctAnswer;
+                      
+                      let borderStyle = '1px solid var(--color-border)';
+                      let bgStyle = 'var(--color-surface)';
+                      let iconColor = 'var(--color-text-muted)';
 
-        {/* Sticky Footer */}
-        <div className="fixed bottom-0 md:bottom-8 left-0 md:left-1/2 md:-translate-x-1/2 w-full md:w-auto px-4 md:px-0 z-40">
-          <div className="bg-white dark:bg-gray-800 md:border border-gray-200 dark:border-gray-700 md:rounded-full shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:shadow-xl p-3 flex items-center justify-center gap-4 w-full md:w-auto">
-            <button
-              onClick={() => navigate({ to: "/dashboard" })}
-              className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-8 py-3 bg-primary text-white font-bold rounded-xl md:rounded-full hover:bg-primary-dark transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30"
-            >
-              Back to Dashboard <ArrowRight size={18} />
-            </button>
-          </div>
+                      if (isCorrectOpt) {
+                        borderStyle = '1px solid var(--color-success, #10b981)';
+                        bgStyle = 'rgba(16, 185, 129, 0.08)';
+                        iconColor = 'var(--color-success, #10b981)';
+                      } else if (isChosen && !isCorrectOpt) {
+                        borderStyle = '1px solid var(--color-danger)';
+                        bgStyle = 'rgba(239, 68, 68, 0.08)';
+                        iconColor = 'var(--color-danger)';
+                      }
+
+                      return (
+                        <div
+                          key={option.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--space-12)',
+                            padding: 'var(--space-12) var(--space-16)',
+                            borderRadius: 'var(--radius-lg)',
+                            border: borderStyle,
+                            background: bgStyle,
+                            fontSize: '0.9rem',
+                            fontWeight: 500
+                          }}
+                        >
+                          <div 
+                            style={{ 
+                              width: 22, 
+                              height: 22, 
+                              borderRadius: '50%', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              color: iconColor 
+                            }}
+                          >
+                            {isCorrectOpt ? (
+                              <CheckCircle2 size={18} />
+                            ) : isChosen ? (
+                              <XCircle size={18} />
+                            ) : (
+                              <div style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px solid var(--color-border)' }} />
+                            )}
+                          </div>
+                          <span style={{ flex: 1, color: 'var(--color-text-primary)' }}>
+                            <FormattedMathText text={option.text} />
+                          </span>
+                          {isChosen && (
+                            <Badge variant={isCorrectOpt ? "success" : "danger"}>Your Answer</Badge>
+                          )}
+                          {isCorrectOpt && !isChosen && (
+                            <Badge variant="success">Correct Answer</Badge>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Theory Answer Review */}
+                {isTheory && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-12)', marginBottom: 'var(--space-20)' }}>
+                    {ans.writtenAnswer ? (
+                      <div style={{ padding: 'var(--space-16)', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
+                          Your Submitted Answer
+                        </span>
+                        <div style={{ fontSize: '0.9rem', color: 'var(--color-text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                          <FormattedMathText text={ans.writtenAnswer} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ padding: 'var(--space-14)', borderRadius: 'var(--radius-lg)', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.3)', color: 'var(--color-warning)', fontSize: '0.85rem' }}>
+                        No answer was submitted for this question.
+                      </div>
+                    )}
+
+                    {ans.gradingStatus === 'GRADED' && (
+                      <div 
+                        style={{ 
+                          padding: 'var(--space-16)', 
+                          borderRadius: 'var(--radius-lg)', 
+                          border: `1px solid ${(ans.score ?? 0) >= 0.7 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                          background: (ans.score ?? 0) >= 0.7 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)'
+                        }}
+                      >
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: (ans.score ?? 0) >= 0.7 ? 'var(--color-success, #10b981)' : 'var(--color-danger)', marginBottom: 6 }}>
+                          AI Evaluation Grade: {Math.round((ans.score ?? 0) * 100)}%
+                        </div>
+                        {ans.theoryFeedback && (
+                          <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
+                            <FormattedMathText text={ans.theoryFeedback} />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* AI Explanation for MCQ */}
+                {!isTheory && (
+                  <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-16)' }}>
+                    {ans.explanationStatus === 'READY' && ans.aiExplanation ? (
+                      <div 
+                        style={{ 
+                          padding: 'var(--space-16)', 
+                          borderRadius: 'var(--radius-lg)', 
+                          background: 'var(--color-primary-light, rgba(14, 107, 168, 0.08))', 
+                          border: '1px solid rgba(14, 107, 168, 0.2)' 
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.85rem', marginBottom: 8 }}>
+                          <Sparkles size={16} />
+                          <span>AI Tutor Explanation</span>
+                        </div>
+                        <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
+                          <FormattedMathText text={ans.aiExplanation} />
+                        </div>
+                      </div>
+                    ) : ans.explanationStatus === 'PENDING' || pendingExplanations.has((ans as any)._id) ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text-muted)', fontSize: '0.85rem', padding: 'var(--space-12)' }}>
+                        <Loader2 className="animate-spin" size={16} color="var(--color-primary)" />
+                        Generating detailed AI explanation...
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-12)' }}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRequestExplanation((ans as any)._id)}
+                        >
+                          <Sparkles size={14} style={{ marginRight: 6 }} />
+                          {ans.explanationStatus === 'FAILED' ? 'Retry AI Explanation' : 'Ask AI Tutor for Explanation'}
+                        </Button>
+                        {ans.explanationStatus === 'FAILED' && (
+                          <span style={{ fontSize: '0.8rem', color: 'var(--color-danger)' }}>Generation failed. Please retry.</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Pagination Controls */}
+          {total > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-12)', flexWrap: 'wrap' }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(Math.max(0, currentPage - 1))}
+                disabled={currentPage === 0}
+              >
+                <ChevronLeft size={16} style={{ marginRight: 4 }} /> Previous
+              </Button>
+
+              {/* Dot Indicators */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {questionsSummary.map((item: any, i: number) => {
+                  const isCur = i === currentPage;
+                  const isCorrect = item?.correct;
+                  const isUnans = item?.answered === false;
+                  
+                  let dotColor = 'var(--color-border)';
+                  if (isCur) dotColor = 'var(--color-primary)';
+                  else if (isCorrect) dotColor = 'var(--color-success, #10b981)';
+                  else if (!isUnans) dotColor = 'var(--color-danger)';
+
+                  return (
+                    <button
+                      type="button"
+                      key={i}
+                      onClick={() => goToPage(i)}
+                      aria-label={`Jump to question ${i + 1}`}
+                      style={{
+                        width: isCur ? 20 : 10,
+                        height: 10,
+                        borderRadius: 'var(--radius-full)',
+                        background: dotColor,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    />
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => goToPage(Math.min(total - 1, currentPage + 1))}
+                disabled={currentPage === total - 1}
+              >
+                Next <ChevronRight size={16} style={{ marginLeft: 4 }} />
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Floating Return Button */}
+        <div 
+          style={{ 
+            position: 'fixed', 
+            bottom: 24, 
+            left: '50%', 
+            transform: 'translateX(-50%)', 
+            zIndex: 40,
+            boxShadow: 'var(--shadow-lg)' 
+          }}
+        >
+          <Button
+            variant="primary"
+            onClick={() => navigate({ to: '/dashboard' })}
+            style={{ borderRadius: 'var(--radius-full)', padding: '12px 28px', fontSize: '0.9rem' }}
+          >
+            Back to Dashboard <ArrowRight size={16} style={{ marginLeft: 8 }} />
+          </Button>
+        </div>
+
       </div>
     </AppLayout>
   );
 }
+
