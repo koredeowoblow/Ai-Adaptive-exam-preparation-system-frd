@@ -25,6 +25,7 @@ export const Route = createLazyFileRoute("/exam/$sessionId")({
 type AnswerState = {
   selectedAnswer?: string;
   writtenAnswer?: string;
+  subPartAnswers?: { partId: string; label?: string; writtenAnswer: string }[];
   timeTaken: number;
 };
 
@@ -40,7 +41,9 @@ const QuestionNavigator = React.memo(({ questionsList, currentIndex, answersMap,
     >
       {questionsList.map((q: any, i: number) => {
         const qId = q.questionId?._id || q.questionId;
-        const isAnswered = !!answersMap[qId]?.selectedAnswer || !!answersMap[qId]?.writtenAnswer;
+        const ans = answersMap[qId];
+        const hasSubPartAns = Array.isArray(ans?.subPartAnswers) && ans.subPartAnswers.some((sp: any) => sp.writtenAnswer?.trim().length > 0);
+        const isAnswered = !!ans?.selectedAnswer || !!ans?.writtenAnswer || hasSubPartAns;
         const isCurrent = i === currentIndex;
         return (
           <button
@@ -319,6 +322,7 @@ function ExamSessionRoute() {
           questionId: String(qId),
           selectedAnswer: ans.selectedAnswer || undefined,
           writtenAnswer: ans.writtenAnswer || undefined,
+          subPartAnswers: ans.subPartAnswers || undefined,
           timeTaken: Math.max(0, Math.round(ans.timeTaken || 0)),
         };
       })
@@ -641,6 +645,26 @@ function ExamSessionRoute() {
             onOptionSelect={handleOptionSelect}
             writtenAnswer={currentAnswer.writtenAnswer || ""}
             onWrittenAnswerChange={handleWrittenAnswerChange}
+            subPartAnswers={currentAnswer.subPartAnswers || []}
+            onSubPartAnswersChange={(subParts) => {
+              setAnswersMap((prev) => {
+                const updated = {
+                  ...prev,
+                  [activeQuestionId]: {
+                    ...prev[activeQuestionId],
+                    timeTaken: prev[activeQuestionId]?.timeTaken || 0,
+                    subPartAnswers: subParts,
+                    writtenAnswer: subParts.map((sp) => `**${sp.label}:**\n${sp.writtenAnswer}`).join('\n\n'),
+                  },
+                };
+                try {
+                  localStorage.setItem(`exam_answers_${sessionId}`, JSON.stringify(updated));
+                } catch {
+                  // ignore
+                }
+                return updated;
+              });
+            }}
             theoryTextareaRef={theoryTextareaRef}
             onSubmit={handleSubmit}
             hideSubmit={true}

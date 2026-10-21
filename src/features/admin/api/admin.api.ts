@@ -198,6 +198,15 @@ export const adminApi = {
   createQuestion: async (data: Partial<Question>): Promise<ApiResponse<Question>> => {
     return apiClient.post('/questions', data);
   },
+  uploadDiagram: async (file: File): Promise<ApiResponse<{ url: string; publicId?: string; width?: number; height?: number }>> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return apiClient.post('/uploads/diagram', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
   bulkCreateQuestions: async (questions: Partial<Question>[]): Promise<ApiResponse<Question[]>> => {
     return apiClient.post('/questions/bulk', { questions });
   },

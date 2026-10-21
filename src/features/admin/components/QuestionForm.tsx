@@ -5,9 +5,12 @@ import { z } from 'zod';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
 import { Select } from '../../../shared/components/Select';
-import { CheckCircle2, Plus, Trash2, Eye, EyeOff, Sparkles, BookOpen, CheckSquare } from 'lucide-react';
+import { CheckCircle2, Plus, Trash2, Eye, EyeOff, Sparkles, BookOpen, CheckSquare, Layers } from 'lucide-react';
 import { FormattedMathText } from '../../../shared/components/FormattedMathText';
 import { MathToolbar } from '../../../shared/components/MathToolbar';
+import { DiagramUploader } from './DiagramUploader';
+import { SubPartEditor } from './SubPartEditor';
+import { DiagramViewer } from '../../../shared/components/DiagramViewer';
 import type { MathSymbolItem } from '../../../shared/constants/mathSymbols';
 import {
   insertSymbolIntoInputOrTextarea,
@@ -16,6 +19,7 @@ import {
 import type { CreateQuestionDTO } from '../../../types';
 import type { Topic } from '../../../types/topic.types';
 import type { Course } from '../../../types/course.types';
+import type { QuestionSubPart } from '../../../types/question.types';
 
 const optionSchema = z.object({
   id: z.string().min(1, 'Option ID is required'),
@@ -27,11 +31,27 @@ const rubricSchema = z.object({
   weight: z.number().positive('Weight must be greater than 0'),
 });
 
+const subPartSchema = z.object({
+  id: z.string(),
+  label: z.string().min(1, 'Label is required'),
+  prompt: z.string().min(1, 'Prompt is required'),
+  maxMarks: z.number().optional(),
+  modelAnswer: z.string().min(1, 'Model answer is required'),
+  rubric: z.array(rubricSchema).min(1, 'At least 1 rubric criterion required'),
+  diagramUrl: z.string().optional(),
+  diagramCaption: z.string().optional(),
+  order: z.number().optional(),
+});
+
 const schema = z
   .object({
     type: z.enum(['MULTIPLE_CHOICE', 'THEORY']),
     questionText: z.string().min(5, 'Question prompt must be at least 5 characters'),
     topicId: z.string().min(1, 'Topic is required'),
+    diagramUrl: z.string().optional(),
+    diagramCaption: z.string().optional(),
+    hasSubParts: z.boolean().default(false),
+    subParts: z.array(subPartSchema).optional(),
     options: z.array(optionSchema).optional(),
     correctAnswer: z.string().optional(),
     modelAnswer: z.string().optional(),
@@ -42,12 +62,22 @@ const schema = z
   })
   .superRefine((data, ctx) => {
     if (data.type === 'THEORY') {
-      if (!data.modelAnswer || data.modelAnswer.trim().length < 5) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Model answer must be at least 5 characters for theory questions',
-          path: ['modelAnswer'],
-        });
+      if (data.hasSubParts) {
+        if (!data.subParts || data.subParts.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Multi-part questions must have at least one sub-part (e.g. 1a)',
+            path: ['subParts'],
+          });
+        }
+      } else {
+        if (!data.modelAnswer || data.modelAnswer.trim().length < 5) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Model answer must be at least 5 characters for theory questions',
+            path: ['modelAnswer'],
+          });
+        }
       }
     } else {
       if (!data.options || data.options.length < 2) {
@@ -183,7 +213,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     reset,
     formState: { errors, isDirty },
   } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       type: initialData?.type || 'MULTIPLE_CHOICE',
       topicId: availableTopics[0]?._id || topics[0]?._id || '',
@@ -264,6 +294,10 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   });
 
   const currentType = watchedValues.type || 'MULTIPLE_CHOICE';
+  const currentHasSubParts = Boolean(watchedValues.hasSubParts);
+  const currentSubParts = (watchedValues.subParts as QuestionSubPart[]) || [];
+  const currentDiagramUrl = watchedValues.diagramUrl || '';
+  const currentDiagramCaption = watchedValues.diagramCaption || '';
   const currentOptions = watchedValues.options || fields;
   const currentCorrectAnswer = watchedValues.correctAnswer || 'A';
   const currentModelAnswer = watchedValues.modelAnswer || '';
@@ -464,8 +498,12 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         questionText: data.questionText,
         topicId: data.topicId,
         difficulty: data.difficulty,
-        modelAnswer: data.modelAnswer || '',
-        rubric: data.rubric && data.rubric.length > 0 ? data.rubric : [{ point: 'Comprehensive explanation & core concepts', weight: 10 }],
+        diagramUrl: data.diagramUrl,
+        diagramCaption: data.diagramCaption,
+        hasSubParts: data.hasSubParts,
+        subParts: data.hasSubParts ? data.subParts : undefined,
+        modelAnswer: !data.hasSubParts ? (data.modelAnswer || '') : undefined,
+        rubric: !data.hasSubParts ? (data.rubric && data.rubric.length > 0 ? data.rubric : [{ point: 'Comprehensive explanation & core concepts', weight: 10 }]) : undefined,
         explanation: data.explanation || data.modelAnswer || '',
         eloRating: data.eloRating,
         explanationSource: 'manual',
@@ -476,6 +514,9 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         questionText: data.questionText,
         topicId: data.topicId,
         difficulty: data.difficulty,
+        diagramUrl: data.diagramUrl,
+        diagramCaption: data.diagramCaption,
+        hasSubParts: false,
         options: data.options || [],
         correctAnswer: data.correctAnswer || 'A',
         explanation: data.explanation || '',
@@ -556,7 +597,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   }, [currentRubric]);
 
   return (
-    <form onSubmit={handleSubmit(submitHandler)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <form onSubmit={handleSubmit(submitHandler as any)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {/* Question Type Segmented Switcher */}
       <div>
         <label
@@ -757,6 +798,16 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
           </div>
         )}
       </div>
+
+      {/* Main Diagram / Figure Uploader */}
+      <DiagramUploader
+        value={currentDiagramUrl}
+        caption={currentDiagramCaption}
+        onChange={(url, caption) => {
+          setValue('diagramUrl', url, { shouldDirty: true });
+          setValue('diagramCaption', caption, { shouldDirty: true });
+        }}
+      />
 
       {/* MCQ OPTIONS BUILDER (Only for MULTIPLE_CHOICE) */}
       {currentType === 'MULTIPLE_CHOICE' && (
@@ -967,16 +1018,109 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
       {/* THEORY MODEL ANSWER & RUBRIC BUILDER (Only for THEORY) */}
       {currentType === 'THEORY' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Model Answer Textarea */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-text)' }}>
-                Model Answer (Ideal Response) *
-              </label>
-              <span style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600 }}>
-                Used for AI & Instructor Grading
-              </span>
+          {/* Mode Selector for Theory: Single Prompt vs University Sub-Parts */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px',
+              borderRadius: '8px',
+              background: 'var(--color-bg-subtle, rgba(0, 0, 0, 0.03))',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setValue('hasSubParts', false, { shouldDirty: true })}
+              style={{
+                flex: 1,
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                background: !currentHasSubParts ? 'var(--color-surface, #fff)' : 'transparent',
+                color: !currentHasSubParts ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                boxShadow: !currentHasSubParts ? 'var(--shadow-sm)' : 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              Standard Single Prompt
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setValue('hasSubParts', true, { shouldDirty: true });
+                if (!currentSubParts || currentSubParts.length === 0) {
+                  setValue(
+                    'subParts',
+                    [
+                      {
+                        id: `part_${Date.now()}_a`,
+                        label: '1(a)',
+                        prompt: '',
+                        maxMarks: 5,
+                        modelAnswer: '',
+                        rubric: [{ point: 'Core explanation & definition', weight: 5 }],
+                        order: 0,
+                      },
+                    ],
+                    { shouldDirty: true }
+                  );
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                background: currentHasSubParts ? 'var(--color-surface, #fff)' : 'transparent',
+                color: currentHasSubParts ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                boxShadow: currentHasSubParts ? 'var(--shadow-sm)' : 'none',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <Layers size={14} />
+              University Multi-Part (1a, 1b...)
+            </button>
+          </div>
+
+          {currentHasSubParts ? (
+            /* Multi-Part Sub-Questions Editor */
+            <div>
+              <SubPartEditor
+                subParts={currentSubParts}
+                onChange={(sp) => setValue('subParts', sp, { shouldDirty: true })}
+                showMathPreview={showMathPreview}
+              />
+              {errors.subParts?.message && (
+                <span style={{ color: 'var(--color-danger)', fontSize: '0.75rem', marginTop: '0.375rem', display: 'block' }}>
+                  {errors.subParts.message as string}
+                </span>
+              )}
             </div>
+          ) : (
+            /* Single-Part Model Answer & Rubric */
+            <>
+              {/* Model Answer Textarea */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                  <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-text)' }}>
+                    Model Answer (Ideal Response) *
+                  </label>
+                  <span style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600 }}>
+                    Used for AI & Instructor Grading
+                  </span>
+                </div>
             {(() => {
               const modelAnswerReg = register('modelAnswer');
               return (
@@ -1197,6 +1341,8 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
               })}
             </div>
           </div>
+          </>
+          )}
         </div>
       )}
 
@@ -1445,40 +1591,84 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
               )}
             </div>
 
-            {currentType === 'THEORY' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.875rem' }}>
-                <div
-                  style={{
-                    padding: '0.75rem',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'rgba(139, 92, 246, 0.05)',
-                    border: '1px dashed rgba(139, 92, 246, 0.3)',
-                  }}
-                >
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#8b5cf6', display: 'block', marginBottom: '0.25rem' }}>
-                    Model Answer:
-                  </span>
-                  <div style={{ fontSize: '0.8125rem', color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>
-                    {currentModelAnswer.trim() ? (
-                      <FormattedMathText text={currentModelAnswer} />
-                    ) : (
-                      <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>Model answer preview...</span>
-                    )}
-                  </div>
-                </div>
+            {currentDiagramUrl && (
+              <DiagramViewer url={currentDiagramUrl} caption={currentDiagramCaption} maxHeight={220} />
+            )}
 
-                {currentRubric && currentRubric.length > 0 && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                    <span style={{ fontWeight: 600 }}>Rubric Criteria ({totalRubricScore} pts):</span>{' '}
-                    {currentRubric.map((r, i) => (
-                      <span key={i}>
-                        {i > 0 && ', '}
-                        {r.point ? <FormattedMathText text={r.point} /> : 'Criterion'} ({r.weight || 0} pts)
-                      </span>
-                    ))}
+            {currentType === 'THEORY' ? (
+              currentHasSubParts ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.875rem' }}>
+                  {currentSubParts.length === 0 ? (
+                    <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg-subtle, rgba(0,0,0,0.02))', fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
+                      No sub-parts added yet.
+                    </div>
+                  ) : (
+                    currentSubParts.map((sp, idx) => (
+                      <div
+                        key={sp.id || idx}
+                        style={{
+                          padding: '0.75rem',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: 'rgba(139, 92, 246, 0.04)',
+                          border: '1px solid rgba(139, 92, 246, 0.25)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary, #8b5cf6)' }}>
+                            {sp.label || `Part ${idx + 1}`}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                            [{sp.maxMarks || 1} marks]
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', marginBottom: '0.5rem', color: 'var(--color-text)' }}>
+                          <FormattedMathText text={sp.prompt || 'Sub-part prompt...'} />
+                        </div>
+                        {sp.diagramUrl && (
+                          <DiagramViewer url={sp.diagramUrl} caption={sp.diagramCaption} maxHeight={160} />
+                        )}
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                          <strong>Expected:</strong> <FormattedMathText text={sp.modelAnswer || 'Model solution...'} />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.875rem' }}>
+                  <div
+                    style={{
+                      padding: '0.75rem',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: 'rgba(139, 92, 246, 0.05)',
+                      border: '1px dashed rgba(139, 92, 246, 0.3)',
+                    }}
+                  >
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#8b5cf6', display: 'block', marginBottom: '0.25rem' }}>
+                      Model Answer:
+                    </span>
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>
+                      {currentModelAnswer.trim() ? (
+                        <FormattedMathText text={currentModelAnswer} />
+                      ) : (
+                        <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>Model answer preview...</span>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {currentRubric && currentRubric.length > 0 && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                      <span style={{ fontWeight: 600 }}>Rubric Criteria ({totalRubricScore} pts):</span>{' '}
+                      {currentRubric.map((r, i) => (
+                        <span key={i}>
+                          {i > 0 && ', '}
+                          {r.point ? <FormattedMathText text={r.point} /> : 'Criterion'} ({r.weight || 0} pts)
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginBottom: '0.875rem' }}>
                 {currentOptions.map((opt, i) => {

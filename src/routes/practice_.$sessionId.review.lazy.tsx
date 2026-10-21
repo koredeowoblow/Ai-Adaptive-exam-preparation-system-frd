@@ -10,6 +10,7 @@ import { Badge } from "../shared/components/Badge";
 import { Button } from "../shared/components/Button";
 import { useTopbar } from "../shared/context/TopbarContext";
 import { FormattedMathText } from "../shared/components/FormattedMathText";
+import { DiagramViewer } from "../shared/components/DiagramViewer";
 import { 
   Trophy, 
   ArrowRight, 
@@ -346,9 +347,17 @@ function SessionReviewRoute() {
                     )}
                   </div>
 
-                  {!isTheory && (
+                  {!isTheory ? (
                     <Badge variant={ans.correct ? "success" : !ans.selectedAnswer ? "warning" : "danger"}>
                       {ans.correct ? "Correct" : !ans.selectedAnswer ? "Unanswered" : "Incorrect"}
+                    </Badge>
+                  ) : ans.gradingStatus === 'GRADED' ? (
+                    <Badge variant={(ans.score ?? 0) >= 0.7 ? "success" : (ans.score ?? 0) >= 0.4 ? "warning" : "danger"}>
+                      Grade: {Math.round((ans.score ?? 0) * 100)}%
+                    </Badge>
+                  ) : (
+                    <Badge variant="warning">
+                      Grading Pending
                     </Badge>
                   )}
                 </div>
@@ -374,9 +383,16 @@ function SessionReviewRoute() {
                 )}
 
                 {/* Question Prompt */}
-                <div style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--color-text-primary)', lineHeight: 1.6, marginBottom: 'var(--space-20)' }}>
+                <div style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--color-text-primary)', lineHeight: 1.6, marginBottom: 'var(--space-16)' }}>
                   <FormattedMathText text={q.questionText ? q.questionText.replace(/\s*\[Variant\s+\d+\]\s*$/i, '').trim() : ''} />
                 </div>
+
+                {/* Main Question Diagram */}
+                {q.diagramUrl && (
+                  <div style={{ marginBottom: 'var(--space-20)' }}>
+                    <DiagramViewer src={q.diagramUrl} caption={q.diagramCaption} alt="Question Diagram" />
+                  </div>
+                )}
 
                 {/* MCQ Options */}
                 {!isTheory && q.options && (
@@ -450,44 +466,313 @@ function SessionReviewRoute() {
                 )}
 
                 {/* Theory Answer Review */}
-                {isTheory && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-12)', marginBottom: 'var(--space-20)' }}>
-                    {ans.writtenAnswer ? (
-                      <div style={{ padding: 'var(--space-16)', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
-                          Your Submitted Answer
-                        </span>
-                        <div style={{ fontSize: '0.9rem', color: 'var(--color-text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                          <FormattedMathText text={ans.writtenAnswer} />
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ padding: 'var(--space-14)', borderRadius: 'var(--radius-lg)', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.3)', color: 'var(--color-warning)', fontSize: '0.85rem' }}>
-                        No answer was submitted for this question.
-                      </div>
-                    )}
+                {isTheory && (() => {
+                  const hasSubParts = Boolean(q.hasSubParts || (ans.subPartAnswers && ans.subPartAnswers.length > 0));
 
-                    {ans.gradingStatus === 'GRADED' && (
-                      <div 
-                        style={{ 
-                          padding: 'var(--space-16)', 
-                          borderRadius: 'var(--radius-lg)', 
-                          border: `1px solid ${(ans.score ?? 0) >= 0.7 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                          background: (ans.score ?? 0) >= 0.7 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)'
-                        }}
-                      >
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: (ans.score ?? 0) >= 0.7 ? 'var(--color-success, #10b981)' : 'var(--color-danger)', marginBottom: 6 }}>
-                          AI Evaluation Grade: {Math.round((ans.score ?? 0) * 100)}%
+                  if (hasSubParts) {
+                    const subPartsList = (q.subParts && q.subParts.length > 0)
+                      ? q.subParts.map((sp: any) => {
+                          const subAns = ans.subPartAnswers?.find((a: any) => a.partId === sp.id || a.label === sp.label);
+                          return {
+                            id: sp.id,
+                            label: sp.label,
+                            prompt: sp.prompt,
+                            maxMarks: sp.maxMarks,
+                            diagramUrl: sp.diagramUrl,
+                            diagramCaption: sp.diagramCaption,
+                            modelAnswer: sp.modelAnswer,
+                            rubricCriteria: sp.rubricCriteria,
+                            writtenAnswer: subAns?.writtenAnswer ?? '',
+                            marksAwarded: subAns?.marksAwarded,
+                            score: subAns?.score,
+                            feedback: subAns?.feedback,
+                            rubricCriteriaMet: subAns?.rubricCriteriaMet,
+                          };
+                        })
+                      : (ans.subPartAnswers || []).map((sa: any) => ({
+                          id: sa.partId,
+                          label: sa.label || 'Part',
+                          prompt: '',
+                          maxMarks: sa.maxMarks || 0,
+                          diagramUrl: undefined,
+                          diagramCaption: undefined,
+                          modelAnswer: undefined,
+                          rubricCriteria: undefined,
+                          writtenAnswer: sa.writtenAnswer || '',
+                          marksAwarded: sa.marksAwarded,
+                          score: sa.score,
+                          feedback: sa.feedback,
+                          rubricCriteriaMet: sa.rubricCriteriaMet,
+                        }));
+
+                    const totalMax = subPartsList.reduce((sum: number, p: any) => sum + (p.maxMarks || 0), 0);
+                    const totalAwarded = subPartsList.reduce((sum: number, p: any) => sum + (p.marksAwarded ?? 0), 0);
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-16)', marginBottom: 'var(--space-20)' }}>
+                        {/* Overall Multi-part Performance Banner */}
+                        <div
+                          style={{
+                            padding: 'var(--space-14) var(--space-18)',
+                            borderRadius: 'var(--radius-lg)',
+                            border: `1px solid ${(ans.score ?? 0) >= 0.7 ? 'rgba(16, 185, 129, 0.3)' : (ans.score ?? 0) >= 0.4 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                            background: (ans.score ?? 0) >= 0.7 ? 'rgba(16, 185, 129, 0.05)' : (ans.score ?? 0) >= 0.4 ? 'rgba(245, 158, 11, 0.05)' : 'rgba(239, 68, 68, 0.05)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: 'var(--space-8)'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-8)' }}>
+                            <Sparkles size={18} color="var(--color-primary)" />
+                            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>
+                              Multi-Part Theory Evaluation
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-10)' }}>
+                            {totalMax > 0 && (
+                              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>
+                                {totalAwarded} / {totalMax} Marks
+                              </span>
+                            )}
+                            <Badge variant={(ans.score ?? 0) >= 0.7 ? 'success' : (ans.score ?? 0) >= 0.4 ? 'warning' : 'danger'}>
+                              {Math.round((ans.score ?? 0) * 100)}%
+                            </Badge>
+                          </div>
                         </div>
-                        {ans.theoryFeedback && (
-                          <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
-                            <FormattedMathText text={ans.theoryFeedback} />
+
+                        {/* Overall Feedback if present */}
+                        {(ans.theoryFeedback || (ans as any).feedback) && (
+                          <div
+                            style={{
+                              padding: 'var(--space-12) var(--space-16)',
+                              borderRadius: 'var(--radius-md)',
+                              background: 'var(--color-surface)',
+                              border: '1px solid var(--color-border)',
+                              fontSize: '0.85rem',
+                              color: 'var(--color-text-muted)',
+                              lineHeight: 1.5
+                            }}
+                          >
+                            <strong style={{ color: 'var(--color-text-primary)' }}>Overall Feedback: </strong>
+                            <FormattedMathText text={ans.theoryFeedback || (ans as any).feedback} />
                           </div>
                         )}
+
+                        {/* Sub-Parts Breakdown */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-14)' }}>
+                          {subPartsList.map((sp: any, idx: number) => {
+                            const hasMarks = typeof sp.marksAwarded === 'number';
+                            const scorePct = hasMarks && sp.maxMarks > 0 ? (sp.marksAwarded! / sp.maxMarks) : 0;
+                            const badgeVariant = scorePct >= 0.8 ? 'success' : scorePct >= 0.4 ? 'warning' : 'danger';
+
+                            return (
+                              <div
+                                key={sp.id || idx}
+                                style={{
+                                  border: '1px solid var(--color-border)',
+                                  borderRadius: 'var(--radius-lg)',
+                                  background: 'var(--color-surface)',
+                                  padding: 'var(--space-16)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 'var(--space-12)'
+                                }}
+                              >
+                                {/* Sub-Part Header */}
+                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-12)' }}>
+                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-8)', flex: 1 }}>
+                                    <span
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        minWidth: 28,
+                                        height: 24,
+                                        padding: '0 8px',
+                                        borderRadius: 'var(--radius-sm)',
+                                        background: 'var(--color-primary-light, rgba(14, 107, 168, 0.12))',
+                                        color: 'var(--color-primary)',
+                                        fontWeight: 800,
+                                        fontSize: '0.8rem',
+                                        flexShrink: 0
+                                      }}
+                                    >
+                                      {sp.label}
+                                    </span>
+                                    {sp.prompt && (
+                                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)', lineHeight: 1.5 }}>
+                                        <FormattedMathText text={sp.prompt} />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-6)', flexShrink: 0 }}>
+                                    {hasMarks ? (
+                                      <Badge variant={badgeVariant}>
+                                        {sp.marksAwarded} / {sp.maxMarks} marks
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="neutral">{sp.maxMarks} marks</Badge>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Sub-Part Diagram if any */}
+                                {sp.diagramUrl && (
+                                  <div style={{ maxWidth: 450, margin: 'var(--space-4) 0' }}>
+                                    <DiagramViewer src={sp.diagramUrl} caption={sp.diagramCaption} alt={`Diagram for part ${sp.label}`} />
+                                  </div>
+                                )}
+
+                                {/* Submitted Answer */}
+                                <div
+                                  style={{
+                                    padding: 'var(--space-12) var(--space-14)',
+                                    borderRadius: 'var(--radius-md)',
+                                    background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.02))',
+                                    border: '1px solid var(--color-border)',
+                                    fontSize: '0.875rem'
+                                  }}
+                                >
+                                  <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 4 }}>
+                                    Your Answer:
+                                  </div>
+                                  {sp.writtenAnswer ? (
+                                    <div style={{ color: 'var(--color-text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                                      <FormattedMathText text={sp.writtenAnswer} />
+                                    </div>
+                                  ) : (
+                                    <span style={{ color: 'var(--color-warning)', fontStyle: 'italic' }}>
+                                      No response submitted for this part.
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Granular Feedback & Criteria */}
+                                {sp.feedback && (
+                                  <div
+                                    style={{
+                                      padding: 'var(--space-12) var(--space-14)',
+                                      borderRadius: 'var(--radius-md)',
+                                      background: scorePct >= 0.7 ? 'rgba(16, 185, 129, 0.06)' : 'rgba(239, 68, 68, 0.06)',
+                                      border: `1px solid ${scorePct >= 0.7 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                                      fontSize: '0.85rem'
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: scorePct >= 0.7 ? 'var(--color-success, #10b981)' : 'var(--color-danger)', marginBottom: 4 }}>
+                                      <Sparkles size={14} /> Part Feedback
+                                    </div>
+                                    <div style={{ color: 'var(--color-text-primary)', lineHeight: 1.5 }}>
+                                      <FormattedMathText text={sp.feedback} />
+                                    </div>
+
+                                    {sp.rubricCriteriaMet && sp.rubricCriteriaMet.length > 0 && (
+                                      <div style={{ marginTop: 'var(--space-8)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
+                                          Demonstrated Criteria:
+                                        </span>
+                                        {sp.rubricCriteriaMet.map((crit: string, cIdx: number) => (
+                                          <div key={cIdx} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--color-text-primary)' }}>
+                                            <CheckCircle2 size={13} color="var(--color-success, #10b981)" style={{ flexShrink: 0 }} />
+                                            <span>{crit}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Model Answer Accordion */}
+                                {sp.modelAnswer && (
+                                  <details style={{ fontSize: '0.825rem' }}>
+                                    <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--color-primary)', userSelect: 'none' }}>
+                                      View Model Answer
+                                    </summary>
+                                    <div
+                                      style={{
+                                        marginTop: 'var(--space-8)',
+                                        padding: 'var(--space-12)',
+                                        borderRadius: 'var(--radius-md)',
+                                        background: 'rgba(14, 107, 168, 0.05)',
+                                        border: '1px solid rgba(14, 107, 168, 0.15)',
+                                        color: 'var(--color-text-primary)',
+                                        lineHeight: 1.6
+                                      }}
+                                    >
+                                      <FormattedMathText text={sp.modelAnswer} />
+                                    </div>
+                                  </details>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                )}
+                    );
+                  }
+
+                  // Single-part theory question fallback
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-12)', marginBottom: 'var(--space-20)' }}>
+                      {ans.writtenAnswer ? (
+                        <div style={{ padding: 'var(--space-16)', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: '0.04em', display: 'block', marginBottom: 6 }}>
+                            Your Submitted Answer
+                          </span>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--color-text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                            <FormattedMathText text={ans.writtenAnswer} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ padding: 'var(--space-14)', borderRadius: 'var(--radius-lg)', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.3)', color: 'var(--color-warning)', fontSize: '0.85rem' }}>
+                          No answer was submitted for this question.
+                        </div>
+                      )}
+
+                      {ans.gradingStatus === 'GRADED' && (
+                        <div 
+                          style={{ 
+                            padding: 'var(--space-16)', 
+                            borderRadius: 'var(--radius-lg)', 
+                            border: `1px solid ${(ans.score ?? 0) >= 0.7 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                            background: (ans.score ?? 0) >= 0.7 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)'
+                          }}
+                        >
+                          <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: (ans.score ?? 0) >= 0.7 ? 'var(--color-success, #10b981)' : 'var(--color-danger)', marginBottom: 6 }}>
+                            AI Evaluation Grade: {Math.round((ans.score ?? 0) * 100)}%
+                          </div>
+                          {(ans.theoryFeedback || (ans as any).feedback) && (
+                            <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
+                              <FormattedMathText text={ans.theoryFeedback || (ans as any).feedback} />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {q.modelAnswer && (
+                        <details style={{ fontSize: '0.825rem' }}>
+                          <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--color-primary)', userSelect: 'none' }}>
+                            View Model Answer
+                          </summary>
+                          <div
+                            style={{
+                              marginTop: 'var(--space-8)',
+                              padding: 'var(--space-12)',
+                              borderRadius: 'var(--radius-md)',
+                              background: 'rgba(14, 107, 168, 0.05)',
+                              border: '1px solid rgba(14, 107, 168, 0.15)',
+                              color: 'var(--color-text-primary)',
+                              lineHeight: 1.6
+                            }}
+                          >
+                            <FormattedMathText text={q.modelAnswer} />
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* AI Explanation for MCQ */}
                 {!isTheory && (

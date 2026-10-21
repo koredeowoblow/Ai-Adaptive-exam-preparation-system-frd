@@ -2,6 +2,18 @@ import type { Question } from './question.types';
 
 export type QuestionTypeMix = 'MIXED' | 'OBJECTIVE_ONLY' | 'THEORY_ONLY';
 
+export interface SubPartAnswer {
+  partId: string;
+  label?: string;
+  writtenAnswer: string;
+  score?: number;
+  marksAwarded?: number;
+  maxMarks?: number;
+  feedback?: string;
+  rubricCriteriaMet?: string[];
+  correct?: boolean;
+}
+
 export interface PracticeAnswer {
   submissionId: string;
   questionId: string;
@@ -9,6 +21,7 @@ export interface PracticeAnswer {
   difficulty: number;
   selectedAnswer?: string;
   writtenAnswer?: string;
+  subPartAnswers?: SubPartAnswer[];
   correct?: boolean;
   gradingStatus: 'PENDING' | 'GRADED';
   score?: number;
@@ -89,6 +102,11 @@ export interface SubmitAnswerPayload {
   questionId: string;
   selectedAnswer?: string;
   writtenAnswer?: string;
+  subPartAnswers?: {
+    partId: string;
+    label?: string;
+    writtenAnswer: string;
+  }[];
   timeTaken?: number;
 }
 
