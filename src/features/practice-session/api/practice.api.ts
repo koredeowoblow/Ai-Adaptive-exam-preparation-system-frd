@@ -42,4 +42,8 @@ export const practiceApi = {
   requestMcqExplanation: async (sessionId: string, answerId: string): Promise<ApiResponse<any>> => {
     return apiClient.post(`/practice-sessions/${sessionId}/answers/${answerId}/explain`);
   },
+
+  retrySession: async (sessionId: string): Promise<ApiResponse<any>> => {
+    return apiClient.post(`/practice-sessions/${sessionId}/retry`);
+  },
 };

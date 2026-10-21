@@ -13,16 +13,11 @@ import { Button } from '../../../shared/components/Button';
 import { Popover } from '../../../shared/components/Popover';
 import {
   ArrowLeft,
-  BookOpen,
-  GraduationCap,
-  Award,
-  Briefcase,
   HelpCircle,
   AlertTriangle,
   BookCheck,
   ListChecks,
   Blend,
-  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 
@@ -59,8 +54,8 @@ function getCourseLevel(code: string): number {
 
 // ── Step Heading ─────────────────────────────────────────────────────────────
 const StepHeading: React.FC<{ step: number; title: string; sub: string }> = ({ title, sub }) => (
-  <div className="mb-6">
-    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary m-0 mb-1.5">{title}</h2>
+  <div className="mb-4">
+    <h2 className="text-xl sm:text-2xl font-bold tracking-[-0.005em] text-text-primary m-0 mb-1">{title}</h2>
     <p className="text-sm sm:text-base text-text-secondary m-0">{sub}</p>
   </div>
 );
@@ -98,16 +93,6 @@ const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId, studentLe
     );
   }
 
-  const getLevelIcon = (level: number) => {
-    switch (level) {
-      case 100: return <BookOpen size={22} className="text-text-muted" />;
-      case 200: return <GraduationCap size={22} className="text-text-muted" />;
-      case 300: return <Award size={22} className="text-text-muted" />;
-      case 400: return <Briefcase size={22} className="text-text-muted" />;
-      default: return <Award size={22} className="text-text-muted" />;
-    }
-  };
-
   return (
     <div>
       <StepHeading
@@ -116,7 +101,7 @@ const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId, studentLe
         sub="Filter courses by your academic curriculum year to begin practice."
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 items-stretch">
         {LEVELS.map((level) => {
           const levelCourses = courses.filter((c) => getCourseLevel(c.code) === level.value);
           const hasCourses = levelCourses.length > 0;
@@ -130,14 +115,13 @@ const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId, studentLe
               <div
                 key={level.value}
                 aria-disabled="true"
-                className="bg-surface-0 border border-border/60 rounded-xl p-5 flex flex-col justify-between h-full opacity-60 cursor-not-allowed select-none"
+                className="bg-surface-0 border border-border/60 rounded-xl p-4 sm:p-5 flex flex-col justify-between h-full opacity-60 cursor-not-allowed select-none"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-2">
                     <span className="text-3xl font-bold tabular-nums text-text-muted">
                       {level.value}
                     </span>
-                    {getLevelIcon(level.value)}
                   </div>
                   <p className="text-sm font-semibold text-text-muted m-0 mb-1">
                     {level.description}
@@ -145,11 +129,6 @@ const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId, studentLe
                   <p className="text-xs text-text-muted m-0">
                     Curriculum currently in development
                   </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-border/40">
-                  <span className="inline-flex items-center text-xs font-medium text-text-muted">
-                    No courses yet
-                  </span>
                 </div>
               </div>
             );
@@ -160,25 +139,18 @@ const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId, studentLe
               key={level.value}
               type="button"
               onClick={() => onSelect(level.value)}
-              className={`bg-surface-0 border text-left rounded-xl p-5 flex flex-col justify-between h-full transition-all duration-150 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                isStudentLevel
-                  ? 'border-primary ring-1 ring-primary/30 hover:border-primary hover:shadow-md'
-                  : 'border-border hover:border-text-secondary hover:shadow-sm'
-              }`}
+              className="bg-surface-0 border border-border hover:border-primary hover:shadow-sm text-left rounded-xl p-4 sm:p-5 flex flex-col justify-between h-full transition-all duration-150 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2">
                   <span className="text-3xl font-bold tabular-nums text-text-primary group-hover:text-primary transition-colors">
                     {level.value}
                   </span>
-                  <div className="flex items-center gap-2">
-                    {isStudentLevel && (
-                      <Badge variant="primary" size="sm">
-                        Your level
-                      </Badge>
-                    )}
-                    {getLevelIcon(level.value)}
-                  </div>
+                  {isStudentLevel && (
+                    <Badge variant="neutral" size="sm">
+                      Your level
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm font-semibold text-text-primary m-0 mb-1">
                   {level.description}
@@ -188,12 +160,9 @@ const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId, studentLe
                 </p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-                <span className="text-xs text-text-muted font-mono truncate mr-2">
+              <div className="mt-3.5 pt-2.5 border-t border-border flex items-center justify-between">
+                <span className="text-xs text-text-muted font-mono truncate">
                   {sampleText}
-                </span>
-                <span className="text-xs font-semibold text-primary inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform shrink-0">
-                  Select <ArrowRight size={13} />
                 </span>
               </div>
             </button>
@@ -202,7 +171,7 @@ const LevelStep: React.FC<LevelStepProps> = ({ onSelect, departmentId, studentLe
       </div>
 
       {/* Popover for "Not sure which level to pick?" */}
-      <div className="mt-6 flex items-center">
+      <div className="mt-4 flex items-center">
         <Popover
           align="left"
           width="360px"

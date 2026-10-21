@@ -72,19 +72,19 @@ export const Topbar: React.FC<TopbarProps> = ({
         )}
 
         <div className="flex flex-col min-w-0 justify-center">
-          {breadcrumbs.length > 0 && (
-            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted leading-tight mb-0.5">
+          {breadcrumbs.length > 0 ? (
+            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted leading-tight">
               {breadcrumbs.map((crumb, idx) => (
                 <React.Fragment key={crumb.label + idx}>
                   {crumb.to ? (
                     <Link
                       to={crumb.to}
-                      className="hover:text-text-primary transition-colors truncate max-w-[120px]"
+                      className="hover:text-text-primary transition-colors truncate max-w-[140px]"
                     >
                       {crumb.label}
                     </Link>
                   ) : (
-                    <span className="truncate max-w-[120px]">{crumb.label}</span>
+                    <span className="truncate max-w-[140px] text-text-primary font-medium">{crumb.label}</span>
                   )}
                   {idx < breadcrumbs.length - 1 && (
                     <span className="text-text-muted/50 select-none" aria-hidden="true">/</span>
@@ -92,11 +92,11 @@ export const Topbar: React.FC<TopbarProps> = ({
                 </React.Fragment>
               ))}
             </nav>
+          ) : (
+            <span className="font-outfit font-semibold text-base sm:text-lg text-text-primary tracking-[-0.005em] m-0 leading-tight truncate">
+              {title}
+            </span>
           )}
-
-          <h1 className="font-outfit font-semibold text-base sm:text-lg text-text-primary tracking-[-0.01em] m-0 leading-tight truncate">
-            {title}
-          </h1>
         </div>
       </div>
 

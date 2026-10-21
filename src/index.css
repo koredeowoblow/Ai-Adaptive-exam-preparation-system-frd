@@ -1078,18 +1078,19 @@ select:-webkit-autofill {
 /* 2. Unified Page Container */
 .page-container {
   width: 100%;
-  max-width: 100%;
-  margin: 0;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
   padding: var(--space-32) var(--space-40);
   box-sizing: border-box;
 }
 
-.page-wide,
 .page-catalog,
 .page-intro {
-  max-width: 100%;
+  max-width: 1200px;
   width: 100%;
-  margin: 0;
+  margin-left: auto;
+  margin-right: auto;
   box-sizing: border-box;
 }
 

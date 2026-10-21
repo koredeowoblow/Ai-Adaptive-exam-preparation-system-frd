@@ -20,9 +20,11 @@ import {
   TrendingUp, 
   TrendingDown, 
   Clock, 
-  BookOpen 
+  BookOpen,
+  RotateCcw
 } from 'lucide-react';
 import type { PracticeSession } from '../../types/practice.types';
+import { practiceApi } from '../../features/practice-session/api/practice.api';
 
 export const Route = createLazyFileRoute('/practice/history')({
   component: HistoryRoute,
@@ -87,6 +89,21 @@ function HistoryRoute() {
   // Discard dialog state
   const [discardSession, setDiscardSession] = React.useState<PracticeSession | null>(null);
   const [discardedIds, setDiscardedIds] = React.useState<Set<string>>(new Set());
+
+  // Retry grading state
+  const [retryingSessionId, setRetryingSessionId] = React.useState<string | null>(null);
+
+  const handleRetryGrading = async (sessionId: string) => {
+    try {
+      setRetryingSessionId(sessionId);
+      await practiceApi.retrySession(sessionId);
+      await refetch();
+    } catch (err: any) {
+      console.error('Failed to retry grading:', err);
+    } finally {
+      setRetryingSessionId(null);
+    }
+  };
 
   const rawSessions: PracticeSession[] = responseData?.sessions || [];
   const sessions = React.useMemo(() => {
@@ -171,9 +188,9 @@ function HistoryRoute() {
     <AppLayout>
       <PageContainer className="py-5 sm:py-6 pb-32 sm:pb-20">
         
-        {/* Page Header without tinted circle */}
+        {/* Page Header */}
         <PageHeader
-          title="Session History"
+          title="History"
           description="Track past mock exams, quick practice runs, and analyze learning pacing over time."
           className="mb-4 sm:mb-6"
         />
@@ -226,8 +243,8 @@ function HistoryRoute() {
               
               {/* Metric 1: Average Score */}
               <div className="sm:px-4 first:sm:pl-0 flex items-center justify-between sm:flex-col sm:items-start sm:justify-center">
-                <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-                  Average Score
+                <span className="text-xs font-semibold text-text-muted tracking-[-0.005em]">
+                  Average score
                 </span>
                 <div className="flex items-baseline gap-2 mt-0.5">
                   {avgScore !== null ? (
@@ -256,8 +273,8 @@ function HistoryRoute() {
 
               {/* Metric 2: Questions Answered */}
               <div className="pt-2 sm:pt-0 sm:px-4 flex items-center justify-between sm:flex-col sm:items-start sm:justify-center">
-                <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-                  Questions Answered
+                <span className="text-xs font-semibold text-text-muted tracking-[-0.005em]">
+                  Questions answered
                 </span>
                 <div className="mt-0.5">
                   <span className="text-xl sm:text-2xl font-bold text-text-primary tabular-nums">
@@ -268,8 +285,8 @@ function HistoryRoute() {
 
               {/* Metric 3: Total Sessions */}
               <div className="pt-2 sm:pt-0 sm:px-4 last:sm:pr-0 flex items-center justify-between sm:flex-col sm:items-start sm:justify-center">
-                <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-                  Total Sessions
+                <span className="text-xs font-semibold text-text-muted tracking-[-0.005em]">
+                  Total sessions
                 </span>
                 <div className="mt-0.5 flex items-baseline gap-2">
                   <span className="text-xl sm:text-2xl font-bold text-text-primary tabular-nums">
@@ -286,11 +303,7 @@ function HistoryRoute() {
             <div className="card p-4 sm:p-6 space-y-6">
               
               {/* Filter Row */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-border">
-                <h2 className="text-base font-bold text-text-primary">
-                  All Activity
-                </h2>
-
+              <div className="flex items-center justify-between gap-3 pb-4 border-b border-border">
                 <div 
                   role="tablist" 
                   aria-label="Filter sessions by mode"
@@ -364,7 +377,7 @@ function HistoryRoute() {
                     <section key={group.label} aria-labelledby={`heading-${group.label.replace(/\s+/g, '-')}`} className="space-y-3">
                       <h3
                         id={`heading-${group.label.replace(/\s+/g, '-')}`}
-                        className="text-xs font-bold text-text-muted uppercase tracking-wider px-1"
+                        className="text-xs font-bold text-text-muted tracking-[-0.005em] px-1"
                       >
                         {group.label}
                       </h3>
@@ -381,7 +394,9 @@ function HistoryRoute() {
                           const courseTitle = courseObj?.title || courseObj?.name || (courseCode ? 'Course Assessment' : 'General Practice');
 
                           const totalQ = session.totalQuestions || 1;
-                          const answeredQ = session.questionsAnswered ?? 0;
+                          const answeredQ = session.questionsAnswered > 0
+                            ? session.questionsAnswered
+                            : (session.questionsServed?.filter((q: any) => q.selectedAnswer !== undefined || q.writtenAnswer !== undefined).length || 0);
                           const progressPercent = Math.min(100, Math.round((answeredQ / totalQ) * 100));
 
                           return (
@@ -392,7 +407,7 @@ function HistoryRoute() {
                               {/* Left: Title First, Mode as Plain Muted Text, Status as ONLY Badge */}
                               <div className="flex flex-col min-w-0 flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-sm font-bold text-text-primary truncate">
+                                  <span className="text-sm font-bold text-text-primary tracking-[-0.005em] truncate">
                                     {courseCode ? `${courseCode}: ` : ''}{courseTitle}
                                   </span>
                                   {isCompleted && (
@@ -424,12 +439,11 @@ function HistoryRoute() {
                                 </div>
                               </div>
 
-                              {/* Middle: Progress Bar appears ONLY for in-progress sessions */}
+                              {/* Middle: Progress Bar appears ONLY for in-progress sessions (no 0% next to 0 of 10) */}
                               {isInProgress && (
                                 <div className="w-full sm:w-44 shrink-0 flex flex-col justify-center">
                                   <div className="flex items-center justify-between text-xs text-text-secondary mb-1 tabular-nums font-medium">
                                     <span>{answeredQ} of {totalQ} answered</span>
-                                    <span>{progressPercent}%</span>
                                   </div>
                                   <ProgressBar
                                     progress={progressPercent}
@@ -454,8 +468,8 @@ function HistoryRoute() {
                               {/* Failed Session: Outcome */}
                               {isFailed && (
                                 <div className="flex flex-col items-start sm:items-end justify-center shrink-0">
-                                  <span className="text-xs text-danger font-medium">
-                                    Terminated
+                                  <span className="text-xs font-semibold text-danger">
+                                    Grading failed, your answers are saved
                                   </span>
                                   <span className="text-xs text-text-muted tabular-nums">
                                     {answeredQ} of {totalQ} answered
@@ -501,12 +515,14 @@ function HistoryRoute() {
 
                                 {isFailed && (
                                   <Button
-                                    variant="outline"
+                                    variant="primary"
                                     size="sm"
-                                    onClick={() => handleReview(session._id)}
+                                    onClick={() => handleRetryGrading(session._id)}
+                                    disabled={retryingSessionId === session._id}
+                                    className="gap-1 text-xs"
                                   >
-                                    View Log
-                                    <ChevronRight size={14} className="ml-1" />
+                                    <RotateCcw size={13} className={retryingSessionId === session._id ? 'animate-spin' : ''} />
+                                    {retryingSessionId === session._id ? 'Requeuing...' : 'Retry'}
                                   </Button>
                                 )}
                               </div>

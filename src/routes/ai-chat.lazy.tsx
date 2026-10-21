@@ -19,8 +19,7 @@ import {
   Send, 
   User as UserIcon, 
   RefreshCw, 
-  AlertCircle, 
-  Lightbulb
+  AlertCircle 
 } from 'lucide-react';
 import type { Course } from '../types/course.types';
 import type { Topic } from '../types/topic.types';
@@ -110,45 +109,30 @@ function AIChatRoute() {
     }
   }, [initialGreeting]);
 
-  // Dynamic suggestion chips (derived strictly from course title and its real curriculum topics)
+  // Dynamic suggestion chips (using topic names directly in 2x2 grid)
   const suggestionChips = React.useMemo(() => {
     if (!selectedCourse) {
       return [
-        'Explain a foundational concept in simple terms',
-        'Walk me through a step-by-step problem',
-        'Quiz me on key principles for my upcoming exam',
-        'Help me identify common pitfalls in my study plan',
+        'Core Principles',
+        'Step-by-Step Problem',
+        'Practice Exam Questions',
+        'Key Formulas & Concepts',
       ];
     }
 
-    const chips: string[] = [];
     const topicNames = courseTopics.map((t) => t.name).filter(Boolean);
+    const chips: string[] = [];
 
-    if (topicNames.length >= 1) {
-      chips.push(`Explain ${topicNames[0]} in simple terms`);
-    } else {
-      chips.push(`Explain the core foundations of ${selectedCourse.title}`);
+    for (let i = 0; i < Math.min(4, topicNames.length); i++) {
+      chips.push(topicNames[i]);
     }
 
-    if (topicNames.length >= 2) {
-      chips.push(`Quiz me on ${topicNames[1]}`);
-    } else {
-      chips.push(`Quiz me on key principles of ${selectedCourse.title}`);
-    }
+    if (chips.length < 1) chips.push('Overview & Fundamentals');
+    if (chips.length < 2) chips.push('Core Theories & Principles');
+    if (chips.length < 3) chips.push('Practical Problem Solving');
+    if (chips.length < 4) chips.push('Exam Review & Key Formulas');
 
-    if (topicNames.length >= 3) {
-      chips.push(`Walk me through an exam problem on ${topicNames[2]}`);
-    } else {
-      chips.push(`Walk me through step-by-step problems in ${selectedCourse.title}`);
-    }
-
-    if (topicNames.length >= 4) {
-      chips.push(`What are common pitfalls in ${topicNames[3]}?`);
-    } else {
-      chips.push(`Break down the most difficult theories in ${selectedCourse.title}`);
-    }
-
-    return chips;
+    return chips.slice(0, 4);
   }, [selectedCourse, courseTopics]);
 
   const [input, setInput] = React.useState('');
@@ -273,7 +257,7 @@ function AIChatRoute() {
 
   return (
     <AppLayout>
-      <PageContainer className="flex flex-col h-[calc(100dvh-64px)] max-w-5xl mx-auto px-4 sm:px-6 overflow-hidden">
+      <PageContainer className="flex flex-col h-[calc(100dvh-64px)] max-w-[1200px] w-full mx-auto px-4 sm:px-6 overflow-hidden">
         
         {/* Page Header: Course Title as H1 + Context Selector + New Chat */}
         <PageHeader
@@ -339,40 +323,39 @@ function AIChatRoute() {
               className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 scrollbar-none flex flex-col"
             >
               {isConversationEmpty ? (
-                /* Empty State with Suggestion Chips - positioned closer to the composer */
-                <div className="flex flex-col items-start justify-end mt-auto max-w-2xl w-full p-2 sm:p-4 space-y-4">
+                /* Empty State with Suggestion Chips (2x2 grid, topic names, max ~760px centered) */
+                <div className="flex flex-col items-start justify-end mt-auto max-w-[760px] mx-auto w-full p-2 sm:p-4 space-y-4">
                   <div>
-                    <h2 className="text-base sm:text-lg font-bold text-text-primary">
-                      {selectedCourse ? selectedCourse.title : 'What would you like to explore?'}
+                    <h2 className="text-base sm:text-lg font-bold text-text-primary tracking-[-0.005em]">
+                      What would you like to explore?
                     </h2>
                     <p className="text-xs sm:text-sm text-text-secondary mt-1">
                       Ask questions, review key concepts, or practice problem-solving for this course.
                     </p>
                   </div>
 
-                  {/* Suggestion Chips */}
+                  {/* Suggestion Chips in 2x2 grid */}
                   <div className="w-full space-y-2 pt-1">
-                    <span className="text-xs font-medium text-text-secondary block">
-                      Suggested prompts
+                    <span className="text-xs font-semibold text-text-secondary block">
+                      Suggested topics
                     </span>
-                    <div className="flex flex-wrap gap-2 text-left">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full text-left">
                       {suggestionChips.map((chip, idx) => (
                         <button
                           key={idx}
                           type="button"
                           onClick={() => handleChipClick(chip)}
-                          className="inline-flex items-center gap-2 p-2.5 rounded-xl border border-border bg-surface-0 hover:border-primary/40 hover:bg-surface-1 transition-colors text-left text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer shadow-xs"
+                          className="p-3 rounded-xl border border-border bg-surface-0 hover:border-primary/50 hover:bg-surface-1 transition-colors text-left text-xs sm:text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer shadow-xs leading-snug"
                         >
-                          <Lightbulb size={14} className="text-primary shrink-0" aria-hidden="true" />
-                          <span className="leading-snug">{chip}</span>
+                          <span>{chip}</span>
                         </button>
                       ))}
                     </div>
                   </div>
                 </div>
               ) : (
-                /* Messages Stream */
-                <div className="space-y-4">
+                /* Messages Stream - max ~760px centered */
+                <div className="max-w-[760px] mx-auto w-full space-y-4">
                   {messages.map((msg, i) => {
                     const isUser = msg.role === 'user';
                     return (
@@ -443,39 +426,41 @@ function AIChatRoute() {
               )}
             </div>
 
-            {/* Pinned Composer with Mobile Tab-Bar Safe Area Padding */}
+            {/* Pinned Composer with Mobile Tab-Bar Safe Area Padding - max ~760px centered */}
             <div className="shrink-0 p-3 sm:p-4 border-t border-border bg-surface-0 pb-safe">
-              <div className="relative flex items-end gap-2 bg-surface-1 border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-xl p-2 transition-all">
-                <textarea
-                  ref={composerRef}
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder={selectedCourse ? `Ask about ${selectedCourse.title}... (Enter to send)` : 'Ask a question...'}
-                  rows={1}
-                  disabled={isPending}
-                  className="w-full px-2.5 py-1.5 bg-transparent text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none min-h-10 max-h-36 leading-relaxed scrollbar-none disabled:opacity-60"
-                />
+              <div className="max-w-[760px] mx-auto w-full">
+                <div className="relative flex items-end gap-2 bg-surface-1 border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 rounded-xl p-2 transition-all">
+                  <textarea
+                    ref={composerRef}
+                    value={input}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder={selectedCourse ? `Ask about ${selectedCourse.title}... (Enter to send)` : 'Ask a question...'}
+                    rows={1}
+                    disabled={isPending}
+                    className="w-full px-2.5 py-1.5 bg-transparent text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none min-h-10 max-h-36 leading-relaxed scrollbar-none disabled:opacity-60"
+                  />
 
-                <div className="shrink-0 p-0.5 rounded-xl bg-surface-0 border border-border/80">
-                  <button
-                    type="button"
-                    onClick={handleSend}
-                    disabled={!input.trim() || isPending}
-                    aria-label="Send message to AI Tutor"
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
-                      input.trim() && !isPending
-                        ? 'bg-primary text-white hover:bg-primary-hover shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer'
-                        : 'bg-surface-2 text-text-muted cursor-not-allowed opacity-50 border border-border/50'
-                    }`}
-                  >
-                    <Send size={16} />
-                  </button>
+                  <div className="shrink-0 p-0.5 rounded-xl bg-surface-0 border border-border/80">
+                    <button
+                      type="button"
+                      onClick={handleSend}
+                      disabled={!input.trim() || isPending}
+                      aria-label="Send message to AI Tutor"
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
+                        input.trim() && !isPending
+                          ? 'bg-primary text-white hover:bg-primary-hover shadow-md active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer font-bold'
+                          : 'bg-surface-2 text-text-muted cursor-not-allowed opacity-50 border border-border/50'
+                      }`}
+                    >
+                      <Send size={16} />
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between text-xs text-text-secondary mt-1.5 px-1 font-medium">
-                <span>Shift+Enter for newline</span>
+                <div className="flex items-center justify-between text-xs text-text-secondary mt-1.5 px-1 font-medium">
+                  <span>Shift+Enter for newline</span>
+                </div>
               </div>
             </div>
 

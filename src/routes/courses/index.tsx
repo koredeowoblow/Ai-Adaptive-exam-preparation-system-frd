@@ -7,7 +7,7 @@ import { Skeleton } from '../../shared/components/Skeleton';
 import { ErrorState } from '../../shared/components/ErrorState';
 import type { Department } from '../../types/department.types';
 import type { Course } from '../../types/course.types';
-import { Search, X, SearchX, Library, Building2 } from 'lucide-react';
+import { Search, X, SearchX, Library } from 'lucide-react';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { requireAuth } from '../../features/auth/utils/authGuard';
@@ -65,18 +65,39 @@ function CoursesIndex() {
     isFetchingNextPage
   } = useDepartmentCourses(selectedDeptId || '');
 
+  const studentLevel = user?.level ?? '';
+  const studentLevelNum = parseInt(studentLevel.replace(/\D/g, ''), 10) || 100;
+
+  const allCourses = React.useMemo(() => {
+    return coursesData?.pages.flatMap((page: any) => (Array.isArray(page) ? page : page?.items || [])) || [];
+  }, [coursesData]);
+
+  const has500Courses = React.useMemo(() => {
+    return allCourses.some((c: Course) => c.level === 500);
+  }, [allCourses]);
+
   const filteredCourses = React.useMemo(() => {
-    const items = coursesData?.pages.flatMap((page: any) => (Array.isArray(page) ? page : page?.items || [])) || [];
-    let result = items;
+    let result = [...allCourses];
     if (selectedLevel !== 'ALL') {
       result = result.filter((c: Course) => c.level === selectedLevel);
     }
-    if (!search.trim()) return result;
-    const q = search.toLowerCase();
-    return result.filter((c: Course) =>
-      c.title.toLowerCase().includes(q) || c.code?.toLowerCase().includes(q)
-    );
-  }, [coursesData, search, selectedLevel]);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((c: Course) =>
+        c.title.toLowerCase().includes(q) || c.code?.toLowerCase().includes(q)
+      );
+    }
+    if (selectedLevel === 'ALL') {
+      result.sort((a: Course, b: Course) => {
+        const aIsOwn = a.level === studentLevelNum ? 1 : 0;
+        const bIsOwn = b.level === studentLevelNum ? 1 : 0;
+        if (aIsOwn !== bIsOwn) return bIsOwn - aIsOwn;
+        if (a.level !== b.level) return (a.level || 0) - (b.level || 0);
+        return (a.code || '').localeCompare(b.code || '');
+      });
+    }
+    return result;
+  }, [allCourses, search, selectedLevel, studentLevelNum]);
 
   if (deptsLoading) return (
     <AppLayout userName={user?.name || "Student"}>
@@ -109,7 +130,7 @@ function CoursesIndex() {
         {/* -- Page Header -- */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 32 }}>
           <div>
-            <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '1.75rem', margin: '0 0 8px', color: 'var(--color-text-primary)' }}>
+            <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '1.75rem', letterSpacing: '-0.005em', margin: '0 0 8px', color: 'var(--color-text-primary)' }}>
               Course Catalog
             </h1>
             <p style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text-secondary)', maxWidth: 600 }}>
@@ -120,8 +141,8 @@ function CoursesIndex() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
-            {/* Department Tabs (Only rendered if admin has multiple departments available) */}
-            {visibleDepartments.length > 1 ? (
+            {/* Department Tabs (Rendered only if multiple departments are available to filter) */}
+            {visibleDepartments.length > 1 && (
               <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, maxWidth: '100%' }}>
                 {visibleDepartments.map((dept: Department) => {
                   const isActive = selectedDeptId === dept._id;
@@ -165,24 +186,6 @@ function CoursesIndex() {
                   );
                 })}
               </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '6px 14px',
-                  borderRadius: 20,
-                  background: 'var(--color-primary-light)',
-                  color: 'var(--color-primary)',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  border: '1px solid var(--color-primary-border)',
-                }}>
-                  <Building2 size={15} />
-                  <span>{currentDeptName || 'Your Department'}</span>
-                </span>
-              </div>
             )}
 
             {/* Search Bar */}
@@ -224,13 +227,16 @@ function CoursesIndex() {
             </span>
             {(['ALL', 100, 200, 300, 400, 500] as const).map((lvl) => {
               const isActive = selectedLevel === lvl;
+              const isDisabled = lvl === 500 && !has500Courses;
               return (
                 <button
                   key={lvl}
-                  onClick={() => setSelectedLevel(lvl)}
+                  onClick={() => !isDisabled && setSelectedLevel(lvl)}
+                  disabled={isDisabled}
+                  aria-disabled={isDisabled}
                   style={{
                     all: 'unset',
-                    cursor: 'pointer',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
                     padding: '4px 14px',
                     fontSize: '0.8rem',
                     fontWeight: 600,
@@ -239,10 +245,12 @@ function CoursesIndex() {
                     color: isActive ? '#ffffff' : 'var(--color-text-secondary)',
                     border: '1px solid',
                     borderColor: isActive ? 'var(--color-primary)' : 'var(--color-border)',
+                    opacity: isDisabled ? 0.4 : 1,
                     transition: 'all 0.15s ease',
                   }}
-                  onMouseOver={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-2)'; }}
-                  onMouseOut={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-1)'; }}
+                  onMouseOver={e => { if (!isActive && !isDisabled) e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                  onMouseOut={e => { if (!isActive && !isDisabled) e.currentTarget.style.background = 'var(--color-surface-1)'; }}
+                  title={isDisabled ? 'No courses available for 500 Level' : undefined}
                 >
                   {lvl === 'ALL' ? 'All Levels' : `${lvl}L`}
                 </button>
@@ -296,7 +304,7 @@ function CoursesIndex() {
           </div>
         )}
 
-        {hasNextPage && !search.trim() && (
+        {hasNextPage && !search.trim() && filteredCourses.length > 8 && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px' }}>
             <button
               className="btn-outline"
