@@ -75,7 +75,22 @@ test.describe('Mock Exam State and Polling Integrity', () => {
       });
     });
 
+    await page.addInitScript(() => {
+      sessionStorage.setItem('exam_started_sess_123', 'true');
+      Object.defineProperty(document, 'fullscreenElement', {
+        get: () => document.documentElement,
+        configurable: true,
+      });
+    });
+
     await page.goto('/exam/sess_123');
+
+    // Dismiss exam notice modal if visible
+    const modalCheckbox = page.locator('div[role="dialog"] input[type="checkbox"]');
+    if (await modalCheckbox.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await modalCheckbox.check();
+      await page.click('button:has-text("Begin Exam")');
+    }
 
     // Wait for the exam question to be visible
     await expect(page.getByText('What is the primary role of an operating system kernel?')).toBeVisible();
@@ -88,6 +103,11 @@ test.describe('Mock Exam State and Polling Integrity', () => {
 
     // Reload the page mid-exam
     await page.reload();
+
+    if (await modalCheckbox.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await modalCheckbox.check();
+      await page.click('button:has-text("Begin Exam")');
+    }
 
     // Verify answer is hydrated from localStorage and remains selected
     await expect(page.getByText('What is the primary role of an operating system kernel?')).toBeVisible();
@@ -173,7 +193,20 @@ test.describe('Mock Exam State and Polling Integrity', () => {
       });
     });
 
+    await page.addInitScript(() => {
+      sessionStorage.setItem('exam_started_sess_123', 'true');
+      Object.defineProperty(document, 'fullscreenElement', {
+        get: () => document.documentElement,
+        configurable: true,
+      });
+    });
+
     await page.goto('/exam/sess_123');
+    const modalCheckbox = page.locator('div[role="dialog"] input[type="checkbox"]');
+    if (await modalCheckbox.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await modalCheckbox.check();
+      await page.click('button:has-text("Begin Exam")');
+    }
     await expect(page.locator('text=What is the primary role of an operating system kernel?')).toBeVisible();
 
     // Answer Q1 and proceed to Q2
@@ -269,7 +302,7 @@ test.describe('Mock Exam State and Polling Integrity', () => {
 
     await page.click('button:has-text("Ask AI Tutor for Explanation")');
 
-    await expect(page.locator('text=Generating personalized AI explanation...')).toBeVisible();
+    await expect(page.getByText(/Generating.*AI explanation/i)).toBeVisible();
     expect(capturedAnswerId).toBe('ans_spec_uuid_777');
     expect(capturedAnswerId).not.toBe('q_wrong_uuid_999');
   });

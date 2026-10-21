@@ -20,6 +20,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       : '';
 
     const combinedClasses = [
+      'card',
       'rounded-xl border p-5 sm:p-6',
       tierClasses[tier],
       interactiveClass,

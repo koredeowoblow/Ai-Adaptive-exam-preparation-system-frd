@@ -30,8 +30,7 @@ type AnswerState = {
 
 const QuestionNavigator = React.memo(({ questionsList, currentIndex, answersMap, onJumpToQuestion }: any) => {
   return (
-    <div
-      role="tablist"
+    <nav
       aria-label="Questions list"
       className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none"
       style={{
@@ -81,7 +80,7 @@ const QuestionNavigator = React.memo(({ questionsList, currentIndex, answersMap,
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 });
 

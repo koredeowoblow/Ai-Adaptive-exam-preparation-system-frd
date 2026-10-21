@@ -31,7 +31,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId })
 
   if (isLoading) {
     return (
-      <div className="page-container page-wide">
+      <div className="w-full">
         <div className="flex flex-col gap-8 pb-20">
           {/* Header Skeleton */}
           <div className="flex flex-col gap-2">
@@ -68,7 +68,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId })
 
   if (error || !data) {
     return (
-      <div className="page-container page-wide">
+      <div className="w-full">
         <ErrorState message="Failed to load your dashboard. Please check your connection and try again." />
       </div>
     );
@@ -105,7 +105,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId })
   };
 
   return (
-    <main className="page-container page-wide">
+    <div className="w-full">
       <div className="flex flex-col gap-8 pb-20">
 
         {/* ── Page H1 with Context Line ── */}
@@ -448,6 +448,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId })
           </aside>
         </div>
       </div>
-    </main>
+    </div>
   );
 };

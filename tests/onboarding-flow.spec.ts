@@ -80,7 +80,13 @@ test.describe('Onboarding Course Selection Flow', () => {
     await expect(page.locator('h1')).toContainText('Welcome to EduAdapt');
 
     // Select Mathematics department
-    await page.selectOption('select#departmentId', 'dept_math');
+    const nativeSelect = page.locator('select#departmentId-native');
+    if (await nativeSelect.count() > 0) {
+      await nativeSelect.selectOption('dept_math', { force: true });
+    } else {
+      await page.click('button#departmentId');
+      await page.locator('text="Mathematics"').click();
+    }
 
     // Click Continue
     await page.click('button:has-text("Continue to Choose Courses")');
@@ -103,6 +109,7 @@ test.describe('Onboarding Course Selection Flow', () => {
     expect(onboardedPayload).toEqual({
       departmentId: 'dept_math',
       courseIds: ['c_mat101', 'c_mat102'],
+      level: '100L',
     });
   });
 });
