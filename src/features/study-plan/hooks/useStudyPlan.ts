@@ -7,13 +7,26 @@ export const STUDY_PLAN_KEYS = {
   history: ['studyPlan', 'history'] as const,
 };
 
+function extractPlan(res: any): StudyPlan | null {
+  if (!res) return null;
+  // If wrapped in sendResponse envelope: { success: true, data: { plan: ... } }
+  if (res.data?.plan) return res.data.plan;
+  // If res.data is the plan itself
+  if (res.data && (res.data._id || Array.isArray(res.data.weeks))) return res.data;
+  // If res is { plan: StudyPlan }
+  if (res.plan) return res.plan;
+  // If res itself is the StudyPlan
+  if (res._id || Array.isArray(res.weeks)) return res;
+  return null;
+}
+
 export function useActiveStudyPlan() {
   return useQuery({
     queryKey: STUDY_PLAN_KEYS.active,
     queryFn: async (): Promise<StudyPlan | null> => {
       try {
         const res = await studyPlanApi.getActivePlan();
-        return res?.data ?? null;
+        return extractPlan(res);
       } catch (err: any) {
         if (err?.response?.status === 404 || err?.status === 404) {
           return null;
@@ -37,10 +50,12 @@ export function useGenerateStudyPlan() {
   return useMutation({
     mutationFn: async () => {
       const res = await studyPlanApi.generatePlan();
-      return res.data;
+      return extractPlan(res);
     },
     onSuccess: (newPlan) => {
-      queryClient.setQueryData(STUDY_PLAN_KEYS.active, newPlan);
+      if (newPlan) {
+        queryClient.setQueryData(STUDY_PLAN_KEYS.active, newPlan);
+      }
       queryClient.invalidateQueries({ queryKey: STUDY_PLAN_KEYS.history });
     },
   });
@@ -51,10 +66,12 @@ export function useGenerateWeek() {
   return useMutation({
     mutationFn: async ({ planId, weekNumber }: { planId: string; weekNumber: number }) => {
       const res = await studyPlanApi.generateWeek(planId, weekNumber);
-      return res.data;
+      return extractPlan(res);
     },
     onSuccess: (updatedPlan) => {
-      queryClient.setQueryData(STUDY_PLAN_KEYS.active, updatedPlan);
+      if (updatedPlan) {
+        queryClient.setQueryData(STUDY_PLAN_KEYS.active, updatedPlan);
+      }
     },
   });
 }
@@ -64,10 +81,12 @@ export function useRetryWeek() {
   return useMutation({
     mutationFn: async ({ planId, weekNumber }: { planId: string; weekNumber: number }) => {
       const res = await studyPlanApi.retryWeek(planId, weekNumber);
-      return res.data;
+      return extractPlan(res);
     },
     onSuccess: (updatedPlan) => {
-      queryClient.setQueryData(STUDY_PLAN_KEYS.active, updatedPlan);
+      if (updatedPlan) {
+        queryClient.setQueryData(STUDY_PLAN_KEYS.active, updatedPlan);
+      }
     },
   });
 }

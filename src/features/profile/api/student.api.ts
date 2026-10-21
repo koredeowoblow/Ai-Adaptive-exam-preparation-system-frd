@@ -32,7 +32,7 @@ export const studentApi = {
   updateCourseExamDates: async (
     dates: Record<string, string>
   ): Promise<{ success: boolean; data: StudentProfile }> =>
-    apiClient.put('/students/course-exam-dates', { dates }),
+    apiClient.put('/students/course-exam-dates', { courseExamDates: dates, dates }),
 
   getEnrolledCourses: async (): Promise<{ success: boolean; data: Course[] }> =>
     apiClient.get('/students/courses'),
