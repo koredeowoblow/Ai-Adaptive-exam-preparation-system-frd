@@ -8,6 +8,7 @@ export interface StudentProfile {
   departmentId?: { _id: string; name: string };
   level?: '100L' | '200L' | '300L' | '400L' | '500L';
   nextExamDate?: string | null;
+  courseExamDates?: Record<string, string>;
   enrolledCourses: (string | Course)[];
   totalSessions: number;
   averageScore: number;
@@ -27,6 +28,11 @@ export const studentApi = {
 
   updateProfile: async (data: UpdateProfilePayload): Promise<{ success: boolean; data: StudentProfile }> =>
     apiClient.put('/students/profile', data),
+
+  updateCourseExamDates: async (
+    dates: Record<string, string>
+  ): Promise<{ success: boolean; data: StudentProfile }> =>
+    apiClient.put('/students/course-exam-dates', { dates }),
 
   getEnrolledCourses: async (): Promise<{ success: boolean; data: Course[] }> =>
     apiClient.get('/students/courses'),

@@ -49,3 +49,20 @@ export const useEnrollCourse = () => {
     },
   });
 };
+
+export const useUpdateCourseExamDates = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (dates: Record<string, string>) => studentApi.updateCourseExamDates(dates),
+    onSuccess: () => {
+      toast.success('Course exam dates saved successfully!');
+      queryClient.invalidateQueries({ queryKey: ['student', 'profile'] });
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['studyPlan', 'active'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to save course exam dates');
+    },
+  });
+};
+

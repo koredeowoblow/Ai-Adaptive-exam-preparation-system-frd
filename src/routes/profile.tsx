@@ -75,7 +75,6 @@ function ProfileRoute() {
   const [nameInput, setNameInput] = React.useState('');
   const [deptInput, setDeptInput] = React.useState('');
   const [levelInput, setLevelInput] = React.useState<'100L' | '200L' | '300L' | '400L' | '500L'>('100L');
-  const [examDateInput, setExamDateInput] = React.useState('');
 
   // Move to next level promotion state
   const [isPromoteOpen, setIsPromoteOpen] = React.useState(false);
@@ -151,8 +150,6 @@ function ProfileRoute() {
     const currentDeptId = typeof profile?.departmentId === 'object' ? profile.departmentId?._id : (profile?.departmentId || user?.departmentId || '');
     setDeptInput(currentDeptId || '');
     setLevelInput((profile?.level || user?.level || '100L') as any);
-    const existingDate = profile?.nextExamDate || user?.nextExamDate;
-    setExamDateInput(existingDate ? new Date(existingDate).toISOString().split('T')[0] : '');
     setIsEditOpen(true);
   };
 
@@ -162,7 +159,6 @@ function ProfileRoute() {
       name: nameInput.trim() || undefined,
       departmentId: deptInput || undefined,
       level: levelInput || undefined,
-      nextExamDate: examDateInput ? new Date(examDateInput).toISOString() : null,
     }, {
       onSuccess: () => {
         setIsEditOpen(false);
@@ -348,9 +344,14 @@ function ProfileRoute() {
                   icon={<Calendar size={16} />} 
                   loading={isLoading}
                   action={
-                    <Button variant="ghost" size="sm" onClick={handleOpenEdit}>
-                      {profile?.nextExamDate ? 'Edit Date' : 'Set Date'}
-                    </Button>
+                    <Link
+                      to="/study-planner"
+                      className="btn btn-ghost btn-sm"
+                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <span>Manage in Planner</span>
+                      <ExternalLink size={14} />
+                    </Link>
                   }
                 />
                 <ProfileRecordRow 
@@ -420,14 +421,34 @@ function ProfileRoute() {
             options={levelOptions}
           />
 
-          <Input
-            label="Target Next Exam Date"
-            type="date"
-            value={examDateInput}
-            min={new Date().toISOString().split('T')[0]}
-            onChange={(e) => setExamDateInput(e.target.value)}
-            helperText="Calibrates the study planner timeline and daily prep tasks."
-          />
+          <div style={{
+            padding: '12px 16px',
+            borderRadius: 10,
+            background: 'var(--color-surface-raised, var(--color-surface-1))',
+            border: '1px solid var(--color-border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}>
+            <div>
+              <p style={{ margin: '0 0 2px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)' }}>
+                Course Exam Schedules
+              </p>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>
+                Exam dates are calibrated per course with automated planner sync.
+              </p>
+            </div>
+            <Link
+              to="/study-planner"
+              onClick={() => setIsEditOpen(false)}
+              className="btn btn-outline btn-sm"
+              style={{ textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            >
+              <span>Planner</span>
+              <ExternalLink size={13} />
+            </Link>
+          </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-12)', marginTop: 'var(--space-12)' }}>
             <Button variant="secondary" type="button" onClick={() => setIsEditOpen(false)} disabled={isUpdating}>

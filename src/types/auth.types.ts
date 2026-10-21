@@ -5,6 +5,7 @@ export interface AuthUser {
   departmentId?: string;
   level?: '100L' | '200L' | '300L' | '400L' | '500L';
   nextExamDate?: string | null;
+  courseExamDates?: Record<string, string>;
   isOnboarded?: boolean;
   role?: 'student' | 'admin' | 'superAdmin';
 }

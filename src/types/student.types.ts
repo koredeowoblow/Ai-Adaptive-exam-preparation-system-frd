@@ -8,6 +8,7 @@ export interface StudentUser {
   } | string;
   level?: '100L' | '200L' | '300L' | '400L' | '500L';
   nextExamDate?: string | null;
+  courseExamDates?: Record<string, string>;
   enrolledCourseIds?: Array<{
     _id: string;
     title: string;
