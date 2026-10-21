@@ -12,9 +12,11 @@ import { Skeleton } from '../../shared/components/Skeleton';
 import { ErrorState } from '../../shared/components/ErrorState';
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import { ProgressBar } from '../../shared/components/ProgressBar';
-import { CheckCircle2, ChevronRight, BookOpen, Layers, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, ChevronRight, BookOpen, Layers, ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import type { Topic } from '../../types/topic.types';
 import type { BadgeVariant } from '../../shared/components/Badge';
+import type { QuestionTypeMix } from '../../types/practice.types';
+import { PracticeConfigModal } from '../../features/practice-session/components/PracticeConfigModal';
 import { requireAuth } from '../../features/auth/utils/authGuard';
 
 // Helper to determine Elo tier (Restrained palette, strictly NO orange)
@@ -80,6 +82,27 @@ function CourseDetails() {
   const { mutate: startSession, isPending: isStarting } = useStartSession();
   const isStartingRef = React.useRef(false);
   const [isImmediateStarting, setIsImmediateStarting] = React.useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = React.useState(false);
+
+  const handleStartCustomSession = (totalQuestions: number, questionType: QuestionTypeMix) => {
+    if (isStartingRef.current || isStarting) return;
+    isStartingRef.current = true;
+    setIsImmediateStarting(true);
+
+    startSession(
+      { courseId, totalQuestions, questionType },
+      {
+        onSuccess: (response) => {
+          setIsConfigModalOpen(false);
+          navigate({ to: '/exam/$sessionId', params: { sessionId: response.data.session._id } });
+        },
+        onError: () => {
+          isStartingRef.current = false;
+          setIsImmediateStarting(false);
+        },
+      }
+    );
+  };
 
   const handleStartPractice = () => {
     if (isStartingRef.current || isStarting) return;
@@ -218,8 +241,8 @@ function CourseDetails() {
               </p>
             </div>
 
-            {/* Actions: Primary is Enroll (or Quick practice when enrolled). Secondary is Full mock exam */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            {/* Actions: Primary is Customize / Start practice. Secondary is Quick practice & Full mock */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 flex-wrap">
               {!isEnrolled ? (
                 <>
                   <Button
@@ -231,6 +254,15 @@ function CourseDetails() {
                   </Button>
                   <Button
                     variant="outline"
+                    size="md"
+                    onClick={() => setIsConfigModalOpen(true)}
+                    isLoading={isStarting || isImmediateStarting}
+                    disabled={isStarting || isImmediateStarting}
+                  >
+                    <SlidersHorizontal size={15} className="mr-1.5" /> Customize Practice...
+                  </Button>
+                  <Button
+                    variant="ghost"
                     size="md"
                     onClick={handleStartPractice}
                     isLoading={isStarting || isImmediateStarting}
@@ -244,11 +276,20 @@ function CourseDetails() {
                   <Button
                     variant="primary"
                     size="md"
+                    onClick={() => setIsConfigModalOpen(true)}
+                    isLoading={isStarting || isImmediateStarting}
+                    disabled={isStarting || isImmediateStarting}
+                  >
+                    <SlidersHorizontal size={15} className="mr-1.5" /> Choose Question Count...
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="md"
                     onClick={handleStartPractice}
                     isLoading={isStarting || isImmediateStarting}
                     disabled={isStarting || isImmediateStarting}
                   >
-                    Quick Practice (10 Qs)
+                    Quick (10 Qs)
                   </Button>
                   <div className="flex flex-col items-center">
                     <Button
@@ -372,7 +413,15 @@ function CourseDetails() {
             )}
           </section>
 
-          {/* ── Enrollment Confirmation Modal ── */}
+          {/* ── Practice Session Configuration Modal (Allows Choosing Question Count) ── */}
+          <PracticeConfigModal
+            isOpen={isConfigModalOpen}
+            onClose={() => setIsConfigModalOpen(false)}
+            courseTitle={course.title}
+            courseCode={course.code}
+            onStart={handleStartCustomSession}
+            isStarting={isStarting || isImmediateStarting}
+          />
           <ConfirmDialog
             isOpen={isEnrollModalOpen}
             title="Enroll in Course"

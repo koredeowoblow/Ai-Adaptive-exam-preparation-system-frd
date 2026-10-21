@@ -20,6 +20,7 @@ import {
   Blend,
 } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
+import { QuestionCountPicker } from '../../practice-session/components/QuestionCountPicker';
 
 type WizardStep = 'level' | 'course';
 
@@ -222,6 +223,7 @@ const CourseStep: React.FC<CourseStepProps> = ({
   isStarting,
 }) => {
   const [questionType, setQuestionType] = React.useState<QuestionTypeMix>('MIXED');
+  const [questionCount, setQuestionCount] = React.useState<number>(10);
   const levelCaps = LEVEL_CAPS[studentLevel] ?? LEVEL_CAPS['100L'];
   const {
     data: allCoursesData,
@@ -283,35 +285,45 @@ const CourseStep: React.FC<CourseStepProps> = ({
         </div>
       </div>
 
-      {/* Question Type Selector */}
-      <div className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-wider text-text-muted m-0 mb-2">
-          Question Format
-        </p>
-        <div role="group" aria-label="Question type" className="flex gap-2 sm:gap-3 flex-wrap">
-          {QUESTION_TYPE_OPTIONS.map((opt) => {
-            const isSelected = questionType === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setQuestionType(opt.value)}
-                aria-pressed={isSelected}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-colors cursor-pointer ${
-                  isSelected
-                    ? 'bg-primary-light text-primary border-primary shadow-xs font-semibold'
-                    : 'bg-surface-0 text-text-secondary border-border hover:border-text-secondary'
-                }`}
-              >
-                {opt.icon}
-                <span>{opt.label}</span>
-              </button>
-            );
-          })}
+      {/* ── Session Configuration Box (Question Count + Format) ── */}
+      <div className="bg-surface-0 border border-border rounded-xl p-4 sm:p-5 mb-6 space-y-5">
+        <QuestionCountPicker
+          value={questionCount}
+          onChange={setQuestionCount}
+          maxCap={levelCaps.totalCap}
+          theoryCap={levelCaps.theoryCap}
+          questionType={questionType}
+        />
+
+        <div className="pt-4 border-t border-border">
+          <p className="text-xs font-semibold uppercase tracking-wider text-text-muted m-0 mb-2">
+            Question Format
+          </p>
+          <div role="group" aria-label="Question type" className="flex gap-2 sm:gap-3 flex-wrap">
+            {QUESTION_TYPE_OPTIONS.map((opt) => {
+              const isSelected = questionType === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setQuestionType(opt.value)}
+                  aria-pressed={isSelected}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'bg-primary-light text-primary border-primary shadow-xs font-semibold'
+                      : 'bg-surface-1 text-text-secondary border-border hover:border-text-secondary'
+                  }`}
+                >
+                  {opt.icon}
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-text-muted m-0 mt-2">
+            {QUESTION_TYPE_OPTIONS.find((o) => o.value === questionType)?.sub}
+          </p>
         </div>
-        <p className="text-xs text-text-muted m-0 mt-2">
-          {QUESTION_TYPE_OPTIONS.find((o) => o.value === questionType)?.sub}
-        </p>
       </div>
 
       {/* Course List or Empty State */}
@@ -345,23 +357,25 @@ const CourseStep: React.FC<CourseStepProps> = ({
                 )}
               </div>
 
-              <div className="flex items-center gap-2.5 shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onSelect(course, 10, questionType)}
-                  disabled={isStarting}
-                >
-                  {isStarting ? 'Starting...' : 'Quick Practice (10 Qs)'}
-                </Button>
+              <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => onSelect(course, 40, questionType)}
+                  onClick={() => onSelect(course, questionCount, questionType)}
                   disabled={isStarting}
                 >
-                  {isStarting ? 'Starting...' : 'Full Mock Exam (40 Qs)'}
+                  {isStarting ? 'Starting...' : `Start Practice (${questionCount} Qs)`}
                 </Button>
+                {questionCount !== 40 && levelCaps.totalCap >= 40 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onSelect(course, 40, questionType)}
+                    disabled={isStarting}
+                  >
+                    {isStarting ? 'Starting...' : 'Full Mock (40 Qs)'}
+                  </Button>
+                )}
               </div>
             </div>
           ))}
