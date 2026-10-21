@@ -21,7 +21,8 @@ import {
   TrendingDown, 
   Clock, 
   BookOpen,
-  RotateCcw
+  RotateCcw,
+  Loader2
 } from 'lucide-react';
 import type { PracticeSession } from '../../types/practice.types';
 import { practiceApi } from '../../features/practice-session/api/practice.api';
@@ -388,6 +389,7 @@ function HistoryRoute() {
                           const isCompleted = session.status === 'completed';
                           const isFailed = session.status === 'FAILED';
                           const isInProgress = session.status === 'active';
+                          const isPendingGrading = session.status === 'PENDING_GRADING' || (session as any).isGradingPending === true;
 
                           const courseObj = typeof session.courseId === 'object' ? session.courseId : null;
                           const courseCode = courseObj?.code || session.courseCode || '';
@@ -413,6 +415,12 @@ function HistoryRoute() {
                                   {isCompleted && (
                                     <Badge variant="success" size="sm">
                                       Completed
+                                    </Badge>
+                                  )}
+                                  {isPendingGrading && (
+                                    <Badge variant="warning" size="sm" className="inline-flex items-center gap-1">
+                                      <Loader2 size={11} className="animate-spin" />
+                                      Grading in progress
                                     </Badge>
                                   )}
                                   {isInProgress && (
@@ -453,11 +461,24 @@ function HistoryRoute() {
                                 </div>
                               )}
 
+                              {/* Pending Grading Session: Explicit state, NEVER 0% */}
+                              {isPendingGrading && (
+                                <div className="flex flex-col items-start sm:items-end justify-center shrink-0">
+                                  <span className="text-xs font-semibold text-warning inline-flex items-center gap-1">
+                                    <Loader2 size={12} className="animate-spin" />
+                                    Grading in progress
+                                  </span>
+                                  <span className="text-xs text-text-muted tabular-nums">
+                                    {answeredQ} of {totalQ} answered
+                                  </span>
+                                </div>
+                              )}
+
                               {/* Completed Session: Score shown as its own number */}
                               {isCompleted && (
                                 <div className="flex flex-col items-start sm:items-end justify-center shrink-0">
                                   <span className="text-base sm:text-lg font-bold text-text-primary tabular-nums">
-                                    {session.score !== undefined ? `${session.score}%` : '0%'}
+                                    {session.score !== undefined && session.score !== null ? `${session.score}%` : '0%'}
                                   </span>
                                   <span className="text-xs text-text-muted tabular-nums">
                                     {answeredQ} of {totalQ} answered
@@ -479,6 +500,18 @@ function HistoryRoute() {
 
                               {/* Right: Actions */}
                               <div className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                                {isPendingGrading && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled
+                                    className="opacity-75 cursor-wait text-xs"
+                                  >
+                                    <Loader2 size={13} className="mr-1.5 animate-spin" />
+                                    Grading...
+                                  </Button>
+                                )}
+
                                 {isInProgress && (
                                   <>
                                     <Button
