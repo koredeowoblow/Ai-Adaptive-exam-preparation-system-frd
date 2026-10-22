@@ -27,9 +27,15 @@ import {
   CheckCircle2,
   XCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Bot,
+  Brain
 } from "lucide-react";
 import type { Question } from "../types/question.types";
+import { SocraticTutorDrawer } from "../features/practice-session/components/SocraticTutorDrawer";
+import { CognitiveAutopsyModal } from "../features/practice-session/components/CognitiveAutopsyModal";
+import { CohortCompetencyRadar } from "../features/analytics/components/CohortCompetencyRadar";
+import { ExplainBetterWidget } from "../features/practice-session/components/ExplainBetterWidget";
 
 export const Route = createLazyFileRoute("/practice_/$sessionId/review")({
   component: SessionReviewRoute,
@@ -54,6 +60,61 @@ function SessionReviewRoute() {
   const { data: responseData, isLoading, error, isFetching } = usePracticeSession(sessionId);
   const { mutate: requestExplanation } = useRequestMcqExplanation(sessionId);
   const [pendingExplanations, setPendingExplanations] = React.useState<Set<string>>(new Set());
+
+  // Interactive Socratic Tutor State
+  const [tutorContext, setTutorContext] = React.useState<any | null>(null);
+  const [isTutorOpen, setIsTutorOpen] = React.useState(false);
+
+  const openTutorForQuestion = (q: any, ans: any) => {
+    let studentAnswer = ans.writtenAnswer;
+    if (!studentAnswer && ans.selectedAnswer && Array.isArray(q.options)) {
+      const opt = q.options.find((o: any) => o.id === ans.selectedAnswer);
+      studentAnswer = opt ? `${opt.id}: ${opt.text}` : ans.selectedAnswer;
+    }
+    if (!studentAnswer && Array.isArray(ans.subPartAnswers) && ans.subPartAnswers.length > 0) {
+      studentAnswer = ans.subPartAnswers
+        .map((sp: any) => `${sp.label || 'Part'}: ${sp.writtenAnswer || 'No response'}`)
+        .join('\n');
+    }
+
+    setTutorContext({
+      questionText: q.questionText ? q.questionText.replace(/\s*\[Variant\s+\d+\]\s*$/i, '').trim() : '',
+      type: q.type,
+      studentAnswer,
+      correctAnswer: q.correctAnswer,
+      modelAnswer: q.modelAnswer,
+      marksAwarded: ans.score !== null && ans.score !== undefined ? Math.round(ans.score * (q.maxMarks || 1) * 10) / 10 : undefined,
+      maxMarks: q.maxMarks || 1,
+      feedback: ans.feedback,
+    });
+    setIsTutorOpen(true);
+  };
+
+  // Option C: AI Cognitive Autopsy State
+  const [autopsyContext, setAutopsyContext] = React.useState<any | null>(null);
+  const [isAutopsyOpen, setIsAutopsyOpen] = React.useState(false);
+
+  const openAutopsyForQuestion = (q: any, ans: any, subPart?: any) => {
+    let studentAnswer = ans.writtenAnswer;
+    if (!studentAnswer && ans.selectedAnswer && Array.isArray(q.options)) {
+      const opt = q.options.find((o: any) => o.id === ans.selectedAnswer);
+      studentAnswer = opt ? `${opt.id}: ${opt.text}` : ans.selectedAnswer;
+    }
+    if (subPart) {
+      studentAnswer = subPart.writtenAnswer || 'No response';
+    }
+
+    setAutopsyContext({
+      questionText: subPart?.prompt || (q.questionText ? q.questionText.replace(/\s*\[Variant\s+\d+\]\s*$/i, '').trim() : ''),
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+      studentAnswer: studentAnswer || 'Unanswered',
+      modelAnswer: subPart?.modelAnswer || q.modelAnswer,
+      subPartLabel: subPart?.label,
+      explanation: ans.aiExplanation || subPart?.feedback || ans.theoryFeedback,
+    });
+    setIsAutopsyOpen(true);
+  };
 
   const handleRequestExplanation = (answerId: string) => {
     setPendingExplanations(prev => new Set(prev).add(answerId));
@@ -226,7 +287,6 @@ function SessionReviewRoute() {
                   borderRadius: 'var(--radius-full)', 
                   fontSize: '0.8rem', 
                   fontWeight: 600,
-                  backdropFilter: 'blur(4px)'
                 }}
               >
                 <TierIcon size={16} />
@@ -287,10 +347,10 @@ function SessionReviewRoute() {
               </div>
 
               <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: integrityScore >= 80 ? 'var(--color-success, #10b981)' : 'var(--color-danger)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: integrityScore >= 80 ? 'var(--color-success)' : 'var(--color-danger)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
                   <ShieldCheck size={14} /> Integrity
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: integrityScore >= 80 ? 'var(--color-success, #10b981)' : 'var(--color-danger)' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: integrityScore >= 80 ? 'var(--color-success)' : 'var(--color-danger)' }}>
                   {integrityScore}
                 </div>
               </div>
@@ -299,10 +359,15 @@ function SessionReviewRoute() {
           </div>
         </div>
 
+        {/* Option D: Departmental Cohort Percentile & Competency Radar Benchmark */}
+        <div style={{ marginBottom: 'var(--space-24)' }}>
+          <CohortCompetencyRadar />
+        </div>
+
         {/* Detailed Question Review Area */}
         <div style={{ position: 'relative' }}>
           {isFetching && !isLoading && (
-            <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-xl)' }}>
+            <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(255, 255, 255, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-xl)' }}>
               <Loader2 className="animate-spin" size={32} color="var(--color-primary)" />
             </div>
           )}
@@ -347,19 +412,53 @@ function SessionReviewRoute() {
                     )}
                   </div>
 
-                  {!isTheory ? (
-                    <Badge variant={ans.correct ? "success" : !ans.selectedAnswer ? "warning" : "danger"}>
-                      {ans.correct ? "Correct" : !ans.selectedAnswer ? "Unanswered" : "Incorrect"}
-                    </Badge>
-                  ) : ans.gradingStatus === 'GRADED' ? (
-                    <Badge variant={(ans.score ?? 0) >= 0.7 ? "success" : (ans.score ?? 0) >= 0.4 ? "warning" : "danger"}>
-                      Grade: {Math.round((ans.score ?? 0) * 100)}%
-                    </Badge>
-                  ) : (
-                    <Badge variant="warning">
-                      Grading Pending
-                    </Badge>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-8)' }}>
+                    {!isTheory ? (
+                      <Badge variant={ans.correct ? "success" : !ans.selectedAnswer ? "warning" : "danger"}>
+                        {ans.correct ? "Correct" : !ans.selectedAnswer ? "Unanswered" : "Incorrect"}
+                      </Badge>
+                    ) : ans.gradingStatus === 'GRADED' ? (
+                      <Badge variant={(ans.score ?? 0) >= 0.7 ? "success" : (ans.score ?? 0) >= 0.4 ? "warning" : "danger"}>
+                        Grade: {Math.round((ans.score ?? 0) * 100)}%
+                      </Badge>
+                    ) : (
+                      <Badge variant="warning">
+                        Grading Pending
+                      </Badge>
+                    )}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openTutorForQuestion(q, ans)}
+                      style={{ fontSize: '0.8rem', padding: '4px 10px', height: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}
+                    >
+                      <Bot size={14} className="text-primary" />
+                      <span>Ask AI Helper</span>
+                    </Button>
+
+                    {(!ans.correct || (ans.score !== undefined && ans.score < 1)) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openAutopsyForQuestion(q, ans)}
+                        style={{
+                          fontSize: '0.8rem',
+                          padding: '4px 10px',
+                          height: 'auto',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          color: 'var(--color-danger)',
+                          borderColor: 'rgba(239, 68, 68, 0.4)',
+                          background: 'rgba(239, 68, 68, 0.06)'
+                        }}
+                      >
+                        <Brain size={14} />
+                        <span>Why Did I Miss This?</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {!isTheory && !ans.selectedAnswer && (
@@ -406,9 +505,9 @@ function SessionReviewRoute() {
                       let iconColor = 'var(--color-text-muted)';
 
                       if (isCorrectOpt) {
-                        borderStyle = '1px solid var(--color-success, #10b981)';
+                        borderStyle = '1px solid var(--color-success)';
                         bgStyle = 'rgba(16, 185, 129, 0.08)';
-                        iconColor = 'var(--color-success, #10b981)';
+                        iconColor = 'var(--color-success)';
                       } else if (isChosen && !isCorrectOpt) {
                         borderStyle = '1px solid var(--color-danger)';
                         bgStyle = 'rgba(239, 68, 68, 0.08)';
@@ -527,7 +626,7 @@ function SessionReviewRoute() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-8)' }}>
                             <Sparkles size={18} color="var(--color-primary)" />
                             <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>
-                              Multi-Part Theory Evaluation
+                              Question Breakdown &amp; Scoring
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-10)' }}>
@@ -615,6 +714,26 @@ function SessionReviewRoute() {
                                     ) : (
                                       <Badge variant="neutral">{sp.maxMarks} marks</Badge>
                                     )}
+                                    {scorePct < 1 && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openAutopsyForQuestion(q, ans, sp)}
+                                        style={{
+                                          fontSize: '0.75rem',
+                                          padding: '2px 8px',
+                                          height: 'auto',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 4,
+                                          color: 'var(--color-danger)',
+                                          borderColor: 'rgba(239, 68, 68, 0.3)'
+                                        }}
+                                      >
+                                        <Brain size={12} />
+                                        <span>Check Mistake</span>
+                                      </Button>
+                                    )}
                                   </div>
                                 </div>
 
@@ -660,7 +779,7 @@ function SessionReviewRoute() {
                                       fontSize: '0.85rem'
                                     }}
                                   >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: scorePct >= 0.7 ? 'var(--color-success, #10b981)' : 'var(--color-danger)', marginBottom: 4 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: scorePct >= 0.7 ? 'var(--color-success)' : 'var(--color-danger)', marginBottom: 4 }}>
                                       <Sparkles size={14} /> Part Feedback
                                     </div>
                                     <div style={{ color: 'var(--color-text-primary)', lineHeight: 1.5 }}>
@@ -670,11 +789,11 @@ function SessionReviewRoute() {
                                     {sp.rubricCriteriaMet && sp.rubricCriteriaMet.length > 0 && (
                                       <div style={{ marginTop: 'var(--space-8)', display: 'flex', flexDirection: 'column', gap: 4 }}>
                                         <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
-                                          Demonstrated Criteria:
+                                          What You Got Right:
                                         </span>
                                         {sp.rubricCriteriaMet.map((crit: string, cIdx: number) => (
                                           <div key={cIdx} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--color-text-primary)' }}>
-                                            <CheckCircle2 size={13} color="var(--color-success, #10b981)" style={{ flexShrink: 0 }} />
+                                            <CheckCircle2 size={13} color="var(--color-success)" style={{ flexShrink: 0 }} />
                                             <span>{crit}</span>
                                           </div>
                                         ))}
@@ -739,7 +858,7 @@ function SessionReviewRoute() {
                             background: (ans.score ?? 0) >= 0.7 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)'
                           }}
                         >
-                          <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: (ans.score ?? 0) >= 0.7 ? 'var(--color-success, #10b981)' : 'var(--color-danger)', marginBottom: 6 }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: (ans.score ?? 0) >= 0.7 ? 'var(--color-success)' : 'var(--color-danger)', marginBottom: 6 }}>
                             AI Evaluation Grade: {Math.round((ans.score ?? 0) * 100)}%
                           </div>
                           {(ans.theoryFeedback || (ans as any).feedback) && (
@@ -770,6 +889,14 @@ function SessionReviewRoute() {
                           </div>
                         </details>
                       )}
+
+                      {/* Explain Better Bar for Theory Question */}
+                      <ExplainBetterWidget
+                        questionText={q.questionText || (q as any).text || ''}
+                        studentAnswer={ans.theoryAnswer || ''}
+                        modelAnswer={q.modelAnswer || ''}
+                        currentExplanation={ans.theoryFeedback || (ans as any).feedback || ''}
+                      />
                     </div>
                   );
                 })()}
@@ -793,6 +920,14 @@ function SessionReviewRoute() {
                         <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
                           <FormattedMathText text={ans.aiExplanation} />
                         </div>
+
+                        {/* Explain Better Bar for MCQ Explanation */}
+                        <ExplainBetterWidget
+                          questionText={q.questionText || (q as any).text || ''}
+                          studentAnswer={String(ans.selectedOption || '')}
+                          correctAnswer={String(q.correctAnswer || (q as any).correctOption || '')}
+                          currentExplanation={ans.aiExplanation}
+                        />
                       </div>
                     ) : ans.explanationStatus === 'PENDING' || pendingExplanations.has((ans as any)._id) ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text-muted)', fontSize: '0.85rem', padding: 'var(--space-12)' }}>
@@ -851,15 +986,28 @@ function SessionReviewRoute() {
                       onClick={() => goToPage(i)}
                       aria-label={`Jump to question ${i + 1}`}
                       style={{
-                        width: isCur ? 20 : 10,
-                        height: 10,
-                        borderRadius: 'var(--radius-full)',
-                        background: dotColor,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: 36,
+                        minHeight: 36,
+                        padding: 0,
+                        background: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        transition: 'all 0.2s'
                       }}
-                    />
+                    >
+                      <span
+                        style={{
+                          width: isCur ? 20 : 10,
+                          height: 10,
+                          borderRadius: 'var(--radius-full)',
+                          background: dotColor,
+                          display: 'block',
+                          transition: 'all 0.2s',
+                        }}
+                      />
+                    </button>
                   );
                 })}
               </div>
@@ -895,6 +1043,28 @@ function SessionReviewRoute() {
             Back to Dashboard <ArrowRight size={16} style={{ marginLeft: 8 }} />
           </Button>
         </div>
+
+        {/* Interactive Socratic AI Tutor Drawer */}
+        <SocraticTutorDrawer
+          isOpen={isTutorOpen}
+          onClose={() => setIsTutorOpen(false)}
+          questionContext={tutorContext}
+        />
+
+        {/* Option C: AI Cognitive Autopsy (Mental Model Diagnostic) */}
+        {autopsyContext && (
+          <CognitiveAutopsyModal
+            isOpen={isAutopsyOpen}
+            onClose={() => setIsAutopsyOpen(false)}
+            questionText={autopsyContext.questionText}
+            options={autopsyContext.options}
+            correctAnswer={autopsyContext.correctAnswer}
+            studentAnswer={autopsyContext.studentAnswer}
+            modelAnswer={autopsyContext.modelAnswer}
+            subPartLabel={autopsyContext.subPartLabel}
+            explanation={autopsyContext.explanation}
+          />
+        )}
 
       </div>
     </AppLayout>

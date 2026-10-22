@@ -19,6 +19,7 @@ import { EmptyState } from '../../shared/components/EmptyState';
 import { Button } from '../../shared/components/Button';
 import { QuestionForm } from '../../features/admin/components/QuestionForm';
 import { QuestionBulkImportModal } from '../../features/admin/components/QuestionBulkImportModal';
+import { QuestionAiGeneratorModal } from '../../features/admin/components/QuestionAiGeneratorModal';
 import { FormattedMathText, stripMathDelimiters } from '../../shared/components/FormattedMathText';
 import {
   Plus,
@@ -34,6 +35,7 @@ import {
   Edit2,
   Trash2,
   BookOpen,
+  Sparkles,
 } from 'lucide-react';
 import type { Question } from '../../types/question.types';
 import type { Course } from '../../types/course.types';
@@ -106,6 +108,7 @@ function QuestionsAdminRoute() {
   const {
     data: questionsData,
     isLoading: isLoadingQuestions,
+    refetch: refetchQuestions,
   } = useQuestions({
     q: querySearch || undefined,
     courseId: selectedCourseFilter || undefined,
@@ -203,6 +206,7 @@ function QuestionsAdminRoute() {
   const [viewingQuestion, setViewingQuestion] = React.useState<EnrichedQuestion | null>(null);
   const [questionToDelete, setQuestionToDelete] = React.useState<EnrichedQuestion | null>(null);
   const [isBulkImportOpen, setIsBulkImportOpen] = React.useState(false);
+  const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false);
 
   // Selection states
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
@@ -723,6 +727,9 @@ function QuestionsAdminRoute() {
         description="Curate practice and examination items with options, difficulty calibration, and answer explanations."
       >
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <Button variant="outline" size="sm" onClick={() => setIsAiGeneratorOpen(true)}>
+            <Sparkles size={14} style={{ marginRight: '0.375rem', color: 'var(--color-primary)' }} /> AI Generator
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setIsBulkImportOpen(true)}>
             <FileUp size={14} style={{ marginRight: '0.375rem' }} /> Bulk Import
           </Button>
@@ -1404,6 +1411,15 @@ function QuestionsAdminRoute() {
         selectedTopicId={selectedTopicFilter || undefined}
         onImport={handleBulkImport}
         isImporting={isBulkImporting}
+      />
+
+      {/* AI QUESTION GENERATOR MODAL */}
+      <QuestionAiGeneratorModal
+        isOpen={isAiGeneratorOpen}
+        onClose={() => setIsAiGeneratorOpen(false)}
+        courses={courses}
+        topics={topics}
+        onQuestionsSaved={() => refetchQuestions?.()}
       />
     </div>
   );

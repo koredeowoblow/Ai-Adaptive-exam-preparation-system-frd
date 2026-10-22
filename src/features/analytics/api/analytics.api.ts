@@ -288,6 +288,52 @@ export interface DetailedTopicAnalyticsData {
   insights: string[];
 }
 
+export interface CohortBenchmarkData {
+  cohort: {
+    departmentName: string;
+    level: string;
+    cohortLabel: string;
+    totalStudents: number;
+    cohortAverage: number;
+    cohortMedian: number;
+  };
+  student: {
+    id: string;
+    name: string;
+    averageScore: number;
+    percentile: number;
+    tier: string;
+    tierColor: string;
+  };
+  radar: {
+    key: string;
+    label: string;
+    studentScore: number;
+    cohortScore: number;
+    delta: number;
+  }[];
+  insights: {
+    topStrength: {
+      label: string;
+      delta: number;
+      score: number;
+    };
+    topGrowthArea: {
+      label: string;
+      delta: number;
+      score: number;
+    };
+  };
+  distribution: {
+    min: number;
+    q1: number;
+    median: number;
+    q3: number;
+    top10: number;
+    max: number;
+  };
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -296,6 +342,9 @@ export interface ApiResponse<T> {
 export const analyticsApi = {
   getStudentAnalytics: async (): Promise<ApiResponse<StudentAnalyticsData>> => {
     return apiClient.get('/analytics/me');
+  },
+  getCohortBenchmark: async (): Promise<ApiResponse<CohortBenchmarkData>> => {
+    return apiClient.get('/analytics/cohort-benchmark');
   },
   getStudentAnalyticsById: async (studentId: string): Promise<ApiResponse<DetailedStudentAnalyticsData>> => {
     return apiClient.get(`/analytics/student/${studentId}`);

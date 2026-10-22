@@ -16,6 +16,7 @@ export const ExamTimer = React.memo(React.forwardRef<ExamTimerRef, {}>((_props, 
 
   return (
     <div 
+      title="Continuous Real-Time Timer (Pausing Disabled)"
       style={{ 
         display: 'inline-flex',
         alignItems: 'center',
@@ -32,6 +33,17 @@ export const ExamTimer = React.memo(React.forwardRef<ExamTimerRef, {}>((_props, 
       }}
       aria-live="off" // Prevent screen reader from announcing every second
     >
+      <span 
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          backgroundColor: 'var(--color-danger)',
+          display: 'inline-block',
+          animation: 'pulse 1.5s infinite',
+        }}
+        aria-hidden="true"
+      />
       <svg 
         width="16" height="16" viewBox="0 0 24 24" 
         fill="none" stroke="var(--color-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"

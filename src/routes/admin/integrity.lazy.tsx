@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import type { IntegrityLogItem } from '../../features/admin/api/admin.api';
 import type { AdminExamSession } from '../../types/practice.types';
+import { LiveProctoringMonitor } from '../../features/admin/components/LiveProctoringMonitor';
 import { toast } from 'sonner';
 
 interface IntegritySearch {
@@ -58,6 +59,7 @@ function formatDate(dateStr?: string): string {
 function IntegrityAdminRoute() {
   useDocumentTitle('Admin: Anti-Cheat & Integrity Monitor');
   const navigate = useNavigate({ from: '/admin/integrity' });
+  const [activeTab, setActiveTab] = React.useState<'live' | 'logs'>('live');
   const search = Route.useSearch();
 
   const [searchInput, setSearchInput] = React.useState(search.q || '');
@@ -165,9 +167,9 @@ function IntegrityAdminRoute() {
         };
       case 'MEDIUM':
         return {
-          bg: 'rgba(245, 158, 11, 0.12)',
-          color: '#f59e0b',
-          border: 'rgba(245, 158, 11, 0.3)',
+          bg: 'var(--color-warning-light, rgba(245, 158, 11, 0.12))',
+          color: 'var(--color-warning)',
+          border: 'rgba(180, 83, 9, 0.3)',
           label: 'Moderate Warning',
         };
       default:
@@ -231,7 +233,7 @@ function IntegrityAdminRoute() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: log.severity === 'HIGH' ? '#ef4444' : log.severity === 'MEDIUM' ? '#f59e0b' : 'var(--color-text-muted)',
+                color: log.severity === 'HIGH' ? 'var(--color-danger)' : log.severity === 'MEDIUM' ? 'var(--color-warning)' : 'var(--color-text-muted)',
               }}
             >
               {log.severity === 'HIGH' ? <ShieldAlert size={15} /> : <AlertTriangle size={15} />}
@@ -381,6 +383,57 @@ function IntegrityAdminRoute() {
         </div>
       </PageHeader>
 
+      {/* View Mode Tabs */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('live')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-md)',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            border: 'none',
+            background: activeTab === 'live' ? 'var(--color-primary)' : 'transparent',
+            color: activeTab === 'live' ? '#ffffff' : 'var(--color-text-secondary)',
+            transition: 'all 0.2s',
+          }}
+        >
+          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+          <span>Live Proctoring Monitor</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('logs')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: 'var(--radius-md)',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            border: 'none',
+            background: activeTab === 'logs' ? 'var(--color-primary)' : 'transparent',
+            color: activeTab === 'logs' ? '#ffffff' : 'var(--color-text-secondary)',
+            transition: 'all 0.2s',
+          }}
+        >
+          <FileText size={14} />
+          <span>Historical Violation Logs</span>
+        </button>
+      </div>
+
+      {activeTab === 'live' ? (
+        <LiveProctoringMonitor onInspectSession={(sId) => setInspectingSessionId(sId)} />
+      ) : (
+        <>
       {/* KPI Overview Strip */}
       <div
         style={{
@@ -584,6 +637,10 @@ function IntegrityAdminRoute() {
           }}
         >
           <option value="all">All Event Types</option>
+          <option value="AI_PASTE_DETECTED">AI Paste Detected</option>
+          <option value="UNNATURAL_TYPING_VELOCITY">Unnatural Typing Speed</option>
+          <option value="AI_HONEYPOT_TRIGGERED">AI Honeypot Triggered</option>
+          <option value="MULTIPLE_VOICES_DETECTED">Multiple Voices Detected</option>
           <option value="WINDOW_BLUR">Window Blur</option>
           <option value="VISIBILITY_CHANGE">Visibility Change</option>
           <option value="PASTE_ATTEMPT">Paste Attempt</option>
@@ -657,6 +714,8 @@ function IntegrityAdminRoute() {
             </Button>
           </div>
         </div>
+      )}
+        </>
       )}
 
       {/* Session Deep Inspection Drawer */}

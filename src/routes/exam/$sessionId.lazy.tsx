@@ -2,6 +2,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { usePracticeSession, useSubmitBatchAnswers } from "../../features/practice-session/hooks/usePractice";
+import { practiceApi } from "../../features/practice-session/api/practice.api";
 import { ExamTimer, type ExamTimerRef } from "../../features/practice-session/components/ExamTimer";
 import type { Question } from "../../types/question.types";
 import { Skeleton } from "../../shared/components/Skeleton";
@@ -16,6 +17,8 @@ import { FullscreenEnforcerOverlay } from "../../features/practice-session/compo
 import { useDocumentTitle } from "../../shared/hooks/useDocumentTitle";
 import { QuestionCard } from "../../features/practice-session/components/QuestionCard";
 import { ConfirmDialog } from "../../shared/components/ConfirmDialog";
+import { useAuth } from "../../features/auth/hooks/useAuth";
+import { ExamWatermark } from "../../features/practice-session/components/ExamWatermark";
 
 export const Route = createLazyFileRoute("/exam/$sessionId")({
   component: ExamSessionRoute,
@@ -91,6 +94,7 @@ function ExamSessionRoute() {
   useDocumentTitle("Mock Exam - EduAdapt");
   const { sessionId } = Route.useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const { data: responseData, isLoading, error } = usePracticeSession(sessionId);
   const { mutate: submitBatchAnswers, isPending: isSubmitting } = useSubmitBatchAnswers(sessionId);
@@ -123,8 +127,8 @@ function ExamSessionRoute() {
   }, [answersMap, sessionId]);
 
   const questionsList = React.useMemo(() => responseData?.session?.questionsServed || [], [responseData?.session?.questionsServed]);
-  const activeQuestionId = typeof questionsList[currentIndex]?.questionId === 'object' 
-    ? (questionsList[currentIndex]?.questionId as any)?._id 
+  const activeQuestionId = typeof questionsList[currentIndex]?.questionId === 'object'
+    ? (questionsList[currentIndex]?.questionId as any)?._id
     : questionsList[currentIndex]?.questionId;
 
   const courseTitle = React.useMemo(() => {
@@ -348,7 +352,7 @@ function ExamSessionRoute() {
   const handleSubmit = React.useCallback(() => {
     flushCurrentDraft();
     saveCurrentTime();
-    
+
     // Process submit using functional state update to guarantee we have the freshly flushed state
     setAnswersMap(currentAnswersMap => {
       // Ensure the latest text in theory textarea is included even if focused
@@ -411,6 +415,25 @@ function ExamSessionRoute() {
   if (responseData.session.status === 'completed') {
     navigate({ to: `/practice/$sessionId/review`, params: { sessionId }, replace: true });
     return null;
+  }
+
+  if (responseData.session.status === 'TERMINATED_BY_PROCTOR') {
+    return (
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--color-background)', padding: '0 20px', textAlign: 'center' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+          <ShieldAlert size={32} />
+        </div>
+        <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.8rem', fontWeight: 700, marginBottom: 8, color: 'var(--color-danger, #ef4444)' }}>
+          Exam Terminated by Invigilator
+        </h2>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '1rem', maxWidth: 480, marginBottom: 24, lineHeight: 1.6 }}>
+          {responseData.session.terminatedReason || 'This exam was forcibly terminated by the proctor for integrity non-compliance or repeated unauthorized tab switching.'}
+        </p>
+        <Button variant="primary" onClick={() => navigate({ to: '/dashboard' })}>
+          Return to Dashboard
+        </Button>
+      </div>
+    );
   }
 
   if (responseData.session.status === 'PENDING_GRADING') {
@@ -512,6 +535,9 @@ function ExamSessionRoute() {
         questionCount={questionsList.length}
       />
 
+      {/* Forensic Diagonal Security Watermark */}
+      <ExamWatermark studentName={user?.name} studentEmail={user?.email} sessionId={sessionId} />
+
       {/* Strict Fullscreen Enforcer Overlay during Exam */}
       <FullscreenEnforcerOverlay
         isVisible={hasStartedExam && isMonitoring && !isFullscreen && !bypassFullscreenOverlay}
@@ -530,183 +556,221 @@ function ExamSessionRoute() {
         }}
       />
 
-    <header className="sticky top-0 z-30 bg-[var(--color-surface-0)] border-b border-[var(--color-border)] shadow-xs">
-      {/* Top Tier: Course title + Proctoring badge + Timer + Actions */}
-      <div className="px-4 sm:px-8 py-3 flex items-center justify-between gap-4 border-b border-[var(--color-border)]">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <h1 className="text-sm sm:text-base font-bold text-[var(--color-text)] tracking-tight truncate max-w-[180px] sm:max-w-md">
-            {courseTitle}
-          </h1>
-          {isMonitoring && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              Proctored
-            </span>
-          )}
-        </div>
+      <header className="sticky top-0 z-30 bg-[var(--color-surface-0)] border-b border-[var(--color-border)] shadow-xs">
+        {/* Top Tier: Course title + Proctoring badge + Timer + Actions */}
+        <div className="px-4 sm:px-8 py-3 flex items-center justify-between gap-4 border-b border-[var(--color-border)]">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <h1 className="text-sm sm:text-base font-bold text-[var(--color-text)] tracking-tight truncate max-w-[180px] sm:max-w-md">
+              {courseTitle}
+            </h1>
+            {isMonitoring && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Proctored
+              </span>
+            )}
+          </div>
 
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          {isMonitoring && !isFullscreen && (
-            <Button variant="outline" size="sm" onClick={requestFullscreen}>
-              <Maximize2 size={14} style={{ marginRight: 6 }} /> Full Screen
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            {isMonitoring && !isFullscreen && (
+              <Button variant="outline" size="sm" onClick={requestFullscreen}>
+                <Maximize2 size={14} style={{ marginRight: 6 }} /> Full Screen
+              </Button>
+            )}
+            <ExamTimer ref={timerRef} />
+            <Button variant="accent" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+              Submit Exam
             </Button>
-          )}
-          <ExamTimer ref={timerRef} />
-          <Button variant="accent" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
-            Submit Exam
-          </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Secondary Tier: Horizontal question pill strip + answer count */}
-      <div className="px-4 sm:px-8 py-2 flex items-center justify-between gap-3 bg-[var(--color-surface-1)]">
-        <div className="flex-1 min-w-0">
-          <QuestionNavigator
-            questionsList={questionsList}
-            currentIndex={currentIndex}
-            answersMap={answersMap}
-            onJumpToQuestion={handleJumpToQuestion}
-          />
+        {/* Secondary Tier: Horizontal question pill strip + answer count */}
+        <div className="px-4 sm:px-8 py-2 flex items-center justify-between gap-3 bg-[var(--color-surface-1)]">
+          <div className="flex-1 min-w-0">
+            <QuestionNavigator
+              questionsList={questionsList}
+              currentIndex={currentIndex}
+              answersMap={answersMap}
+              onJumpToQuestion={handleJumpToQuestion}
+            />
+          </div>
+          <div className="shrink-0 text-xs font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface-0)] border border-[var(--color-border)] px-2.5 py-1 rounded-md">
+            {answeredCount} / {questionsList.length} answered
+          </div>
         </div>
-        <div className="shrink-0 text-xs font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface-0)] border border-[var(--color-border)] px-2.5 py-1 rounded-md">
-          {answeredCount} / {questionsList.length} answered
-        </div>
-      </div>
-    </header>
+      </header>
 
-    <main className="flex-1 px-4 sm:px-6 py-6 sm:py-8 pb-32 sm:pb-20 flex justify-center">
-      <div className="w-full max-w-3xl">
-        {/* Anti-Cheat Fullscreen Requirement Banner */}
-        {isMonitoring && !isFullscreen && (
-          <div
-            role="alert"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              padding: '12px 16px',
-              marginBottom: 20,
-              borderRadius: 'var(--radius-lg)',
-              backgroundColor: 'var(--color-danger-light)',
-              border: '1px solid var(--color-danger)',
-              color: 'var(--color-danger)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <ShieldAlert size={20} style={{ flexShrink: 0 }} />
-              <div>
-                <strong style={{ display: 'block', fontSize: '0.875rem' }}>Anti-Cheat Proctoring Active</strong>
-                <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                  This exam requires full screen mode. Leaving fullscreen or switching windows is logged.
-                </span>
+      <main className="flex-1 px-4 sm:px-6 py-6 sm:py-8 pb-32 sm:pb-20 flex justify-center">
+        <div className="w-full max-w-3xl">
+          {/* Live Proctor Warning Banner */}
+          {responseData?.session?.proctorWarning && (
+            <div
+              role="alert"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 16px',
+                marginBottom: '20px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                border: '2px solid rgba(245, 158, 11, 0.5)',
+                color: 'var(--color-warning, #d97706)',
+              }}
+            >
+              <AlertTriangle size={22} style={{ flexShrink: 0 }} />
+              <div style={{ flex: 1, fontSize: '0.875rem' }}>
+                <strong style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800 }}>
+                  ⚠️ Official Invigilator Warning
+                </strong>
+                <span>{responseData.session.proctorWarning}</span>
               </div>
             </div>
-            <Button variant="danger" size="sm" onClick={requestFullscreen}>
-              <Maximize2 size={14} style={{ marginRight: 6 }} /> Full Screen
+          )}
+
+          {/* Anti-Cheat Fullscreen Requirement Banner */}
+          {isMonitoring && !isFullscreen && (
+            <div
+              role="alert"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                padding: '12px 16px',
+                marginBottom: 20,
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'var(--color-danger-light)',
+                border: '1px solid var(--color-danger)',
+                color: 'var(--color-danger)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <ShieldAlert size={20} style={{ flexShrink: 0 }} />
+                <div>
+                  <strong style={{ display: 'block', fontSize: '0.875rem' }}>Anti-Cheat Proctoring Active</strong>
+                  <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                    This exam requires full screen mode. Leaving fullscreen or switching windows is logged.
+                  </span>
+                </div>
+              </div>
+              <Button variant="danger" size="sm" onClick={requestFullscreen}>
+                <Maximize2 size={14} style={{ marginRight: 6 }} /> Full Screen
+              </Button>
+            </div>
+          )}
+
+          {/* Integrity Violation Warning Banner */}
+          {lastViolationType && (
+            <IntegrityWarningBanner
+              violationType={lastViolationType}
+              onDismiss={clearViolation}
+            />
+          )}
+
+          {clampedMessage && (
+            <div
+              role="alert"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '12px 16px',
+                marginBottom: 20,
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-warning-light)',
+                border: '1px solid var(--color-warning)',
+                color: 'var(--color-text)',
+                fontSize: '0.9rem',
+              }}
+            >
+              <AlertTriangle size={18} style={{ flexShrink: 0, color: 'var(--color-warning)' }} />
+              <span>{clampedMessage}</span>
+            </div>
+          )}
+
+          {activeQuestionObj && (
+            <QuestionCard
+              question={activeQuestionObj}
+              difficulty={difficultyLabel}
+              selectedOptionId={currentAnswer.selectedAnswer || null}
+              onOptionSelect={handleOptionSelect}
+              writtenAnswer={currentAnswer.writtenAnswer || ""}
+              onWrittenAnswerChange={handleWrittenAnswerChange}
+              subPartAnswers={currentAnswer.subPartAnswers || []}
+              onSubPartAnswersChange={(subParts) => {
+                setAnswersMap((prev) => {
+                  const updated = {
+                    ...prev,
+                    [activeQuestionId]: {
+                      ...prev[activeQuestionId],
+                      timeTaken: prev[activeQuestionId]?.timeTaken || 0,
+                      subPartAnswers: subParts,
+                      writtenAnswer: subParts.map((sp) => `**${sp.label}:**\n${sp.writtenAnswer}`).join('\n\n'),
+                    },
+                  };
+                  try {
+                    localStorage.setItem(`exam_answers_${sessionId}`, JSON.stringify(updated));
+                  } catch {
+                    // ignore
+                  }
+                  return updated;
+                });
+              }}
+              theoryTextareaRef={theoryTextareaRef}
+              onSubmit={handleSubmit}
+              hideSubmit={true}
+              onSecurityViolation={(violation) => {
+                practiceApi.logAntiCheatEvents(sessionId, {
+                  events: [
+                    {
+                      type: (violation.type as any) || 'MULTIPLE_VOICES_DETECTED',
+                      questionId: activeQuestionId,
+                      timestamp: new Date().toISOString(),
+                      metadata: { details: violation.details },
+                    },
+                  ],
+                }).catch(() => { });
+              }}
+              isSubmitting={isSubmitting}
+              disabled={isSubmitting}
+            />
+          )}
+
+          {/* Bottom Question Controls */}
+          <div className="flex items-center justify-between pt-6 border-t border-[var(--color-border)] mt-8">
+            <Button variant="outline" disabled={currentIndex === 0} onClick={handlePrev}>
+              <ChevronLeft size={16} style={{ marginRight: 6 }} /> Previous
+            </Button>
+
+            <span className="text-sm font-semibold text-[var(--color-text-secondary)]">
+              Question {currentIndex + 1} of {questionsList.length}
+            </span>
+
+            <Button
+              variant="primary"
+              disabled={currentIndex === questionsList.length - 1}
+              onClick={handleNext}
+            >
+              Next <ChevronRight size={16} style={{ marginLeft: 6 }} />
             </Button>
           </div>
-        )}
 
-        {/* Integrity Violation Warning Banner */}
-        {lastViolationType && (
-          <IntegrityWarningBanner
-            violationType={lastViolationType}
-            onDismiss={clearViolation}
-          />
-        )}
-
-        {clampedMessage && (
-          <div
-            role="alert"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '12px 16px',
-              marginBottom: 20,
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-warning-light)',
-              border: '1px solid var(--color-warning)',
-              color: 'var(--color-text)',
-              fontSize: '0.9rem',
+          <ConfirmDialog
+            isOpen={confirmState.isOpen}
+            title="Submit Exam?"
+            message={confirmState.message}
+            confirmText="Submit Anyway"
+            cancelText="Keep Working"
+            onCancel={() => setConfirmState(s => ({ ...s, isOpen: false }))}
+            onConfirm={() => {
+              setConfirmState(s => ({ ...s, isOpen: false }));
+              processSubmission(answersMap);
             }}
-          >
-            <AlertTriangle size={18} style={{ flexShrink: 0, color: 'var(--color-warning)' }} />
-            <span>{clampedMessage}</span>
-          </div>
-        )}
-
-        {activeQuestionObj && (
-          <QuestionCard
-            question={activeQuestionObj}
-            difficulty={difficultyLabel}
-            selectedOptionId={currentAnswer.selectedAnswer || null}
-            onOptionSelect={handleOptionSelect}
-            writtenAnswer={currentAnswer.writtenAnswer || ""}
-            onWrittenAnswerChange={handleWrittenAnswerChange}
-            subPartAnswers={currentAnswer.subPartAnswers || []}
-            onSubPartAnswersChange={(subParts) => {
-              setAnswersMap((prev) => {
-                const updated = {
-                  ...prev,
-                  [activeQuestionId]: {
-                    ...prev[activeQuestionId],
-                    timeTaken: prev[activeQuestionId]?.timeTaken || 0,
-                    subPartAnswers: subParts,
-                    writtenAnswer: subParts.map((sp) => `**${sp.label}:**\n${sp.writtenAnswer}`).join('\n\n'),
-                  },
-                };
-                try {
-                  localStorage.setItem(`exam_answers_${sessionId}`, JSON.stringify(updated));
-                } catch {
-                  // ignore
-                }
-                return updated;
-              });
-            }}
-            theoryTextareaRef={theoryTextareaRef}
-            onSubmit={handleSubmit}
-            hideSubmit={true}
-            isSubmitting={isSubmitting}
-            disabled={isSubmitting}
+            isPending={isSubmitting}
           />
-        )}
-
-        {/* Bottom Question Controls */}
-        <div className="flex items-center justify-between pt-6 border-t border-[var(--color-border)] mt-8">
-          <Button variant="outline" disabled={currentIndex === 0} onClick={handlePrev}>
-            <ChevronLeft size={16} style={{ marginRight: 6 }} /> Previous
-          </Button>
-
-          <span className="text-sm font-semibold text-[var(--color-text-secondary)]">
-            Question {currentIndex + 1} of {questionsList.length}
-          </span>
-
-          <Button
-            variant="primary"
-            disabled={currentIndex === questionsList.length - 1}
-            onClick={handleNext}
-          >
-            Next <ChevronRight size={16} style={{ marginLeft: 6 }} />
-          </Button>
         </div>
-
-        <ConfirmDialog
-          isOpen={confirmState.isOpen}
-          title="Submit Exam?"
-          message={confirmState.message}
-          confirmText="Submit Anyway"
-          cancelText="Keep Working"
-          onCancel={() => setConfirmState(s => ({ ...s, isOpen: false }))}
-          onConfirm={() => {
-            setConfirmState(s => ({ ...s, isOpen: false }));
-            processSubmission(answersMap);
-          }}
-          isPending={isSubmitting}
-        />
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
   );
 }

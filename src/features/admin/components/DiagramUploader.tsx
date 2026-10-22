@@ -19,12 +19,15 @@ export const DiagramUploader: React.FC<DiagramUploaderProps> = ({
 }) => {
   const [isUploading, setIsUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [prevCaption, setPrevCaption] = React.useState(caption);
   const [localCaption, setLocalCaption] = React.useState(caption);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  // Derive / adjust state during render when prop changes
+  if (prevCaption !== caption) {
+    setPrevCaption(caption);
     setLocalCaption(caption);
-  }, [caption]);
+  }
 
   const handleFile = async (file: File) => {
     setError(null);
@@ -225,7 +228,7 @@ export const DiagramUploader: React.FC<DiagramUploaderProps> = ({
                 fontSize: '13px',
                 borderRadius: '6px',
                 border: '1px solid var(--color-border)',
-                background: 'var(--color-bg-surface, #fff)',
+                background: 'var(--color-surface)',
                 color: 'var(--color-text-primary)',
               }}
             />

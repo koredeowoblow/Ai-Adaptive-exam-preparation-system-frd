@@ -10,63 +10,13 @@ import {
 } from 'recharts';
 
 import { useStudentAnalytics } from '../features/analytics/hooks/useAnalytics';
+import { CohortCompetencyRadar } from '../features/analytics/components/CohortCompetencyRadar';
+import { CustomTooltip } from '../features/analytics/components/CustomTooltip';
+import { ProgressRing } from '../features/analytics/components/ProgressRing';
 
 export const Route = createLazyFileRoute('/analytics')({
   component: AnalyticsRoute,
 });
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div style={{
-        background: 'var(--color-surface-0)', padding: '10px 14px',
-        border: '1px solid var(--color-border)',
-        borderRadius: 10, boxShadow: 'var(--shadow-md)',
-      }}>
-        <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-          {label}
-        </p>
-        {payload.map((p: any) => (
-          <p key={p.name} style={{ fontSize: '0.95rem', fontWeight: 700, color: p.stroke || p.fill || 'var(--color-primary)', margin: 0 }}>
-            {p.value}{p.name === 'Frequency' ? ' sessions' : '%'}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
-// Mini circular progress ring component
-const ProgressRing = ({ radius, stroke, progress, color }: { radius: number; stroke: number; progress: number; color: string }) => {
-  const normalizedRadius = radius - stroke * 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
-
-  return (
-    <svg height={radius * 2} width={radius * 2} style={{ transform: 'rotate(-90deg)' }}>
-      <circle
-        stroke="var(--color-surface-2)"
-        fill="transparent"
-        strokeWidth={stroke}
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
-      />
-      <circle
-        stroke={color}
-        fill="transparent"
-        strokeWidth={stroke}
-        strokeDasharray={circumference + ' ' + circumference}
-        style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.5s ease-in-out' }}
-        strokeLinecap="round"
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
-      />
-    </svg>
-  );
-};
 
 // Derive real subject performance data from API
 const deriveSubjectData = (apiData: any) => {
@@ -214,7 +164,7 @@ function AnalyticsRoute() {
           gap: 24,
           boxShadow: 'var(--shadow-1)'
         }}>
-          <div style={{ flex: 1, minWidth: 300 }}>
+          <div style={{ flex: 1, minWidth: 'min(100%, 300px)' }}>
             <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: '2rem', margin: '0 0 12px', color: 'var(--color-text-primary)' }}>
               {hasZeroActivity ? "Let's start your practice sessions" : hasActivity ? "You're on a 3-day streak! Keep it up" : "Your practice progress is underway"}
             </h1>
@@ -306,6 +256,9 @@ function AnalyticsRoute() {
                 </div>
               </div>
             </div>
+
+            {/* Departmental Cohort Percentile & Competency Radar */}
+            <CohortCompetencyRadar />
 
             <section>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text-primary)', margin: '0 0 16px' }}>AI Learning Insights</h2>

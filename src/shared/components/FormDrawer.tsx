@@ -51,8 +51,7 @@ export const FormDrawer: React.FC<FormDrawerProps> = ({
         style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(2px)',
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
           display: 'flex',
           justifyContent: 'flex-end',
           zIndex: 'var(--z-drawer, 60)' as any,

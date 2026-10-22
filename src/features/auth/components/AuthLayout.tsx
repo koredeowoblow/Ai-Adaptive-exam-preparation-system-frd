@@ -29,7 +29,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
       className="min-h-screen bg-[var(--auth-bg)] text-[var(--auth-text)] flex flex-col justify-between selection:bg-[var(--auth-accent)] selection:text-white"
     >
       {/* Top Header */}
-      <header className="w-full border-b border-[var(--auth-card-border)] bg-[var(--auth-card-bg)]/80 backdrop-blur-sm sticky top-0 z-30">
+      <header className="w-full border-b border-[var(--auth-card-border)] bg-[var(--auth-card-bg)] sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link
             to="/"

@@ -187,7 +187,7 @@ export const SubPartEditor: React.FC<SubPartEditorProps> = ({
               style={{
                 border: '1px solid var(--color-border)',
                 borderRadius: 'var(--radius-lg, 10px)',
-                background: 'var(--color-bg-surface, #fff)',
+                background: 'var(--color-surface)',
                 overflow: 'hidden',
                 boxShadow: 'var(--shadow-xs, 0 1px 3px rgba(0,0,0,0.05))',
               }}

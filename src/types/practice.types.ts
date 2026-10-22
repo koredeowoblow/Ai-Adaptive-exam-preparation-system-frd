@@ -32,7 +32,16 @@ export interface PracticeAnswer {
   explanationStatus?: 'PENDING' | 'READY' | 'FAILED';
 }
 
-export type AntiCheatEventType = 'TAB_SWITCH' | 'PASTE_DETECTED' | 'FAST_ANSWER' | 'DEVTOOLS_DETECTED' | 'RIGHT_CLICK_BLOCKED';
+export type AntiCheatEventType = 
+  | 'TAB_SWITCH' 
+  | 'PASTE_DETECTED' 
+  | 'FAST_ANSWER' 
+  | 'DEVTOOLS_DETECTED' 
+  | 'RIGHT_CLICK_BLOCKED' 
+  | 'MULTIPLE_VOICES_DETECTED'
+  | 'AI_PASTE_DETECTED'
+  | 'UNNATURAL_TYPING_VELOCITY'
+  | 'AI_HONEYPOT_TRIGGERED';
 
 export interface IAntiCheatEvent {
   type: AntiCheatEventType;
@@ -49,7 +58,7 @@ export interface PracticeSession {
   mode?: 'quick' | 'exam' | 'mock' | 'adaptive' | string;
   startedAt: string;
   endedAt?: string;
-  status: 'active' | 'completed' | 'PENDING_GRADING' | 'FAILED';
+  status: 'active' | 'completed' | 'PENDING_GRADING' | 'FAILED' | 'TERMINATED_BY_PROCTOR';
   currentQuestionId?: string;
   questionsServed: PracticeAnswer[];
   totalQuestions: number;
@@ -58,6 +67,9 @@ export interface PracticeSession {
   score: number;
   trustScore?: number;
   antiCheatEvents?: IAntiCheatEvent[];
+  proctorWarning?: string;
+  proctorWarningAt?: string;
+  terminatedReason?: string;
   lateSubmission?: boolean;
   questionTypeMix?: QuestionTypeMix;
   clampedMessage?: string;

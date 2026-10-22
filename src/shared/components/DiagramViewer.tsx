@@ -103,7 +103,6 @@ export const DiagramViewer: React.FC<DiagramViewerProps> = ({
             gap: '4px',
             fontSize: '12px',
             fontWeight: 500,
-            backdropFilter: 'blur(4px)',
             pointerEvents: 'none',
           }}
         >
@@ -137,12 +136,11 @@ export const DiagramViewer: React.FC<DiagramViewerProps> = ({
             position: 'fixed',
             inset: 0,
             zIndex: 9999,
-            background: 'rgba(0, 0, 0, 0.88)',
+            background: 'rgba(15, 23, 42, 0.85)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backdropFilter: 'blur(8px)',
             padding: 'var(--space-24)',
           }}
         >

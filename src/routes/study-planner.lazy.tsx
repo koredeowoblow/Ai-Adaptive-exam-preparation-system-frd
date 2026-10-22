@@ -54,7 +54,7 @@ const TASK_TYPE_STYLES: Record<string, { bg: string; color: string; label: strin
   },
   REVISION: {
     bg: 'rgba(245, 158, 11, 0.12)',
-    color: '#f59e0b',
+    color: 'var(--color-warning)',
     label: 'Light Revision',
   },
   EXAM_PREP: {
@@ -341,7 +341,7 @@ function StudyPlannerRoute() {
                   height: 36,
                   borderRadius: 10,
                   background: 'rgba(245, 158, 11, 0.2)',
-                  color: '#f59e0b',
+                  color: 'var(--color-warning)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -351,7 +351,7 @@ function StudyPlannerRoute() {
                 <AlertTriangle size={18} />
               </div>
               <div>
-                <h4 style={{ margin: '0 0 2px', fontSize: '0.9rem', fontWeight: 700, color: '#f59e0b' }}>
+                <h4 style={{ margin: '0 0 2px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-warning)' }}>
                   Exam Schedules Have Changed
                 </h4>
                 <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>
@@ -367,7 +367,7 @@ function StudyPlannerRoute() {
               isLoading={isGeneratingPlan}
               style={{
                 borderColor: 'rgba(245, 158, 11, 0.4)',
-                color: '#f59e0b',
+                color: 'var(--color-warning)',
                 whiteSpace: 'nowrap',
               }}
             >
@@ -494,7 +494,7 @@ function StudyPlannerRoute() {
                   border: '1px solid var(--color-border)',
                 }}
               >
-                <div style={{ color: '#10b981', marginBottom: 8 }}>
+                <div style={{ color: 'var(--color-success)', marginBottom: 8 }}>
                   <CheckCircle2 size={18} />
                 </div>
                 <h4 style={{ margin: '0 0 4px', fontSize: '0.85rem', fontWeight: 700 }}>Exam Day Light Revision</h4>
@@ -589,7 +589,7 @@ function StudyPlannerRoute() {
                     <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 600 }}>
                       Earliest Exam
                     </span>
-                    <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#f59e0b' }}>
+                    <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-warning)' }}>
                       {nearestExamDays != null ? `${nearestExamDays}d left` : 'None'}
                     </p>
                   </div>
@@ -673,7 +673,7 @@ function StudyPlannerRoute() {
                           width: 8,
                           height: 8,
                           borderRadius: '50%',
-                          background: 'var(--color-success, #10b981)',
+                          background: 'var(--color-success)',
                         }}
                       />
                     ) : isGenerating ? (
@@ -758,9 +758,9 @@ function StudyPlannerRoute() {
                               : 'var(--color-surface-1)',
                           color:
                             selectedWeek.status === 'READY'
-                              ? 'var(--color-success, #10b981)'
+                              ? 'var(--color-success)'
                               : selectedWeek.status === 'GENERATING'
-                              ? 'var(--color-primary, #6366f1)'
+                              ? 'var(--color-primary)'
                               : 'var(--color-text-muted)',
                         }}
                       >
@@ -1087,7 +1087,7 @@ function StudyPlannerRoute() {
                           </span>
                         </div>
                         {currentDateVal ? (
-                          <span style={{ fontSize: '0.75rem', color: daysLeft && daysLeft >= 0 ? '#10b981' : '#f59e0b' }}>
+                          <span style={{ fontSize: '0.75rem', color: daysLeft && daysLeft >= 0 ? 'var(--color-success)' : 'var(--color-warning)' }}>
                             {daysLeft && daysLeft >= 0 ? `${daysLeft} days until exam` : 'Scheduled date in past'}
                           </span>
                         ) : (

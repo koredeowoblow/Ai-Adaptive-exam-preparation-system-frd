@@ -23,29 +23,11 @@ import {
 } from 'lucide-react';
 import type { Course } from '../types/course.types';
 import type { Topic } from '../types/topic.types';
+import { TypingIndicator } from '../features/ai-study/components/TypingIndicator';
 
 export const Route = createLazyFileRoute('/ai-chat')({
   component: AIChatRoute,
 });
-
-function TypingIndicator() {
-  return (
-    <div className="flex gap-3 items-start my-2 max-w-lg mr-auto">
-      <div 
-        className="w-8 h-8 rounded-lg bg-primary-light text-primary flex items-center justify-center shrink-0 mt-0.5"
-        aria-hidden="true"
-      >
-        <Bot size={16} />
-      </div>
-      <div className="rounded-2xl rounded-tl-xs px-4 py-3 bg-surface-0 border border-border flex items-center gap-1.5 shadow-xs">
-        <span className="w-2 h-2 rounded-full bg-text-muted/60 animate-bounce [animation-delay:-0.3s]" />
-        <span className="w-2 h-2 rounded-full bg-text-muted/60 animate-bounce [animation-delay:-0.15s]" />
-        <span className="w-2 h-2 rounded-full bg-text-muted/60 animate-bounce" />
-        <span className="sr-only">AI Tutor is thinking...</span>
-      </div>
-    </div>
-  );
-}
 
 function AIChatRoute() {
   useDocumentTitle('AI Tutor - EduAdapt');
@@ -68,15 +50,11 @@ function AIChatRoute() {
       .filter((c: any): c is Course => Boolean(c && c._id));
   }, [coursesData]);
 
-  // Selected course state
-  const [selectedCourseId, setSelectedCourseId] = React.useState<string>('');
+  // Selected course state - derived during render instead of in useEffect
+  const [userSelectedCourseId, setUserSelectedCourseId] = React.useState<string>('');
   const [pendingCourseId, setPendingCourseId] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    if (!selectedCourseId && courses.length > 0) {
-      setSelectedCourseId(courses[0]._id);
-    }
-  }, [courses, selectedCourseId]);
+  const selectedCourseId = userSelectedCourseId || (courses.length > 0 ? courses[0]._id : '');
 
   const selectedCourse: Course | undefined = React.useMemo(() => {
     return courses.find((c) => c._id === selectedCourseId) || courses[0];
@@ -98,16 +76,13 @@ function AIChatRoute() {
     return `Hi! I'm your EduAdapt study tutor for **${selectedCourse.code}: ${selectedCourse.title}**.\n\nAsk me to break down complex concepts, work through sample calculations, generate exam practice questions, or explain tricky theory topics.`;
   }, [selectedCourse]);
 
-  const [messages, setMessages] = React.useState<ChatMessage[]>([
-    { role: 'assistant', content: initialGreeting },
-  ]);
+  // Messages beyond the initial greeting
+  const [chatHistory, setChatHistory] = React.useState<ChatMessage[]>([]);
 
-  // Keep greeting synced when course initializes on first load
-  React.useEffect(() => {
-    if (messages.length === 1 && messages[0].role === 'assistant') {
-      setMessages([{ role: 'assistant', content: initialGreeting }]);
-    }
-  }, [initialGreeting]);
+  // Derive full messages during render by prepending initialGreeting
+  const messages: ChatMessage[] = React.useMemo(() => {
+    return [{ role: 'assistant', content: initialGreeting }, ...chatHistory];
+  }, [initialGreeting, chatHistory]);
 
   // Dynamic suggestion chips (using topic names directly in 2x2 grid)
   const suggestionChips = React.useMemo(() => {
@@ -154,28 +129,28 @@ function AIChatRoute() {
     if (newCourseId === selectedCourseId) return;
 
     // If chat has progressed beyond the greeting, confirm before discarding conversation
-    if (messages.length > 1) {
+    if (chatHistory.length > 0) {
       setPendingCourseId(newCourseId);
     } else {
-      setSelectedCourseId(newCourseId);
+      setUserSelectedCourseId(newCourseId);
     }
   };
 
   const confirmCourseSwitch = () => {
     if (pendingCourseId) {
-      setSelectedCourseId(pendingCourseId);
+      setUserSelectedCourseId(pendingCourseId);
       setPendingCourseId(null);
       setErrorMessage(null);
       setFailedMessage(null);
-      // Greeting will reset via the initialGreeting effect
+      setChatHistory([]);
     }
   };
 
   const handleNewChat = () => {
-    if (messages.length > 1) {
+    if (chatHistory.length > 0) {
       setPendingCourseId(selectedCourseId); // trigger confirmation
     } else {
-      setMessages([{ role: 'assistant', content: initialGreeting }]);
+      setChatHistory([]);
       setErrorMessage(null);
       setFailedMessage(null);
     }
@@ -186,9 +161,9 @@ function AIChatRoute() {
     if (!trimmed || isPending) return;
 
     const userMsg: ChatMessage = { role: 'user', content: trimmed };
-    const nextMessages = [...messages, userMsg];
+    const nextHistory = [...chatHistory, userMsg];
 
-    setMessages(nextMessages);
+    setChatHistory(nextHistory);
     setInput('');
     setErrorMessage(null);
     setFailedMessage(null);
@@ -198,15 +173,14 @@ function AIChatRoute() {
       composerRef.current.style.height = 'auto';
     }
 
-    const historyForAPI = nextMessages.filter((_, i) => i > 0);
     const payload = {
-      messages: historyForAPI,
+      messages: nextHistory,
       courseId: selectedCourse?._id || undefined,
     };
 
     sendToAI(payload, {
       onSuccess: (res) => {
-        setMessages((prev) => [...prev, { role: 'assistant', content: res.data.reply }]);
+        setChatHistory((prev) => [...prev, { role: 'assistant', content: res.data.reply }]);
         setErrorMessage(null);
         setFailedMessage(null);
         // Accessibility: return focus to composer

@@ -158,13 +158,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId })
           <div className="bg-surface-0 border-2 border-primary rounded-xl p-6 sm:p-8 flex items-center justify-between gap-6 flex-wrap shadow-sm">
             <div className="flex-1 min-w-[280px] max-w-3xl">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-3 bg-primary-light text-primary">
-                <Sparkles size={14} /> Diagnostic Calibration
+                <Sparkles size={14} /> Quick Skill Check
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-text-primary m-0 mb-2">
-                Start your diagnostic practice session
+                Start your first practice session
               </h2>
               <p className="text-sm sm:text-base text-text-secondary m-0 leading-relaxed">
-                Take an initial adaptive session to calibrate question difficulty to your skill level and begin earning your study streak.
+                Take a quick practice session so questions automatically match your skill level and your study streak begins.
               </p>
             </div>
             <Button
@@ -173,7 +173,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ studentId })
               onClick={() => navigate({ to: "/exam-prep" })}
               className="shrink-0"
             >
-              Start Diagnostic Session <ArrowRight size={16} className="ml-1.5" />
+              Start First Session <ArrowRight size={16} className="ml-1.5" />
             </Button>
           </div>
         ) : (

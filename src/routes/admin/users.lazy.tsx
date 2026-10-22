@@ -85,8 +85,8 @@ function UsersAdminRoute() {
       selectedOnboardedFilter === 'complete'
         ? true
         : selectedOnboardedFilter === 'pending'
-        ? false
-        : undefined,
+          ? false
+          : undefined,
     page: currentPage,
     limit: pageSize,
     sortBy,
@@ -119,8 +119,8 @@ function UsersAdminRoute() {
       selectedOnboardedFilter === 'complete'
         ? true
         : selectedOnboardedFilter === 'pending'
-        ? false
-        : undefined,
+          ? false
+          : undefined,
     page: currentPage,
     limit: pageSize,
     sortBy,
@@ -162,6 +162,7 @@ function UsersAdminRoute() {
   };
 
   const handleSearchChange = (value: string) => {
+
     updateSearchParams({ q: value || undefined, page: 1 });
   };
 
@@ -364,11 +365,11 @@ function UsersAdminRoute() {
       cell: (user) => {
         const initials = user.name
           ? user.name
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .toUpperCase()
-              .slice(0, 2)
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2)
           : 'U';
         const isAdmin = isUserAdmin(user);
 
@@ -561,10 +562,10 @@ function UsersAdminRoute() {
       cell: (user) => {
         const dateStr = user.createdAt
           ? new Date(user.createdAt).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })
           : '-';
 
         return (

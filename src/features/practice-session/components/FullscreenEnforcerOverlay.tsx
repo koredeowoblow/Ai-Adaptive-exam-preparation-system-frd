@@ -50,8 +50,7 @@ export const FullscreenEnforcerOverlay: React.FC<FullscreenEnforcerOverlayProps>
         position: 'fixed',
         inset: 0,
         zIndex: 99999,
-        backgroundColor: 'rgba(15, 23, 42, 0.94)',
-        backdropFilter: 'blur(16px)',
+        backgroundColor: 'rgba(15, 23, 42, 0.85)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -118,7 +117,7 @@ export const FullscreenEnforcerOverlay: React.FC<FullscreenEnforcerOverlayProps>
             width: '100%',
           }}
         >
-          Warning: Window and tab activity is actively logged in your session integrity report.
+          Warning: Exam timer is running continuously in real time. Pausing is disabled to preserve exam integrity.
         </div>
 
         {fullscreenError && (

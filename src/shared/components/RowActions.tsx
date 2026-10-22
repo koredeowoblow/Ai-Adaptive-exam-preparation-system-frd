@@ -74,6 +74,7 @@ export const RowActions: React.FC<RowActionsProps> = ({ actions, label = 'Row ac
           e.stopPropagation();
           setIsOpen((prev) => !prev);
         }}
+        className="hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)]"
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -86,17 +87,7 @@ export const RowActions: React.FC<RowActionsProps> = ({ actions, label = 'Row ac
           color: 'var(--color-text-secondary)',
           cursor: 'pointer',
           padding: 0,
-          transition: 'all 0.15s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)';
-          e.currentTarget.style.color = 'var(--color-text)';
-        }}
-        onMouseLeave={(e) => {
-          if (!isOpen) {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = 'var(--color-text-secondary)';
-          }
+          transition: 'background-color 0.15s ease, color 0.15s ease',
         }}
       >
         <MoreHorizontal size={15} />

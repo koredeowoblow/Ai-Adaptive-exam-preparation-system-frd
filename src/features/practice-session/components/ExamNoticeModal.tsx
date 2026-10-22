@@ -1,4 +1,5 @@
 import * as React from 'react';
+import FocusTrap from 'focus-trap-react';
 import { ShieldCheck, Maximize2, Eye, MonitorOff, CopyX } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 
@@ -22,6 +23,18 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
   const [agreed, setAgreed] = React.useState(false);
   const [isEntering, setIsEntering] = React.useState(false);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onExitExam?.();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onExitExam]);
+
   if (!isOpen) return null;
 
   const handleStart = async () => {
@@ -40,16 +53,22 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="exam-notice-title"
+    <FocusTrap
+      focusTrapOptions={{
+        returnFocusOnDeactivate: true,
+        escapeDeactivates: false,
+        allowOutsideClick: true,
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exam-notice-title"
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        backgroundColor: 'rgba(11, 23, 38, 0.82)',
-        backdropFilter: 'blur(8px)',
+        backgroundColor: 'rgba(15, 23, 42, 0.85)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -150,10 +169,10 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
               <Maximize2 size={20} style={{ color: 'var(--color-primary)', marginTop: 2, flexShrink: 0 }} />
               <div>
                 <strong style={{ display: 'block', fontSize: '0.875rem', color: 'var(--color-text)' }}>
-                  Mandatory Full Screen
+                  Continuous Real-Time Timer (No Pausing)
                 </strong>
                 <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', lineHeight: 1.45 }}>
-                  The exam must remain in full screen at all times. Exiting full screen pauses your exam and logs an integrity penalty.
+                  The exam runs continuously in real time and cannot be paused under any circumstances. Exiting full screen or navigating away does not stop the timer and incurs an integrity violation penalty.
                 </span>
               </div>
             </div>
@@ -290,5 +309,6 @@ export const ExamNoticeModal: React.FC<ExamNoticeModalProps> = ({
         </div>
       </div>
     </div>
+    </FocusTrap>
   );
 };

@@ -12,7 +12,7 @@ function LoginRouteComponent() {
   return (
     <div
       data-app="auth"
-      className="min-h-screen w-full flex flex-col lg:flex-row lg:h-screen lg:overflow-hidden font-body bg-white dark:bg-[#0B1726] text-[#0B2239] dark:text-[#F8FAFC]"
+      className="min-h-screen w-full flex flex-col lg:flex-row lg:h-screen lg:overflow-hidden font-body bg-background text-text"
     >
       <h1 className="sr-only">Sign In to EduAdapt - AI Adaptive Exam Preparation</h1>
 
@@ -25,7 +25,7 @@ function LoginRouteComponent() {
         <div className="flex items-center">
           <Link
             to="/"
-            className="inline-flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#0E6BA8] rounded-xl p-1 -ml-1"
+            className="inline-flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-primary rounded-xl p-1 -ml-1"
             aria-label="EduAdapt Home"
           >
             <EduAdaptLogo size={40} />
@@ -58,14 +58,14 @@ function LoginRouteComponent() {
       {/* ── Right Column: Form Panel (White in light mode, Dark surface in dark mode) ── */}
       <main
         id="main-content"
-        className="w-full lg:w-1/2 min-h-screen lg:min-h-0 lg:h-full p-6 sm:p-10 lg:p-[40px_64px] flex flex-col justify-between overflow-y-auto bg-white dark:bg-[#0B1726]"
+        className="w-full lg:w-1/2 min-h-screen lg:min-h-0 lg:h-full p-6 sm:p-10 lg:p-[40px_64px] flex flex-col justify-between overflow-y-auto bg-surface"
       >
         {/* Top bar: Mobile logo + Theme Toggle (on desktop only ThemeToggle on top right) */}
         <div className="flex items-center justify-between w-full mb-6 lg:mb-0">
           <div className="lg:hidden flex items-center">
             <Link
               to="/"
-              className="inline-flex items-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-[#0E6BA8] rounded-xl p-1 -ml-1 text-[#0B2239] dark:text-white"
+              className="inline-flex items-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-primary rounded-xl p-1 -ml-1 text-text"
               aria-label="EduAdapt Home"
             >
               <EduAdaptLogo size={36} />
@@ -86,7 +86,7 @@ function LoginRouteComponent() {
         </div>
 
         {/* Footer */}
-        <footer className="w-full text-center text-[13px] text-[#52607A] dark:text-[#8FA3BB] pt-6 pb-2">
+        <footer className="w-full text-center text-[13px] text-text-muted pt-6 pb-2">
           © 2026 EduAdapt
         </footer>
       </main>
