@@ -81,6 +81,23 @@ export const useAntiCheat = (
     practiceApi.logAntiCheatEvents(sessionIdRef.current, payload).catch(() => {});
   }, []);
 
+  // Beacon flush for pagehide/beforeunload so events are never lost on unload
+  const flushBeacon = useCallback(() => {
+    if (eventBufferRef.current.length === 0 || !sessionIdRef.current) return;
+    const events = [...eventBufferRef.current];
+    eventBufferRef.current = [];
+
+    const url = `/api/v1/practice-sessions/${sessionIdRef.current}/anticheat-event`;
+    const payloadStr = JSON.stringify({ events });
+
+    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+      const blob = new Blob([payloadStr], { type: 'application/json' });
+      navigator.sendBeacon(url, blob);
+    } else {
+      practiceApi.logAntiCheatEvents(sessionIdRef.current, { events }).catch(() => {});
+    }
+  }, []);
+
   useEffect(() => {
     if (!isMonitoring) return;
 
@@ -107,7 +124,6 @@ export const useAntiCheat = (
       pushEvent('TAB_SWITCH', { reason: 'screenshot_attempt', key: keyName });
       setLastViolationType('screenshot');
       setViolationCount((prev) => prev + 1);
-      flushEvents();
     };
 
     // 1. Fullscreen monitoring
@@ -118,7 +134,6 @@ export const useAntiCheat = (
         pushEvent('TAB_SWITCH', { reason: 'fullscreen_exit' });
         setLastViolationType('tab_switch');
         setViolationCount((prev) => prev + 1);
-        flushEvents();
       }
     };
 
@@ -129,12 +144,10 @@ export const useAntiCheat = (
         pushEvent('TAB_SWITCH', { reason: 'tab_hidden' });
         setLastViolationType('tab_switch');
         setViolationCount((prev) => prev + 1);
-        flushEvents();
       } else if (blurTimeRef.current) {
         const awayDurationMs = Date.now() - blurTimeRef.current;
         pushEvent('TAB_SWITCH', { awayDurationMs });
         blurTimeRef.current = null;
-        flushEvents();
       }
     };
 
@@ -144,7 +157,6 @@ export const useAntiCheat = (
         pushEvent('TAB_SWITCH', { reason: 'window_blur' });
         setLastViolationType('window_blur');
         setViolationCount((prev) => prev + 1);
-        flushEvents();
       }
     };
 
@@ -153,7 +165,6 @@ export const useAntiCheat = (
         const awayDurationMs = Date.now() - blurTimeRef.current;
         pushEvent('TAB_SWITCH', { awayDurationMs });
         blurTimeRef.current = null;
-        flushEvents();
       }
     };
 
@@ -163,7 +174,6 @@ export const useAntiCheat = (
       pushEvent('PASTE_DETECTED', { pastedLength: text.length });
       setLastViolationType('copy_paste');
       setViolationCount((prev) => prev + 1);
-      flushEvents();
     };
 
     const textarea = theoryTextareaRef?.current;
@@ -180,7 +190,6 @@ export const useAntiCheat = (
         pushEvent('PASTE_DETECTED', { reason: 'copy_blocked' });
         setLastViolationType('copy_paste');
         setViolationCount((prev) => prev + 1);
-        flushEvents();
       }
     };
 
@@ -190,7 +199,6 @@ export const useAntiCheat = (
       pushEvent('RIGHT_CLICK_BLOCKED');
       setLastViolationType('right_click');
       setViolationCount((prev) => prev + 1);
-      flushEvents();
     };
 
     // 6. Screenshot & Shortcut Interception
@@ -222,7 +230,6 @@ export const useAntiCheat = (
         pushEvent('TAB_SWITCH', { reason: 'print_attempt' });
         setLastViolationType('screenshot');
         setViolationCount((prev) => prev + 1);
-        flushEvents();
         return;
       }
 
@@ -241,7 +248,6 @@ export const useAntiCheat = (
         pushEvent('DEVTOOLS_DETECTED', { key: e.key });
         setLastViolationType('tab_switch');
         setViolationCount((prev) => prev + 1);
-        flushEvents();
         return;
       }
     };
@@ -267,10 +273,15 @@ export const useAntiCheat = (
       devToolsOpen = isCurrentlyOpen;
     }, 2000);
 
-    // Event Batching Timer
+    // Event Batching Timer: flush every 10 seconds
     const batchInterval = setInterval(() => {
       flushEvents();
     }, 10000);
+
+    // Unload / pagehide listeners to ensure no events are lost
+    const handlePageHide = () => {
+      flushBeacon();
+    };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -284,6 +295,8 @@ export const useAntiCheat = (
     document.addEventListener('cut', handleCopyCut);
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     window.addEventListener('keyup', handleKeyUp, { capture: true });
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('beforeunload', handlePageHide);
 
     return () => {
       clearInterval(checkDevTools);
@@ -300,14 +313,16 @@ export const useAntiCheat = (
       document.removeEventListener('cut', handleCopyCut);
       window.removeEventListener('keydown', handleKeyDown, { capture: true });
       window.removeEventListener('keyup', handleKeyUp, { capture: true });
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('beforeunload', handlePageHide);
       
       if (textarea) {
         textarea.removeEventListener('paste', handlePaste);
       }
       
-      flushEvents(); // Final flush on unmount
+      flushBeacon(); // Final flush on unmount
     };
-  }, [isMonitoring, flushEvents, theoryTextareaRef]);
+  }, [isMonitoring, flushEvents, flushBeacon, theoryTextareaRef, getIsFullscreenActive]);
 
   return {
     isFullscreen,
@@ -316,5 +331,6 @@ export const useAntiCheat = (
     clearViolation,
     isProtectionFlashing,
     violationCount,
+    flushEvents,
   };
 };

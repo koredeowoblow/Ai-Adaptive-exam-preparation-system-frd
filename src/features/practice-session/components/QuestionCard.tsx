@@ -52,6 +52,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
 
   // Local state for single theory answer
   const [localText, setLocalText] = React.useState(writtenAnswer);
+  const deferredLocalText = React.useDeferredValue(localText);
   const [showPreview, setShowPreview] = React.useState(true);
 
   // Local state for multi-part answers (map partId -> text)
@@ -64,6 +65,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
     }
     return map;
   });
+  const deferredSubPartMap = React.useDeferredValue(localSubPartMap);
   const [subPartPreviewState, setSubPartPreviewState] = React.useState<Record<string, boolean>>({});
   const subPartTextareaRefs = React.useRef<Record<string, HTMLTextAreaElement | null>>({});
 
@@ -508,7 +510,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
                         <Eye size={12} />
                         Preview {sp.label}:
                       </div>
-                      <FormattedMathText text={currentVal} />
+                      <FormattedMathText text={deferredSubPartMap[sp.id] || ''} />
                     </div>
                   )}
                 </div>
@@ -573,7 +575,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
                   <span>Live Formatted Math Preview</span>
                 </div>
                 <div className="text-[var(--color-text)] whitespace-pre-wrap leading-relaxed">
-                  <FormattedMathText text={localText} />
+                  <FormattedMathText text={deferredLocalText} />
                 </div>
               </div>
             )}
@@ -601,7 +603,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = React.memo(({
         /* Options - fieldset/legend gives native radio grouping without ARIA hacks */
         <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
           <legend className="sr-only">Select your answer</legend>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-16)' }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {question.options?.map((option) => {
               const isSelected = selectedOptionId === option.id;
               return (

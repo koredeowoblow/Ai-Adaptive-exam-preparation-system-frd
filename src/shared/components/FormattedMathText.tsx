@@ -49,7 +49,7 @@ const BARE_MATH_REGEX = /(\\ce\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}|\\(?:frac|sqrt)\{[
  * Typesets mathematical, physical, and chemical notations using KaTeX with mhchem via lazy loading.
  * Supports $...$ (inline), $$...$$ (display), bare LaTeX formulas, and plain text.
  */
-export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
+export const FormattedMathText: React.FC<FormattedMathTextProps> = React.memo(({
   text,
   className = '',
   style,
@@ -166,4 +166,4 @@ export const FormattedMathText: React.FC<FormattedMathTextProps> = ({
       <span className="whitespace-pre-wrap">{text}</span>
     </Component>
   );
-};
+});

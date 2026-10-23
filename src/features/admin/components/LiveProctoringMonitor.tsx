@@ -15,6 +15,7 @@ import {
 import { Button } from '../../../shared/components/Button';
 import { apiClient } from '../../../shared/api-client/client';
 import { toast } from 'sonner';
+import { FocusTrap } from 'focus-trap-react';
 
 export interface LiveSessionItem {
   sessionId: string;
@@ -99,6 +100,19 @@ export const LiveProctoringMonitor: React.FC<{ onInspectSession?: (sessionId: st
       clearInterval(interval);
     };
   }, []);
+
+  // Close modals on Escape key
+  React.useEffect(() => {
+    if (!warningTarget && !terminateTarget) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (warningTarget && !isSendingWarning) setWarningTarget(null);
+        if (terminateTarget && !isTerminating) setTerminateTarget(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [warningTarget, terminateTarget, isSendingWarning, isTerminating]);
 
   const handleSendWarning = async () => {
     if (!warningTarget || !warningMessage.trim()) return;
@@ -244,7 +258,7 @@ export const LiveProctoringMonitor: React.FC<{ onInspectSession?: (sessionId: st
             return (
               <div
                 key={item.sessionId}
-                className={`p-4 rounded-xl border ${riskBorder} shadow-xs space-y-3 flex flex-col justify-between transition-all`}
+                className={`p-4 rounded-xl border ${riskBorder} shadow-xs space-y-3 flex flex-col justify-between transition-colors duration-150`}
               >
                 {/* Header */}
                 <div className="flex items-start justify-between gap-2">
@@ -286,7 +300,7 @@ export const LiveProctoringMonitor: React.FC<{ onInspectSession?: (sessionId: st
                       <span>{progressPct}%</span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+                      <div className="h-full bg-primary rounded-full transition-[width] duration-300 ease-out" style={{ width: `${progressPct}%` }} />
                     </div>
                   </div>
 
@@ -323,9 +337,9 @@ export const LiveProctoringMonitor: React.FC<{ onInspectSession?: (sessionId: st
                         'Attention: Suspicious screen/tab switching detected. You must keep your exam window focused.'
                       );
                     }}
-                    className="flex-1 text-xs py-1.5 px-2.5 rounded-lg border border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 font-semibold transition-all flex items-center justify-center gap-1"
+                    className="flex-1 min-h-[36px] text-xs py-1.5 px-2.5 rounded-lg border border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5"
                   >
-                    <Send className="w-3 h-3" /> Warn
+                    <Send className="w-3.5 h-3.5" /> Warn
                   </button>
 
                   <button
@@ -334,9 +348,9 @@ export const LiveProctoringMonitor: React.FC<{ onInspectSession?: (sessionId: st
                       setTerminateTarget(item);
                       setTerminateReason('Repeated unauthorized tab navigation and integrity violations.');
                     }}
-                    className="flex-1 text-xs py-1.5 px-2.5 rounded-lg border border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 font-semibold transition-all flex items-center justify-center gap-1"
+                    className="flex-1 min-h-[36px] text-xs py-1.5 px-2.5 rounded-lg border border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5"
                   >
-                    <Ban className="w-3 h-3" /> Terminate
+                    <Ban className="w-3.5 h-3.5" /> Terminate
                   </button>
 
                   {onInspectSession && (
@@ -344,7 +358,8 @@ export const LiveProctoringMonitor: React.FC<{ onInspectSession?: (sessionId: st
                       type="button"
                       onClick={() => onInspectSession(item.sessionId)}
                       title="Inspect Full Session Dossier"
-                      className="p-1.5 rounded-lg border border-border hover:bg-muted text-muted-foreground transition-all"
+                      aria-label="Inspect Full Session Dossier"
+                      className="min-h-[36px] min-w-[36px] flex items-center justify-center p-1.5 rounded-lg border border-border hover:bg-muted text-muted-foreground transition-colors duration-150"
                     >
                       <Eye className="w-3.5 h-3.5" />
                     </button>
@@ -358,65 +373,102 @@ export const LiveProctoringMonitor: React.FC<{ onInspectSession?: (sessionId: st
 
       {/* Warning Dialog */}
       {warningTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(15,23,42,0.85)] animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-background border border-border rounded-2xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <h3 className="font-semibold text-base text-foreground">
-              Send Invigilator Warning to {warningTarget.student?.fullName}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              This message will immediately appear as an urgent warning notification on the student's active exam screen.
-            </p>
-            <textarea
-              rows={3}
-              value={warningMessage}
-              onChange={(e) => setWarningMessage(e.target.value)}
-              className="w-full p-2.5 text-xs sm:text-sm rounded-xl border border-input bg-background text-foreground"
-              placeholder="Type warning text..."
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setWarningTarget(null)} disabled={isSendingWarning}>
-                Cancel
-              </Button>
-              <Button variant="primary" size="sm" onClick={handleSendWarning} disabled={isSendingWarning || !warningMessage.trim()}>
-                {isSendingWarning ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-                Transmit Warning
-              </Button>
+        <FocusTrap
+          focusTrapOptions={{
+            returnFocusOnDeactivate: true,
+            fallbackFocus: '#warning-dialog-title',
+            allowOutsideClick: true,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="warning-dialog-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(15,23,42,0.85)] animate-in fade-in duration-200"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isSendingWarning) setWarningTarget(null);
+            }}
+          >
+            <div className="w-full max-w-md bg-background border border-border rounded-2xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+              <h3 id="warning-dialog-title" className="font-semibold text-base text-foreground">
+                Send Invigilator Warning to {warningTarget.student?.fullName}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                This message will immediately appear as an urgent warning notification on the student's active exam screen.
+              </p>
+              <div>
+                <label htmlFor="warning-message-input" className="sr-only">Warning message</label>
+                <textarea
+                  id="warning-message-input"
+                  rows={3}
+                  value={warningMessage}
+                  onChange={(e) => setWarningMessage(e.target.value)}
+                  className="w-full p-2.5 text-xs sm:text-sm rounded-xl border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Type warning text..."
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setWarningTarget(null)} disabled={isSendingWarning}>
+                  Cancel
+                </Button>
+                <Button variant="primary" size="sm" onClick={handleSendWarning} disabled={isSendingWarning || !warningMessage.trim()}>
+                  {isSendingWarning ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                  Transmit Warning
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </FocusTrap>
       )}
 
       {/* Terminate Dialog */}
       {terminateTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(15,23,42,0.85)] animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-background border border-destructive/30 rounded-2xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <h3 className="font-semibold text-base text-destructive">
-              Terminate Exam: {terminateTarget.student?.fullName}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Are you sure you want to forcibly terminate this exam? The exam will immediately lock on the student's screen and be marked as terminated for integrity non-compliance.
-            </p>
-            <div>
-              <label className="block text-xs font-medium text-foreground mb-1">Termination Reason</label>
-              <input
-                type="text"
-                value={terminateReason}
-                onChange={(e) => setTerminateReason(e.target.value)}
-                className="w-full p-2.5 text-xs sm:text-sm rounded-xl border border-input bg-background text-foreground"
-                placeholder="Reason for termination..."
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setTerminateTarget(null)} disabled={isTerminating}>
-                Cancel
-              </Button>
-              <Button variant="danger" size="sm" onClick={handleTerminate} disabled={isTerminating}>
-                {isTerminating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Ban className="w-4 h-4 mr-1" />}
-                Force Terminate Exam
-              </Button>
+        <FocusTrap
+          focusTrapOptions={{
+            returnFocusOnDeactivate: true,
+            fallbackFocus: '#terminate-dialog-title',
+            allowOutsideClick: true,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="terminate-dialog-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(15,23,42,0.85)] animate-in fade-in duration-200"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isTerminating) setTerminateTarget(null);
+            }}
+          >
+            <div className="w-full max-w-md bg-background border border-destructive/30 rounded-2xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+              <h3 id="terminate-dialog-title" className="font-semibold text-base text-destructive">
+                Terminate Exam: {terminateTarget.student?.fullName}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Are you sure you want to forcibly terminate this exam? The exam will immediately lock on the student's screen and be marked as terminated for integrity non-compliance.
+              </p>
+              <div>
+                <label htmlFor="terminate-reason-input" className="block text-xs font-medium text-foreground mb-1">Termination Reason</label>
+                <input
+                  id="terminate-reason-input"
+                  type="text"
+                  value={terminateReason}
+                  onChange={(e) => setTerminateReason(e.target.value)}
+                  className="w-full p-2.5 text-xs sm:text-sm rounded-xl border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-destructive"
+                  placeholder="Reason for termination..."
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setTerminateTarget(null)} disabled={isTerminating}>
+                  Cancel
+                </Button>
+                <Button variant="danger" size="sm" onClick={handleTerminate} disabled={isTerminating}>
+                  {isTerminating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Ban className="w-4 h-4 mr-1" />}
+                  Force Terminate Exam
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </FocusTrap>
       )}
     </div>
   );

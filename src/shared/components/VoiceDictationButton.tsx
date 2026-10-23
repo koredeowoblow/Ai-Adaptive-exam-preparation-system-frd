@@ -26,14 +26,14 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
   const audioContextRef = React.useRef<AudioContext | null>(null);
   const mediaStreamRef = React.useRef<MediaStream | null>(null);
   const analyserRef = React.useRef<AnalyserNode | null>(null);
-  const animFrameRef = React.useRef<number | null>(null);
+  const analysisIntervalRef = React.useRef<number | null>(null);
   const primaryPitchHistoryRef = React.useRef<number[]>([]);
 
   // Stop audio analysis and release microphone stream
   const cleanupAudioAnalysis = React.useCallback(() => {
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
+    if (analysisIntervalRef.current) {
+      clearInterval(analysisIntervalRef.current as any);
+      analysisIntervalRef.current = null;
     }
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -63,7 +63,7 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
 
   /**
    * Initializes real-time acoustic analysis to monitor for multiple distinct speakers.
-   * Analyzes fundamental human vocal frequencies (85 Hz - 350 Hz) and formant spread.
+   * Analyzes fundamental human vocal frequencies (85 Hz - 350 Hz) on a 150ms interval.
    */
   const startAcousticIntegrityGuard = React.useCallback(async () => {
     try {
@@ -135,8 +135,8 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
 
         if (dualVoiceDetected) {
           consecutiveDualVoiceFrames++;
-          // Require at least 4 consecutive frames (approx 65-70ms) to avoid single-frame transients
-          if (consecutiveDualVoiceFrames >= 4) {
+          // Require at least 2 consecutive checks (approx 300ms) to avoid single-frame transients
+          if (consecutiveDualVoiceFrames >= 2) {
             setMultiVoiceWarning(true);
             toast.error(
               'Security Violation: Multiple voices detected! Examination rules require strict single-speaker silence.',
@@ -161,11 +161,10 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
         } else {
           consecutiveDualVoiceFrames = Math.max(0, consecutiveDualVoiceFrames - 1);
         }
-
-        animFrameRef.current = requestAnimationFrame(analyzeFrame);
       };
 
-      animFrameRef.current = requestAnimationFrame(analyzeFrame);
+      // Run frequency analysis on a 150ms interval instead of every animation frame
+      analysisIntervalRef.current = window.setInterval(analyzeFrame, 150);
     } catch (err) {
       console.warn('Acoustic proctoring could not be started:', err);
     }
@@ -259,8 +258,8 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
             : 'Start voice dictation (Single-speaker proctored)'
         }
         aria-label={isListening ? 'Stop voice dictation' : 'Start voice dictation'}
-        className={`inline-flex items-center gap-1.5 font-medium transition-all rounded-md ${
-          size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs'
+        className={`inline-flex items-center gap-1.5 font-medium transition-colors duration-150 rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[32px] sm:min-h-[36px] ${
+          size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-xs'
         } border ${
           isListening
             ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-400 dark:border-rose-500 animate-pulse'

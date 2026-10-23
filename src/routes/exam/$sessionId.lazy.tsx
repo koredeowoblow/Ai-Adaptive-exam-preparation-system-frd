@@ -9,7 +9,7 @@ import { Skeleton } from "../../shared/components/Skeleton";
 import { ErrorState } from "../../shared/components/ErrorState";
 import { EmptyState } from "../../shared/components/EmptyState";
 import { Button } from "../../shared/components/Button";
-import { ChevronLeft, ChevronRight, Loader2, AlertTriangle, ShieldAlert, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, AlertTriangle, ShieldAlert, Maximize2, Check, Flag } from "lucide-react";
 import { useAntiCheat } from "../../features/practice-session/hooks/useAntiCheat";
 import { IntegrityWarningBanner } from "../../features/practice-session/components/IntegrityWarningBanner";
 import { ExamNoticeModal } from "../../features/practice-session/components/ExamNoticeModal";
@@ -32,11 +32,11 @@ type AnswerState = {
   timeTaken: number;
 };
 
-const QuestionNavigator = React.memo(({ questionsList, currentIndex, answersMap, onJumpToQuestion }: any) => {
+const QuestionNavigator = React.memo(({ questionsList, currentIndex, answersMap, flaggedIds, onJumpToQuestion }: any) => {
   return (
     <nav
       aria-label="Questions list"
-      className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none"
+      className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none"
       style={{
         maxWidth: '100%',
         WebkitOverflowScrolling: 'touch',
@@ -47,24 +47,27 @@ const QuestionNavigator = React.memo(({ questionsList, currentIndex, answersMap,
         const ans = answersMap[qId];
         const hasSubPartAns = Array.isArray(ans?.subPartAnswers) && ans.subPartAnswers.some((sp: any) => sp.writtenAnswer?.trim().length > 0);
         const isAnswered = !!ans?.selectedAnswer || !!ans?.writtenAnswer || hasSubPartAns;
+        const isFlagged = flaggedIds?.has ? flaggedIds.has(qId) : Boolean(ans?.isFlagged);
         const isCurrent = i === currentIndex;
         return (
           <button
             key={i}
             type="button"
             onClick={() => onJumpToQuestion(i)}
-            aria-label={`Question ${i + 1}, ${isCurrent ? 'current, ' : ''}${isAnswered ? 'answered' : 'unanswered'}`}
+            aria-label={`Question ${i + 1}${isFlagged ? ', flagged' : ''}, ${isCurrent ? 'current, ' : ''}${isAnswered ? 'answered' : 'unanswered'}`}
             aria-current={isCurrent ? 'step' : undefined}
             style={{
-              width: 44,
-              height: 44,
-              minWidth: 44,
-              minHeight: 44,
-              borderRadius: 'var(--radius-lg)',
+              width: 36,
+              height: 36,
+              minWidth: 36,
+              minHeight: 36,
+              borderRadius: 'var(--radius-md)',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '0.875rem',
+              position: 'relative',
+              fontSize: '0.8rem',
               fontWeight: isCurrent || isAnswered ? 700 : 500,
               cursor: 'pointer',
               border: isCurrent
@@ -74,15 +77,36 @@ const QuestionNavigator = React.memo(({ questionsList, currentIndex, answersMap,
                   : '1px solid var(--color-border)',
               background: isCurrent
                 ? (isAnswered ? 'var(--color-primary)' : 'var(--color-surface-0)')
-                : (isAnswered ? 'var(--color-primary-light)' : 'var(--color-surface-0)'),
+                : (isAnswered ? 'var(--color-primary-light, rgba(14, 107, 168, 0.1))' : 'var(--color-surface-0)'),
               color: isCurrent
                 ? (isAnswered ? '#ffffff' : 'var(--color-primary)')
                 : (isAnswered ? 'var(--color-primary)' : 'var(--color-text-secondary)'),
               boxShadow: isCurrent ? 'var(--shadow-sm)' : 'none',
               transition: 'all 0.15s ease',
+              flexShrink: 0,
+              padding: 0,
             }}
           >
-            {i + 1}
+            <span>{i + 1}</span>
+            {isFlagged ? (
+              <Flag
+                size={8}
+                className="fill-amber-500 text-amber-500"
+                style={{ position: 'absolute', top: 2, right: 2 }}
+                aria-hidden="true"
+              />
+            ) : isAnswered ? (
+              <Check
+                size={8}
+                strokeWidth={3}
+                style={{
+                  position: 'absolute',
+                  bottom: 2,
+                  color: isCurrent && isAnswered ? '#ffffff' : 'var(--color-primary)',
+                }}
+                aria-hidden="true"
+              />
+            ) : null}
           </button>
         );
       })}
@@ -114,6 +138,31 @@ function ExamSessionRoute() {
     return {};
   });
   const [confirmState, setConfirmState] = React.useState({ isOpen: false, message: '' });
+  const [flaggedIds, setFlaggedIds] = React.useState<Set<string>>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(`exam_flags_${sessionId}`);
+        if (saved) return new Set(JSON.parse(saved));
+      }
+    } catch {
+      // ignore
+    }
+    return new Set();
+  });
+
+  const toggleFlag = React.useCallback((qId: string) => {
+    setFlaggedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(qId)) next.delete(qId);
+      else next.add(qId);
+      try {
+        localStorage.setItem(`exam_flags_${sessionId}`, JSON.stringify([...next]));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, [sessionId]);
 
   // Sync answers to localStorage on change
   React.useEffect(() => {
@@ -179,6 +228,7 @@ function ExamSessionRoute() {
     lastViolationType,
     clearViolation,
     isProtectionFlashing,
+    flushEvents: flushAntiCheatEvents,
   } = useAntiCheat(
     sessionId,
     isMonitoring && hasStartedExam,
@@ -332,6 +382,8 @@ function ExamSessionRoute() {
       })
     };
 
+    flushAntiCheatEvents();
+
     submitBatchAnswers(payload, {
       onSuccess: () => {
         try {
@@ -347,7 +399,7 @@ function ExamSessionRoute() {
         toast.error(message);
       }
     });
-  }, [questionsList, submitBatchAnswers, navigate, sessionId]);
+  }, [questionsList, submitBatchAnswers, navigate, sessionId, flushAntiCheatEvents]);
 
   const handleSubmit = React.useCallback(() => {
     flushCurrentDraft();
@@ -557,46 +609,74 @@ function ExamSessionRoute() {
       />
 
       <header className="sticky top-0 z-30 bg-[var(--color-surface-0)] border-b border-[var(--color-border)] shadow-xs">
-        {/* Top Tier: Course title + Proctoring badge + Timer + Actions */}
-        <div className="px-4 sm:px-8 py-3 flex items-center justify-between gap-4 border-b border-[var(--color-border)]">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <h1 className="text-sm sm:text-base font-bold text-[var(--color-text)] tracking-tight truncate max-w-[180px] sm:max-w-md">
+        {/* Unified single-tier header at md and up (64-72px tall); two-row layout below md */}
+        <div className="px-4 md:px-6 flex flex-col md:flex-row md:items-center md:justify-between min-h-[64px] md:h-[68px] py-2.5 md:py-0 gap-2.5 md:gap-4">
+          
+          {/* Left: Course title and status cluster (proctored indicator, fullscreen state) */}
+          <div className="flex items-center justify-between md:justify-start gap-2.5 min-w-0 shrink-0">
+            <h1
+              className="text-sm md:text-base font-bold text-[var(--color-text)] tracking-tight truncate max-w-[150px] sm:max-w-[200px] lg:max-w-[240px]"
+              title={courseTitle}
+            >
               {courseTitle}
             </h1>
-            {isMonitoring && (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                Proctored
-              </span>
-            )}
-          </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            {isMonitoring && !isFullscreen && (
-              <Button variant="outline" size="sm" onClick={requestFullscreen}>
-                <Maximize2 size={14} style={{ marginRight: 6 }} /> Full Screen
+            {/* Small status cluster: proctored indicator & fullscreen state (always visible) */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isMonitoring && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                  title="Proctored Session"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-[11px]">Proctored</span>
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={isFullscreen ? undefined : requestFullscreen}
+                disabled={isFullscreen}
+                title={isFullscreen ? "Fullscreen active" : "Enable full screen"}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold border transition-colors ${
+                  isFullscreen
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 cursor-default"
+                    : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] cursor-pointer"
+                }`}
+              >
+                <Maximize2 size={12} />
+                <span className="text-[11px]">{isFullscreen ? "Fullscreen" : "Full Screen"}</span>
+              </button>
+            </div>
+
+            {/* Mobile-only timer and submit button in top row */}
+            <div className="flex md:hidden items-center gap-2 shrink-0">
+              <ExamTimer ref={timerRef} />
+              <Button variant="accent" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+                Submit
               </Button>
-            )}
-            <ExamTimer ref={timerRef} />
-            <Button variant="accent" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
-              Submit Exam
-            </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Secondary Tier: Horizontal question pill strip + answer count */}
-        <div className="px-4 sm:px-8 py-2 flex items-center justify-between gap-3 bg-[var(--color-surface-1)]">
-          <div className="flex-1 min-w-0">
+          {/* Middle: Question navigator as a compact strip (scrolls horizontally on small screens) */}
+          <div className="flex-1 min-w-0 w-full md:w-auto overflow-x-auto flex items-center md:justify-center py-1 md:py-0 scrollbar-none">
             <QuestionNavigator
               questionsList={questionsList}
               currentIndex={currentIndex}
               answersMap={answersMap}
+              flaggedIds={flaggedIds}
               onJumpToQuestion={handleJumpToQuestion}
             />
           </div>
-          <div className="shrink-0 text-xs font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface-0)] border border-[var(--color-border)] px-2.5 py-1 rounded-md">
-            {answeredCount} / {questionsList.length} answered
+
+          {/* Right: Timer and Submit on md and up */}
+          <div className="hidden md:flex items-center gap-3 shrink-0">
+            <ExamTimer ref={timerRef} />
+            <Button variant="accent" size="sm" onClick={handleSubmit} isLoading={isSubmitting}>
+              Submit
+            </Button>
           </div>
+
         </div>
       </header>
 
@@ -743,9 +823,24 @@ function ExamSessionRoute() {
               <ChevronLeft size={16} style={{ marginRight: 6 }} /> Previous
             </Button>
 
-            <span className="text-sm font-semibold text-[var(--color-text-secondary)]">
-              Question {currentIndex + 1} of {questionsList.length}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-[var(--color-text-secondary)]">
+                Question {currentIndex + 1} of {questionsList.length} ({answeredCount} answered)
+              </span>
+              <button
+                type="button"
+                onClick={() => toggleFlag(activeQuestionId)}
+                title={flaggedIds.has(activeQuestionId) ? "Remove flag" : "Flag question for review"}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
+                  flaggedIds.has(activeQuestionId)
+                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                    : "bg-[var(--color-surface-0)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]"
+                }`}
+              >
+                <Flag size={13} className={flaggedIds.has(activeQuestionId) ? "fill-amber-500 text-amber-500" : ""} />
+                <span>{flaggedIds.has(activeQuestionId) ? "Flagged" : "Flag"}</span>
+              </button>
+            </div>
 
             <Button
               variant="primary"

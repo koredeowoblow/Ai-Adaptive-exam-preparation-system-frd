@@ -1,5 +1,5 @@
 import * as React from 'react';
-import FocusTrap from 'focus-trap-react';
+import { FocusTrap } from 'focus-trap-react';
 import { X, Sparkles, Brain, CheckCircle2, AlertCircle, Lightbulb, Target } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 import { aiApi } from '../api/ai.api';

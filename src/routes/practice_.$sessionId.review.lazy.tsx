@@ -28,6 +28,8 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  X,
   Bot,
   Brain
 } from "lucide-react";
@@ -55,11 +57,73 @@ function SessionReviewRoute() {
     ],
   });
 
-  const [currentPage, setCurrentPage] = React.useState(0);
+  const [selectedPage, setSelectedPage] = React.useState<number | null>(null);
+  const [filterMode, setFilterMode] = React.useState<'incorrect' | 'all'>('incorrect');
+  const [isBreakdownOpen, setIsBreakdownOpen] = React.useState(false);
+  const [isHelpOpen, setIsHelpOpen] = React.useState(false);
   const questionCardRef = React.useRef<HTMLDivElement>(null);
   const { data: responseData, isLoading, error, isFetching } = usePracticeSession(sessionId);
   const { mutate: requestExplanation } = useRequestMcqExplanation(sessionId);
   const [pendingExplanations, setPendingExplanations] = React.useState<Set<string>>(new Set());
+
+  const rawQuestions = responseData?.session?.questionsServed;
+  const questions: any[] = React.useMemo(() => rawQuestions ?? [], [rawQuestions]);
+
+  const takeaway = React.useMemo(() => {
+    if (!questions || questions.length === 0) return null;
+    const missesByTopic: Record<string, number> = {};
+    for (const ans of questions) {
+      const isMiss = ans.correct === false || (!ans.correct && typeof ans.score === 'number' && ans.score < 0.7);
+      if (isMiss) {
+        const q = ans.questionId;
+        const topicName =
+          (typeof q?.topicId === 'object' && q?.topicId?.name)
+            ? q.topicId.name
+            : (typeof ans.topicId === 'object' && ans.topicId?.name)
+            ? ans.topicId.name
+            : typeof (q as any)?.topicName === 'string'
+            ? (q as any).topicName
+            : null;
+        if (topicName && typeof topicName === 'string' && topicName.trim()) {
+          const trimmed = topicName.trim();
+          missesByTopic[trimmed] = (missesByTopic[trimmed] || 0) + 1;
+        }
+      }
+    }
+    let maxMisses = 0;
+    let topTopic: string | null = null;
+    for (const [topic, count] of Object.entries(missesByTopic)) {
+      if (count > maxMisses) {
+        maxMisses = count;
+        topTopic = topic;
+      }
+    }
+    if (topTopic && maxMisses > 0) {
+      return `Most of your misses were in ${topTopic}`;
+    }
+    return null;
+  }, [questions]);
+
+  const incorrectIndices = React.useMemo(() => {
+    return questions
+      .map((ans, idx) => ({ ans, idx }))
+      .filter(({ ans }) => {
+        const isMiss = ans.correct === false || (!ans.correct && typeof ans.score === 'number' && ans.score < 0.7) || (!ans.selectedAnswer && !ans.writtenAnswer);
+        return isMiss;
+      })
+      .map(({ idx }) => idx);
+  }, [questions]);
+
+  const filteredIndices = React.useMemo(() => {
+    if (filterMode === 'incorrect') {
+      return incorrectIndices;
+    }
+    return questions.map((_, idx) => idx);
+  }, [filterMode, incorrectIndices, questions]);
+
+  const currentPage = selectedPage !== null
+    ? selectedPage
+    : (filterMode === 'incorrect' && incorrectIndices.length > 0 ? incorrectIndices[0] : 0);
 
   // Interactive Socratic Tutor State
   const [tutorContext, setTutorContext] = React.useState<any | null>(null);
@@ -130,7 +194,7 @@ function SessionReviewRoute() {
   };
 
   const goToPage = (idx: number) => {
-    setCurrentPage(idx);
+    setSelectedPage(idx);
     questionCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
@@ -211,9 +275,20 @@ function SessionReviewRoute() {
     ? new Date(sessionData.endedAt).getTime() - new Date(sessionData.startedAt).getTime()
     : 0;
 
-  const questions: any[] = sessionData?.questionsServed ?? [];
   const total = questions.length || responseData.totalServed || 0;
-  const currentAns = questions[currentPage] || questions[0];
+
+  const handleFilterChange = (mode: 'incorrect' | 'all') => {
+    setFilterMode(mode);
+    if (mode === 'incorrect') {
+      if (incorrectIndices.length > 0 && !incorrectIndices.includes(currentPage)) {
+        setSelectedPage(incorrectIndices[0]);
+      }
+    }
+  };
+
+  const currentFilteredPos = filteredIndices.indexOf(currentPage);
+  const activeFilteredIdx = currentFilteredPos !== -1 ? currentFilteredPos : 0;
+  const currentAns = questions[currentPage] || (filteredIndices.length > 0 ? questions[filteredIndices[0]] : questions[0]);
   const currentQ = currentAns?.questionId as unknown as Question;
 
   const getPerformanceTier = (score: number) => {
@@ -252,29 +327,32 @@ function SessionReviewRoute() {
     <AppLayout>
       <div className="page-container" style={{ paddingBottom: 'calc(var(--space-48) + 80px)' }}>
         
-        {/* Results Hero (Bento Layout) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-20)', marginBottom: 'var(--space-24)' }}>
-
-          {/* Main Score Card */}
-          <div 
-            className="card" 
-            style={{ 
-              background: 'linear-gradient(135deg, var(--color-primary) 0%, #094770 100%)', 
-              color: '#ffffff', 
-              padding: 'var(--space-24) var(--space-28)',
-              position: 'relative',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              minHeight: 180
-            }}
-          >
-            <div style={{ position: 'relative', zIndex: 2 }}>
+        {/* Top: Score, Performance Tier, Late Badge, and ONE Takeaway Line */}
+        <div 
+          className="card" 
+          style={{ 
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #094770 100%)', 
+            color: '#ffffff', 
+            padding: 'var(--space-24) var(--space-28)',
+            position: 'relative',
+            overflow: 'hidden',
+            marginBottom: 'var(--space-24)'
+          }}
+        >
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: 'var(--space-12)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-8)' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.85 }}>
                 Final Score
               </span>
-              <div style={{ fontSize: '3.5rem', fontWeight: 900, lineHeight: 1.1, margin: 'var(--space-8) 0' }}>
+              {sessionData.lateSubmission && (
+                <Badge variant="warning" style={{ background: 'rgba(245, 158, 11, 0.25)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
+                  <ClockAlert size={14} style={{ marginRight: 4 }} /> Late Submission
+                </Badge>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-16)', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: '3.5rem', fontWeight: 900, lineHeight: 1.1 }}>
                 {Math.round(finalScore)}<span style={{ fontSize: '2rem', opacity: 0.8 }}>%</span>
               </div>
               <div 
@@ -283,9 +361,9 @@ function SessionReviewRoute() {
                   alignItems: 'center', 
                   gap: 6, 
                   background: 'rgba(255, 255, 255, 0.18)', 
-                  padding: '4px 12px', 
+                  padding: '6px 14px', 
                   borderRadius: 'var(--radius-full)', 
-                  fontSize: '0.8rem', 
+                  fontSize: '0.85rem', 
                   fontWeight: 600,
                 }}
               >
@@ -293,79 +371,119 @@ function SessionReviewRoute() {
                 <span>{tier.label}</span>
               </div>
             </div>
-            <div style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.12, pointerEvents: 'none' }}>
-              <Trophy size={160} />
-            </div>
+
+            {takeaway && (
+              <div 
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: 8, 
+                  background: 'rgba(0, 0, 0, 0.22)', 
+                  padding: '8px 14px', 
+                  borderRadius: 'var(--radius-md)', 
+                  fontSize: '0.875rem', 
+                  fontWeight: 500, 
+                  color: '#f8fafc',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  maxWidth: 'fit-content'
+                }}
+              >
+                <Sparkles size={16} style={{ color: '#38bdf8', flexShrink: 0 }} />
+                <span>{takeaway}</span>
+              </div>
+            )}
           </div>
-
-          {/* Performance Summary Metrics Card */}
-          <div className="card" style={{ padding: 'var(--space-24)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-12)', marginBottom: 'var(--space-16)' }}>
-              <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
-                  Session Performance
-                </h2>
-                <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
-                  Summary of your responses and integrity status.
-                </p>
-              </div>
-              {sessionData.lateSubmission && (
-                <Badge variant="warning">
-                  <ClockAlert size={14} style={{ marginRight: 4 }} /> Late Submission
-                </Badge>
-              )}
-            </div>
-
-            {/* Performance Mini Tiles */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 'var(--space-12)' }}>
-              
-              <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
-                  <Target size={14} /> Accuracy
-                </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-                  {accuracy}%
-                </div>
-              </div>
-
-              <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
-                  <HelpCircle size={14} /> Answered
-                </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-                  {answeredCount} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>/ {sessionData.totalQuestions || total}</span>
-                </div>
-              </div>
-
-              <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
-                  <Timer size={14} /> Avg Speed
-                </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-                  {Math.max(1, Math.round(durationMs / 1000 / (answeredCount || 1)))}s <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>/ q</span>
-                </div>
-              </div>
-
-              <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: integrityScore >= 80 ? 'var(--color-success)' : 'var(--color-danger)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
-                  <ShieldCheck size={14} /> Integrity
-                </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: integrityScore >= 80 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                  {integrityScore}
-                </div>
-              </div>
-
-            </div>
+          <div style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.12, pointerEvents: 'none' }}>
+            <Trophy size={160} />
           </div>
         </div>
 
-        {/* Option D: Departmental Cohort Percentile & Competency Radar Benchmark */}
-        <div style={{ marginBottom: 'var(--space-24)' }}>
-          <CohortCompetencyRadar />
-        </div>
-
-        {/* Detailed Question Review Area */}
+        {/* Main: Question Breakdown Area */}
         <div style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-16)', flexWrap: 'wrap', gap: 'var(--space-12)' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
+              Question Breakdown
+            </h2>
+
+            {/* Filter Toggle */}
+            <div
+              role="radiogroup"
+              aria-label="Filter questions"
+              style={{
+                display: 'inline-flex',
+                padding: 3,
+                borderRadius: 'var(--radius-lg)',
+                background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.05))',
+                border: '1px solid var(--color-border)',
+                gap: 2
+              }}
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={filterMode === 'incorrect'}
+                onClick={() => handleFilterChange('incorrect')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  minHeight: 36,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: filterMode === 'incorrect' ? 'var(--color-surface)' : 'transparent',
+                  color: filterMode === 'incorrect' ? 'var(--color-danger, #ef4444)' : 'var(--color-text-muted)',
+                  boxShadow: filterMode === 'incorrect' ? 'var(--shadow-sm)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <XCircle size={14} />
+                <span>Incorrect only ({incorrectIndices.length})</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={filterMode === 'all'}
+                onClick={() => handleFilterChange('all')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  minHeight: 36,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: filterMode === 'all' ? 'var(--color-surface)' : 'transparent',
+                  color: filterMode === 'all' ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                  boxShadow: filterMode === 'all' ? 'var(--shadow-sm)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>All questions ({questions.length})</span>
+              </button>
+            </div>
+          </div>
+
+          {filterMode === 'incorrect' && incorrectIndices.length === 0 && (
+            <div className="card" style={{ padding: 'var(--space-32)', textAlign: 'center', marginBottom: 'var(--space-20)' }}>
+              <CheckCircle2 size={40} color="var(--color-success)" style={{ margin: '0 auto 12px' }} />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: 'var(--color-text-primary)' }}>
+                No incorrect questions!
+              </h3>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', margin: '0 0 16px' }}>
+                You answered every question correctly in this session.
+              </p>
+              <Button variant="outline" onClick={() => handleFilterChange('all')}>
+                View all questions
+              </Button>
+            </div>
+          )}
           {isFetching && !isLoading && (
             <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(255, 255, 255, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-xl)' }}>
               <Loader2 className="animate-spin" size={32} color="var(--color-primary)" />
@@ -428,13 +546,13 @@ function SessionReviewRoute() {
                     )}
 
                     <Button
-                      variant="outline"
+                      variant={isHelpOpen ? "primary" : "outline"}
                       size="sm"
-                      onClick={() => openTutorForQuestion(q, ans)}
+                      onClick={() => setIsHelpOpen(prev => !prev)}
                       style={{ fontSize: '0.8rem', padding: '4px 10px', height: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}
                     >
-                      <Bot size={14} className="text-primary" />
-                      <span>Ask AI Helper</span>
+                      <Sparkles size={14} className={isHelpOpen ? "text-white" : "text-primary"} />
+                      <span>Get help</span>
                     </Button>
 
                     {(!ans.correct || (ans.score !== undefined && ans.score < 1)) && (
@@ -495,7 +613,7 @@ function SessionReviewRoute() {
 
                 {/* MCQ Options */}
                 {!isTheory && q.options && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-10)', marginBottom: 'var(--space-20)' }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ marginBottom: 'var(--space-20)' }}>
                     {q.options.map((option: any) => {
                       const isChosen = option.id === ans.selectedAnswer;
                       const isCorrectOpt = option.id === q.correctAnswer;
@@ -890,13 +1008,7 @@ function SessionReviewRoute() {
                         </details>
                       )}
 
-                      {/* Explain Better Bar for Theory Question */}
-                      <ExplainBetterWidget
-                        questionText={q.questionText || (q as any).text || ''}
-                        studentAnswer={ans.theoryAnswer || ''}
-                        modelAnswer={q.modelAnswer || ''}
-                        currentExplanation={ans.theoryFeedback || (ans as any).feedback || ''}
-                      />
+                      {/* Single-part theory question fallback */}
                     </div>
                   );
                 })()}
@@ -920,14 +1032,6 @@ function SessionReviewRoute() {
                         <div style={{ fontSize: '0.875rem', lineHeight: 1.6, color: 'var(--color-text-primary)' }}>
                           <FormattedMathText text={ans.aiExplanation} />
                         </div>
-
-                        {/* Explain Better Bar for MCQ Explanation */}
-                        <ExplainBetterWidget
-                          questionText={q.questionText || (q as any).text || ''}
-                          studentAnswer={String(ans.selectedOption || '')}
-                          correctAnswer={String(q.correctAnswer || (q as any).correctOption || '')}
-                          currentExplanation={ans.aiExplanation}
-                        />
                       </div>
                     ) : ans.explanationStatus === 'PENDING' || pendingExplanations.has((ans as any)._id) ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text-muted)', fontSize: '0.85rem', padding: 'var(--space-12)' }}>
@@ -951,28 +1055,107 @@ function SessionReviewRoute() {
                     )}
                   </div>
                 )}
+
+                {/* Single Help Panel */}
+                {isHelpOpen && (
+                  <div
+                    style={{
+                      marginTop: 'var(--space-20)',
+                      padding: 'var(--space-16)',
+                      borderRadius: 'var(--radius-lg)',
+                      background: 'var(--color-surface)',
+                      border: '1px solid rgba(14, 107, 168, 0.3)',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-12)', flexWrap: 'wrap', gap: 'var(--space-8)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Sparkles size={16} color="var(--color-primary)" />
+                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>
+                          Question Help
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-8)' }}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openTutorForQuestion(q, ans)}
+                          style={{
+                            fontSize: '0.8rem',
+                            padding: '4px 12px',
+                            height: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            borderColor: 'var(--color-primary)',
+                            color: 'var(--color-primary)',
+                            background: 'var(--color-primary-light, rgba(14, 107, 168, 0.08))',
+                          }}
+                        >
+                          <Bot size={14} />
+                          <span>Walk me through it</span>
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => setIsHelpOpen(false)}
+                          aria-label="Close help panel"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--color-text-muted)',
+                            cursor: 'pointer',
+                            padding: 4,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 'var(--radius-sm)'
+                          }}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Defaults to Explain Better content */}
+                    <ExplainBetterWidget
+                      questionText={q.questionText ? q.questionText.replace(/\s*\[Variant\s+\d+\]\s*$/i, '').trim() : ''}
+                      studentAnswer={
+                        ans.writtenAnswer ||
+                        (ans.selectedAnswer && Array.isArray(q.options)
+                          ? (q.options.find((o: any) => o.id === ans.selectedAnswer)?.text || ans.selectedAnswer)
+                          : String(ans.selectedAnswer || ans.selectedOption || ''))
+                      }
+                      correctAnswer={String(q.correctAnswer || (q as any).correctOption || '')}
+                      modelAnswer={q.modelAnswer || ''}
+                      currentExplanation={ans.aiExplanation || ans.theoryFeedback || (ans as any).feedback || ''}
+                    />
+                  </div>
+                )}
               </div>
             );
           })()}
 
           {/* Pagination Controls */}
-          {total > 1 && (
+          {filteredIndices.length > 1 && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-12)', flexWrap: 'wrap' }}>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => goToPage(Math.max(0, currentPage - 1))}
-                disabled={currentPage === 0}
+                onClick={() => goToPage(filteredIndices[activeFilteredIdx - 1])}
+                disabled={activeFilteredIdx <= 0}
               >
                 <ChevronLeft size={16} style={{ marginRight: 4 }} /> Previous
               </Button>
 
               {/* Dot Indicators */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-                {questionsSummary.map((item: any, i: number) => {
-                  const isCur = i === currentPage;
-                  const isCorrect = item?.correct;
-                  const isUnans = item?.answered === false;
+                {filteredIndices.map((origIdx, fIdx) => {
+                  const isCur = origIdx === currentPage;
+                  const item = questionsSummary[origIdx] || {};
+                  const ans = questions[origIdx];
+                  const isCorrect = item?.correct ?? ans?.correct;
+                  const isUnans = ((item as any)?.answered === false) || (!ans?.selectedAnswer && !ans?.writtenAnswer);
                   
                   let dotColor = 'var(--color-border)';
                   if (isCur) dotColor = 'var(--color-primary)';
@@ -982,9 +1165,9 @@ function SessionReviewRoute() {
                   return (
                     <button
                       type="button"
-                      key={i}
-                      onClick={() => goToPage(i)}
-                      aria-label={`Jump to question ${i + 1}`}
+                      key={origIdx}
+                      onClick={() => goToPage(origIdx)}
+                      aria-label={`Jump to question ${origIdx + 1} (${fIdx + 1} of ${filteredIndices.length})`}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -1015,11 +1198,106 @@ function SessionReviewRoute() {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => goToPage(Math.min(total - 1, currentPage + 1))}
-                disabled={currentPage === total - 1}
+                onClick={() => goToPage(filteredIndices[activeFilteredIdx + 1])}
+                disabled={activeFilteredIdx >= filteredIndices.length - 1}
               >
                 Next <ChevronRight size={16} style={{ marginLeft: 4 }} />
               </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Secondary: Collapsible Detailed Breakdown Section */}
+        <div style={{ marginTop: 'var(--space-32)' }}>
+          <button
+            type="button"
+            aria-expanded={isBreakdownOpen}
+            aria-controls="detailed-breakdown-content"
+            onClick={() => setIsBreakdownOpen(prev => !prev)}
+            style={{
+              width: '100%',
+              minHeight: 44,
+              padding: 'var(--space-12) var(--space-16)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderRadius: 'var(--radius-lg)',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text-primary)',
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-10)' }}>
+              <TrendingUp size={18} color="var(--color-primary)" />
+              <span>Detailed breakdown</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>
+                (Metrics &amp; Cohort Radar)
+              </span>
+            </div>
+            <ChevronDown
+              size={18}
+              style={{
+                transform: isBreakdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease',
+                color: 'var(--color-text-muted)'
+              }}
+            />
+          </button>
+
+          {isBreakdownOpen && (
+            <div id="detailed-breakdown-content" style={{ marginTop: 'var(--space-16)', display: 'flex', flexDirection: 'column', gap: 'var(--space-20)' }}>
+              {/* Summary Metric Tiles */}
+              <div className="card" style={{ padding: 'var(--space-20)' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 var(--space-16)', color: 'var(--color-text-primary)' }}>
+                  Session Performance Metrics
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--space-12)' }}>
+                  <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+                      <Target size={14} /> Accuracy
+                    </div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
+                      {accuracy}%
+                    </div>
+                  </div>
+
+                  <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+                      <HelpCircle size={14} /> Answered
+                    </div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
+                      {answeredCount} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>/ {sessionData.totalQuestions || total}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+                      <Timer size={14} /> Avg Speed
+                    </div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
+                      {Math.max(1, Math.round(durationMs / 1000 / (answeredCount || 1)))}s <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-muted)' }}>/ q</span>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: 'var(--space-12)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-hover, rgba(0, 0, 0, 0.03))', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: integrityScore >= 80 ? 'var(--color-success)' : 'var(--color-danger)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>
+                      <ShieldCheck size={14} /> Integrity
+                    </div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: integrityScore >= 80 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                      {integrityScore}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Departmental Cohort Percentile & Competency Radar Benchmark */}
+              <div>
+                <CohortCompetencyRadar />
+              </div>
             </div>
           )}
         </div>

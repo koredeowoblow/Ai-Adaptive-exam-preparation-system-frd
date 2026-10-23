@@ -1,5 +1,5 @@
 import * as React from 'react';
-import FocusTrap from 'focus-trap-react';
+import { FocusTrap } from 'focus-trap-react';
 import { ShieldCheck, Maximize2, Eye, MonitorOff, CopyX } from 'lucide-react';
 import { Button } from '../../../shared/components/Button';
 

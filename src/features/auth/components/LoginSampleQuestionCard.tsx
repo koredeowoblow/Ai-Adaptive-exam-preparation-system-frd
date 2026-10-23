@@ -266,8 +266,8 @@ export const LoginSampleQuestionCard: React.FC = () => {
       {/* Render Mathematical Notation if present */}
       {currentQ.mathFormula}
 
-      {/* 2-column Options Grid */}
-      <div className="grid grid-cols-2 gap-3 mt-4" role="radiogroup" aria-label="Question choices">
+      {/* Options Grid: grid-cols-1 below md and grid-cols-2 from md up */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4" role="radiogroup" aria-label="Question choices">
         {currentQ.options.map((opt) => {
           const isSelected = selectedOption === opt.id;
           const isCorrectOption = opt.isCorrect;
