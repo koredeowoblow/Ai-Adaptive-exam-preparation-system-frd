@@ -93,6 +93,7 @@ export interface StartSessionPayload {
   courseId: string;
   totalQuestions?: number;
   questionType?: QuestionTypeMix;
+  mode?: 'quick' | 'mock' | 'diagnostic';
 }
 
 export interface StartSessionResponse {
@@ -105,7 +106,7 @@ export interface StartSessionResponse {
 export interface GetSessionResponse {
   session: PracticeSession;
   totalServed?: number;
-  questionsSummary?: { correct?: boolean; type: string }[];
+  questionsSummary?: { correct?: boolean; type?: string; answered?: boolean }[];
   nextQuestion?: Question | null;
 }
 

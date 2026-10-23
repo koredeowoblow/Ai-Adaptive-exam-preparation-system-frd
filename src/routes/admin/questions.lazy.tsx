@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createLazyFileRoute, useNavigate } from '@tanstack/react-router';
+import { createLazyFileRoute } from '@tanstack/react-router';
 import {
   useQuestions,
   useCreateQuestion,
@@ -91,7 +91,7 @@ interface EnrichedQuestion extends Question {
 function QuestionsAdminRoute() {
   useDocumentTitle('Admin: Questions');
   const searchParams = Route.useSearch();
-  const navigate = useNavigate({ from: '/admin/questions' });
+  const navigate = Route.useNavigate();
 
   const querySearch = searchParams.q ?? '';
   const selectedCourseFilter = searchParams.courseId ?? '';
@@ -921,17 +921,14 @@ function QuestionsAdminRoute() {
             variant="ghost"
             size="sm"
             onClick={() =>
-              navigate({
-                search: (prev) => ({
-                  ...prev,
-                  q: undefined,
-                  courseId: undefined,
-                  topicId: undefined,
-                  type: 'all',
-                  difficulty: 'all',
-                  status: 'all',
-                  page: 1,
-                }),
+              updateSearchParams({
+                q: undefined,
+                courseId: undefined,
+                topicId: undefined,
+                type: 'all',
+                difficulty: 'all',
+                status: 'all',
+                page: 1,
               })
             }
             style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}

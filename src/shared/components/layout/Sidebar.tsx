@@ -15,6 +15,7 @@ import {
   LogOut,
   History,
   ShieldAlert,
+  Brain,
   X,
 } from 'lucide-react';
 
@@ -172,6 +173,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose, className = '' }) => 
             icon={<ClipboardList size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
             label="Practice"
             tag="AI"
+            onClick={onClose}
+          />
+          <NavItem
+            to="/review-deck"
+            icon={<Brain size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />}
+            label="Review Deck"
+            tag="Leitner"
             onClick={onClose}
           />
           <NavItem

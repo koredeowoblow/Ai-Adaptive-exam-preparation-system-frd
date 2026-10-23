@@ -470,6 +470,27 @@ function SessionReviewRoute() {
             </div>
           </div>
 
+          {incorrectIndices.length > 0 && (
+            <div className="card p-4 mb-5 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-card to-accent/10 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/25 text-primary flex items-center justify-center shrink-0">
+                  <Brain size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-text">
+                    {incorrectIndices.length} missed question{incorrectIndices.length === 1 ? '' : 's'} added to your Spaced Repetition Deck
+                  </p>
+                  <p className="text-xs text-text-secondary">
+                    Queued into Box 1 (Leitner system) for daily reinforcement and long-term retention.
+                  </p>
+                </div>
+              </div>
+              <Button size="sm" variant="primary" onClick={() => navigate({ to: '/review-deck' })} className="shrink-0">
+                Practice in Review Deck
+              </Button>
+            </div>
+          )}
+
           {filterMode === 'incorrect' && incorrectIndices.length === 0 && (
             <div className="card" style={{ padding: 'var(--space-32)', textAlign: 'center', marginBottom: 'var(--space-20)' }}>
               <CheckCircle2 size={40} color="var(--color-success)" style={{ margin: '0 auto 12px' }} />
@@ -1152,10 +1173,10 @@ function SessionReviewRoute() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {filteredIndices.map((origIdx, fIdx) => {
                   const isCur = origIdx === currentPage;
-                  const item = questionsSummary[origIdx] || {};
+                  const item = questionsSummary[origIdx];
                   const ans = questions[origIdx];
                   const isCorrect = item?.correct ?? ans?.correct;
-                  const isUnans = ((item as any)?.answered === false) || (!ans?.selectedAnswer && !ans?.writtenAnswer);
+                  const isUnans = (item?.answered === false) || (!ans?.selectedAnswer && !ans?.writtenAnswer);
                   
                   let dotColor = 'var(--color-border)';
                   if (isCur) dotColor = 'var(--color-primary)';

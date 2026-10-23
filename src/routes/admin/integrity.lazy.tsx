@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createLazyFileRoute, useNavigate } from '@tanstack/react-router';
+import { createLazyFileRoute } from '@tanstack/react-router';
 import {
   useIntegrityLogs,
   useExamSessionDetails,
@@ -58,7 +58,7 @@ function formatDate(dateStr?: string): string {
 
 function IntegrityAdminRoute() {
   useDocumentTitle('Admin: Anti-Cheat & Integrity Monitor');
-  const navigate = useNavigate({ from: '/admin/integrity' });
+  const navigate = Route.useNavigate();
   const [activeTab, setActiveTab] = React.useState<'live' | 'logs'>('live');
   const search = Route.useSearch();
 
@@ -74,7 +74,7 @@ function IntegrityAdminRoute() {
     const timer = setTimeout(() => {
       if ((search.q || '') !== searchInput.trim()) {
         navigate({
-          search: (prev: any) => ({
+          search: (prev) => ({
             ...prev,
             q: searchInput.trim() || undefined,
             page: 1,
@@ -133,7 +133,7 @@ function IntegrityAdminRoute() {
 
   const handleFilterChange = (updates: Partial<IntegritySearch>) => {
     navigate({
-      search: (prev: any) => ({
+      search: (prev) => ({
         ...prev,
         ...updates,
         page: 1,
@@ -694,7 +694,7 @@ function IntegrityAdminRoute() {
               disabled={currentPage <= 1 || isLoading}
               onClick={() =>
                 navigate({
-                  search: (prev: any) => ({ ...prev, page: Math.max(1, currentPage - 1) }),
+                  search: (prev) => ({ ...prev, page: Math.max(1, currentPage - 1) }),
                 })
               }
             >
@@ -706,7 +706,7 @@ function IntegrityAdminRoute() {
               disabled={currentPage >= totalPages || isLoading}
               onClick={() =>
                 navigate({
-                  search: (prev: any) => ({ ...prev, page: currentPage + 1 }),
+                  search: (prev) => ({ ...prev, page: currentPage + 1 }),
                 })
               }
             >

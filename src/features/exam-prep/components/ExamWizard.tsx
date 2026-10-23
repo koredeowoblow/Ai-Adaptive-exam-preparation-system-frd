@@ -18,6 +18,8 @@ import {
   BookCheck,
   ListChecks,
   Blend,
+  Timer,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { QuestionCountPicker } from '../../practice-session/components/QuestionCountPicker';
@@ -209,7 +211,7 @@ interface CourseStepProps {
   departmentId: string;
   level: number;
   studentLevel: string;
-  onSelect: (course: Course, totalQuestions: number, questionType: QuestionTypeMix) => void;
+  onSelect: (course: Course, totalQuestions: number, questionType: QuestionTypeMix, mode: 'quick' | 'mock') => void;
   onBack: () => void;
   isStarting: boolean;
 }
@@ -222,6 +224,7 @@ const CourseStep: React.FC<CourseStepProps> = ({
   onBack,
   isStarting,
 }) => {
+  const [sessionMode, setSessionMode] = React.useState<'quick' | 'mock'>('quick');
   const [questionType, setQuestionType] = React.useState<QuestionTypeMix>('MIXED');
   const [questionCount, setQuestionCount] = React.useState<number>(10);
   const levelCaps = LEVEL_CAPS[studentLevel] ?? LEVEL_CAPS['100L'];
@@ -264,7 +267,7 @@ const CourseStep: React.FC<CourseStepProps> = ({
     <div>
       <StepHeading
         step={2}
-        title="Select a course to practice"
+        title="Configure & select a course"
         sub={
           filteredCourses.length > 0
             ? `${filteredCourses.length} ${filteredCourses.length === 1 ? 'course' : 'courses'} available for Level ${level}.`
@@ -285,15 +288,87 @@ const CourseStep: React.FC<CourseStepProps> = ({
         </div>
       </div>
 
-      {/* ── Session Configuration Box (Question Count + Format) ── */}
+      {/* ── Session Configuration Box (Mode + Count + Format) ── */}
       <div className="bg-surface-0 border border-border rounded-xl p-4 sm:p-5 mb-6 space-y-5">
-        <QuestionCountPicker
-          value={questionCount}
-          onChange={setQuestionCount}
-          maxCap={levelCaps.totalCap}
-          theoryCap={levelCaps.theoryCap}
-          questionType={questionType}
-        />
+        {/* Practice Mode Choice */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-text-muted m-0 mb-2.5">
+            Select Practice Mode
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setSessionMode('quick');
+                setQuestionCount(10);
+              }}
+              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                sessionMode === 'quick'
+                  ? 'border-primary bg-primary-light/40 shadow-xs'
+                  : 'border-border bg-surface-1 hover:border-text-secondary'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-bold text-text-primary flex items-center gap-1.5">
+                  <Sparkles size={16} className="text-primary" /> Adaptive Practice
+                </span>
+                {sessionMode === 'quick' && (
+                  <Badge variant="primary" size="sm">Active</Badge>
+                )}
+              </div>
+              <p className="text-xs text-text-secondary m-0 leading-relaxed">
+                Topic-focused adaptive training with customizable question count. Questions dynamically calibrate to your Elo mastery.
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSessionMode('mock');
+                setQuestionCount(levelCaps.totalCap);
+              }}
+              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                sessionMode === 'mock'
+                  ? 'border-amber-500 bg-amber-500/10 shadow-xs'
+                  : 'border-border bg-surface-1 hover:border-text-secondary'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-bold text-text-primary flex items-center gap-1.5">
+                  <Timer size={16} className="text-amber-500" /> Mock Exam Simulation
+                </span>
+                {sessionMode === 'mock' && (
+                  <Badge variant="warning" size="sm">Strict Mode</Badge>
+                )}
+              </div>
+              <p className="text-xs text-text-secondary m-0 leading-relaxed">
+                Full-length timed exam paper ({levelCaps.totalCap} Qs) under proctored exam conditions. Continuous timer, strict anti-cheat, NO hints.
+              </p>
+            </button>
+          </div>
+          <p className="text-[11px] text-text-muted m-0 mt-2 flex items-center gap-1">
+            <span className="font-semibold text-text-secondary">Integrity Rule:</span> In both modes, no hints or answers are revealed during test taking.
+          </p>
+        </div>
+
+        {sessionMode === 'quick' ? (
+          <div className="pt-4 border-t border-border">
+            <QuestionCountPicker
+              value={questionCount}
+              onChange={setQuestionCount}
+              maxCap={levelCaps.totalCap}
+              theoryCap={levelCaps.theoryCap}
+              questionType={questionType}
+            />
+          </div>
+        ) : (
+          <div className="pt-4 border-t border-border">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-between text-xs sm:text-sm">
+              <span className="text-text-primary font-medium">Mock Exam Length:</span>
+              <strong className="text-amber-600 dark:text-amber-400 font-bold">{levelCaps.totalCap} Questions ({levelCaps.totalCap} min exam budget)</strong>
+            </div>
+          </div>
+        )}
 
         <div className="pt-4 border-t border-border">
           <p className="text-xs font-semibold uppercase tracking-wider text-text-muted m-0 mb-2">
@@ -358,23 +433,36 @@ const CourseStep: React.FC<CourseStepProps> = ({
               </div>
 
               <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => onSelect(course, questionCount, questionType)}
-                  disabled={isStarting}
-                >
-                  {isStarting ? 'Starting...' : `Start Practice (${questionCount} Qs)`}
-                </Button>
-                {questionCount !== 40 && levelCaps.totalCap >= 40 && (
+                {sessionMode === 'mock' ? (
                   <Button
-                    variant="outline"
+                    variant="accent"
                     size="sm"
-                    onClick={() => onSelect(course, 40, questionType)}
+                    onClick={() => onSelect(course, questionCount, questionType, 'mock')}
                     disabled={isStarting}
                   >
-                    {isStarting ? 'Starting...' : 'Full Mock (40 Qs)'}
+                    <Timer size={14} className="mr-1.5" />
+                    {isStarting ? 'Starting Exam...' : `Launch Mock Exam (${questionCount} Qs)`}
                   </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => onSelect(course, questionCount, questionType, 'quick')}
+                      disabled={isStarting}
+                    >
+                      {isStarting ? 'Starting...' : `Start Practice (${questionCount} Qs)`}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSelect(course, levelCaps.totalCap, questionType, 'mock')}
+                      disabled={isStarting}
+                    >
+                      <Timer size={14} className="mr-1.5 text-amber-500" />
+                      Mock Exam ({levelCaps.totalCap} Qs)
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -425,13 +513,18 @@ export const ExamWizard: React.FC = () => {
     setStep('course');
   };
 
-  const handleCourseSelect = (course: Course, totalQuestions: number, questionType: QuestionTypeMix) => {
+  const handleCourseSelect = (
+    course: Course,
+    totalQuestions: number,
+    questionType: QuestionTypeMix,
+    mode: 'quick' | 'mock' = 'quick'
+  ) => {
     if (isStartingRef.current || isStarting) return;
     isStartingRef.current = true;
     setIsImmediateStarting(true);
 
     startSession(
-      { courseId: course._id, totalQuestions, questionType },
+      { courseId: course._id, totalQuestions, questionType, mode },
       {
         onSuccess: (response) => {
           if (response.data.clampedMessage) {

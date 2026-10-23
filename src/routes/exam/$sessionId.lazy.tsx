@@ -9,7 +9,7 @@ import { Skeleton } from "../../shared/components/Skeleton";
 import { ErrorState } from "../../shared/components/ErrorState";
 import { EmptyState } from "../../shared/components/EmptyState";
 import { Button } from "../../shared/components/Button";
-import { ChevronLeft, ChevronRight, Loader2, AlertTriangle, ShieldAlert, Maximize2, Check, Flag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, AlertTriangle, ShieldAlert, Maximize2, Check, Flag, Timer, WifiOff } from "lucide-react";
 import { useAntiCheat } from "../../features/practice-session/hooks/useAntiCheat";
 import { IntegrityWarningBanner } from "../../features/practice-session/components/IntegrityWarningBanner";
 import { ExamNoticeModal } from "../../features/practice-session/components/ExamNoticeModal";
@@ -187,6 +187,62 @@ function ExamSessionRoute() {
     }
     return 'Mock Examination';
   }, [responseData?.session?.courseId]);
+
+  const sessionMode = (responseData?.session as any)?.mode || (questionsList.length >= 40 ? 'mock' : 'quick');
+  const isMockMode = sessionMode === 'mock';
+
+  // Offline PWA & Local Queue Synchronization
+  const [isOnline, setIsOnline] = React.useState<boolean>(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
+  const [hasOfflineSyncPending, setHasOfflineSyncPending] = React.useState<boolean>(() => {
+    try {
+      return Boolean(localStorage.getItem(`pending_exam_submission_${sessionId}`));
+    } catch {
+      return false;
+    }
+  });
+
+  const triggerOfflineSync = React.useCallback(() => {
+    try {
+      const pendingRaw = localStorage.getItem(`pending_exam_submission_${sessionId}`);
+      if (!pendingRaw) return;
+      const payload = JSON.parse(pendingRaw);
+      toast.info("Syncing cached exam answers with server...");
+      submitBatchAnswers(payload, {
+        onSuccess: () => {
+          localStorage.removeItem(`pending_exam_submission_${sessionId}`);
+          localStorage.removeItem(`exam_answers_${sessionId}`);
+          setHasOfflineSyncPending(false);
+          toast.success("Exam synced and submitted successfully!");
+          navigate({ to: `/practice/$sessionId/review`, params: { sessionId } });
+        },
+        onError: (err: any) => {
+          const message = err?.response?.data?.message || err?.message || "Failed to sync offline answers.";
+          toast.error(`${message} Click 'Retry Sync' to try again.`);
+        },
+      });
+    } catch {
+      // ignore
+    }
+  }, [sessionId, submitBatchAnswers, navigate]);
+
+  React.useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success("Network connection restored");
+      triggerOfflineSync();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.warning("You are currently offline. Your answers are safely stored locally on this device.");
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [triggerOfflineSync]);
 
   const answeredCount = React.useMemo(() => {
     return questionsList.filter((q: any) => {
@@ -384,10 +440,23 @@ function ExamSessionRoute() {
 
     flushAntiCheatEvents();
 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        localStorage.setItem(`pending_exam_submission_${sessionId}`, JSON.stringify(payload));
+        setHasOfflineSyncPending(true);
+      } catch {
+        // ignore
+      }
+      toast.warning("You are currently offline. Your exam has been safely preserved locally and will automatically submit as soon as internet reconnects.");
+      return;
+    }
+
     submitBatchAnswers(payload, {
       onSuccess: () => {
         try {
           localStorage.removeItem(`exam_answers_${sessionId}`);
+          localStorage.removeItem(`pending_exam_submission_${sessionId}`);
+          setHasOfflineSyncPending(false);
         } catch {
           // Ignore storage cleanup failure
         }
@@ -611,7 +680,7 @@ function ExamSessionRoute() {
       <header className="sticky top-0 z-30 bg-[var(--color-surface-0)] border-b border-[var(--color-border)] shadow-xs">
         {/* Unified single-tier header at md and up (64-72px tall); two-row layout below md */}
         <div className="px-4 md:px-6 flex flex-col md:flex-row md:items-center md:justify-between min-h-[64px] md:h-[68px] py-2.5 md:py-0 gap-2.5 md:gap-4">
-          
+
           {/* Left: Course title and status cluster (proctored indicator, fullscreen state) */}
           <div className="flex items-center justify-between md:justify-start gap-2.5 min-w-0 shrink-0">
             <h1
@@ -622,7 +691,32 @@ function ExamSessionRoute() {
             </h1>
 
             {/* Small status cluster: proctored indicator & fullscreen state (always visible) */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+              {isMockMode ? (
+                <span
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                  title="Mock Examination Simulation"
+                >
+                  <Timer size={12} />
+                  <span>Mock Exam</span>
+                </span>
+              ) : (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20"
+                  title="Adaptive Practice Session"
+                >
+                  <span>Practice</span>
+                </span>
+              )}
+
+              {/* Strict No Hints active indicator */}
+              <span
+                className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] border border-[var(--color-border)]"
+                title="Strict Exam Policy: No hints or assists available during assessment"
+              >
+                No Hints
+              </span>
+
               {isMonitoring && (
                 <span
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
@@ -638,11 +732,10 @@ function ExamSessionRoute() {
                 onClick={isFullscreen ? undefined : requestFullscreen}
                 disabled={isFullscreen}
                 title={isFullscreen ? "Fullscreen active" : "Enable full screen"}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold border transition-colors ${
-                  isFullscreen
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold border transition-colors ${isFullscreen
                     ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 cursor-default"
                     : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] cursor-pointer"
-                }`}
+                  }`}
               >
                 <Maximize2 size={12} />
                 <span className="text-[11px]">{isFullscreen ? "Fullscreen" : "Full Screen"}</span>
@@ -679,6 +772,23 @@ function ExamSessionRoute() {
 
         </div>
       </header>
+
+      {/* Offline Status & Local Queue Sync Banner */}
+      {!isOnline && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 flex items-center justify-between gap-3 text-xs sm:text-sm text-amber-800 dark:text-amber-300">
+          <div className="flex items-center gap-2">
+            <WifiOff size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>
+              <strong>Offline Mode Active:</strong> Answers are safely saved locally on this device. Submissions will automatically sync when reconnected.
+            </span>
+          </div>
+          {hasOfflineSyncPending && (
+            <Button size="sm" variant="accent" onClick={triggerOfflineSync} isLoading={isSubmitting}>
+              Retry Sync Now
+            </Button>
+          )}
+        </div>
+      )}
 
       <main className="flex-1 px-4 sm:px-6 py-6 sm:py-8 pb-32 sm:pb-20 flex justify-center">
         <div className="w-full max-w-3xl">
@@ -831,11 +941,10 @@ function ExamSessionRoute() {
                 type="button"
                 onClick={() => toggleFlag(activeQuestionId)}
                 title={flaggedIds.has(activeQuestionId) ? "Remove flag" : "Flag question for review"}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
-                  flaggedIds.has(activeQuestionId)
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${flaggedIds.has(activeQuestionId)
                     ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
                     : "bg-[var(--color-surface-0)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]"
-                }`}
+                  }`}
               >
                 <Flag size={13} className={flaggedIds.has(activeQuestionId) ? "fill-amber-500 text-amber-500" : ""} />
                 <span>{flaggedIds.has(activeQuestionId) ? "Flagged" : "Flag"}</span>

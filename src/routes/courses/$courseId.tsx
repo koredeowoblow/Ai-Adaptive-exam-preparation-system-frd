@@ -90,7 +90,7 @@ function CourseDetails() {
     setIsImmediateStarting(true);
 
     startSession(
-      { courseId, totalQuestions, questionType },
+      { courseId, totalQuestions, questionType, mode: totalQuestions >= 40 ? 'mock' : 'quick' },
       {
         onSuccess: (response) => {
           setIsConfigModalOpen(false);
@@ -110,7 +110,7 @@ function CourseDetails() {
     setIsImmediateStarting(true);
 
     startSession(
-      { courseId, totalQuestions: 10 },
+      { courseId, totalQuestions: 10, mode: 'quick' },
       {
         onSuccess: (response) => {
           navigate({ to: '/exam/$sessionId', params: { sessionId: response.data.session._id } });
@@ -129,7 +129,7 @@ function CourseDetails() {
     setIsImmediateStarting(true);
 
     startSession(
-      { courseId, totalQuestions: 40 },
+      { courseId, totalQuestions: 40, mode: 'mock' },
       {
         onSuccess: (response) => {
           navigate({ to: '/exam/$sessionId', params: { sessionId: response.data.session._id } });

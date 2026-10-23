@@ -21,6 +21,7 @@ import { Route as ExamPrepRouteImport } from './routes/exam-prep'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ReviewDeckRouteImport } from './routes/review-deck'
 import { Route as StudyPlannerRouteImport } from './routes/study-planner'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
@@ -129,6 +130,11 @@ const ResetPasswordLazyRoute = ResetPasswordLazyRouteImport.update({
 } as any).lazy(() =>
   import('./routes/reset-password.lazy').then((d) => d.Route),
 )
+const ReviewDeckRoute = ReviewDeckRouteImport.update({
+  id: '/review-deck',
+  path: '/review-deck',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/review-deck.lazy').then((d) => d.Route))
 const StudyPlannerRoute = StudyPlannerRouteImport.update({
   id: '/study-planner',
   path: '/study-planner',
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/review-deck': typeof ReviewDeckRoute
   '/study-planner': typeof StudyPlannerRoute
   '/forgot-password': typeof ForgotPasswordLazyRoute
   '/login': typeof LoginLazyRoute
@@ -302,6 +309,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/review-deck': typeof ReviewDeckRoute
   '/study-planner': typeof StudyPlannerRoute
   '/forgot-password': typeof ForgotPasswordLazyRoute
   '/login': typeof LoginLazyRoute
@@ -339,6 +347,7 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/review-deck': typeof ReviewDeckRoute
   '/study-planner': typeof StudyPlannerRoute
   '/forgot-password': typeof ForgotPasswordLazyRoute
   '/login': typeof LoginLazyRoute
@@ -377,6 +386,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/onboarding'
     | '/profile'
+    | '/review-deck'
     | '/study-planner'
     | '/forgot-password'
     | '/login'
@@ -412,6 +422,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/onboarding'
     | '/profile'
+    | '/review-deck'
     | '/study-planner'
     | '/forgot-password'
     | '/login'
@@ -448,6 +459,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/onboarding'
     | '/profile'
+    | '/review-deck'
     | '/study-planner'
     | '/forgot-password'
     | '/login'
@@ -485,6 +497,7 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
+  ReviewDeckRoute: typeof ReviewDeckRoute
   StudyPlannerRoute: typeof StudyPlannerRoute
   ForgotPasswordLazyRoute: typeof ForgotPasswordLazyRoute
   LoginLazyRoute: typeof LoginLazyRoute
@@ -596,6 +609,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review-deck': {
+      id: '/review-deck'
+      path: '/review-deck'
+      fullPath: '/review-deck'
+      preLoaderRoute: typeof ReviewDeckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/study-planner': {
@@ -786,6 +806,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
+  ReviewDeckRoute: ReviewDeckRoute,
   StudyPlannerRoute: StudyPlannerRoute,
   ForgotPasswordLazyRoute: ForgotPasswordLazyRoute,
   LoginLazyRoute: LoginLazyRoute,
